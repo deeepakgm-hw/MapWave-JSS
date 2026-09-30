@@ -7,9 +7,9 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently -k -p \"[{name}]\" -n \"web,api\" -c \"cyan.bold,green.bold\" \"npm run dev -w @campus-nav/web\" \"python -m uvicorn app.main:app --app-dir apps/api --reload --port 3001\"",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"web,api\" -c \"cyan.bold,green.bold\" \"npm run dev -w @campus-nav/web\" \".venv\\Scripts\\python -m uvicorn app.main:app --app-dir apps/api --reload --port 3001\"",
     "dev:web": "npm run dev -w @campus-nav/web",
-    "dev:api": "python -m uvicorn app.main:app --app-dir apps/api --reload --port 3001",
+    "dev:api": ".venv\\Scripts\\python -m uvicorn app.main:app --app-dir apps/api --reload --port 3001",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },
