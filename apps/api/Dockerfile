@@ -1,29 +1,18 @@
-FROM node:22-alpine AS builder
+FROM python:3.12-slim
 
 WORKDIR /app
 
-# Copy root workspace configurations
-COPY package.json package-lock.json* ./
-COPY packages/shared-types ./packages/shared-types
-COPY apps/api ./apps/api
+# Install system dependencies for psycopg2 and geospatial libraries
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies and build
-RUN npm install
-RUN npm run build -w @campus-nav/api
+COPY apps/api/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-FROM node:22-alpine AS runner
+COPY apps/api/app ./app
 
-WORKDIR /app
+EXPOSE 3001
 
-ENV NODE_ENV=production
-COPY package.json package-lock.json* ./
-COPY packages/shared-types ./packages/shared-types
-COPY apps/api/package.json ./apps/api/
-RUN npm install --omit=dev
-
-COPY --from=builder /app/apps/api/dist ./apps/api/dist
-COPY apps/api/prisma ./apps/api/prisma
-
-EXPOSE 3000
-
-CMD ["node", "apps/api/dist/main"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "3001"]

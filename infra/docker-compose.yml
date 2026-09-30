@@ -30,11 +30,11 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://campus_user:campus_password@postgres:5432/campus_nav?schema=public
-      PORT: 3000
+      DATABASE_URL: postgresql://campus_user:campus_password@postgres:5432/campus_nav
+      PORT: 3001
       JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-replace-in-production}
     ports:
-      - '3000:3000'
+      - '3001:3001'
 
   web:
     build:
@@ -45,7 +45,7 @@ services:
     depends_on:
       - api
     environment:
-      VITE_API_URL: http://localhost:3000
+      VITE_API_URL: http://localhost:3001
     ports:
       - '5173:5173'
 

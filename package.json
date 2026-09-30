@@ -2,13 +2,14 @@
   "name": "campus-navigator",
   "version": "0.1.0",
   "private": true,
-  "description": "Campus Navigator — college indoor/outdoor mapping web app",
+  "description": "Campus Navigator — college indoor/outdoor mapping web app (React JS + FastAPI)",
   "workspaces": [
-    "apps/*",
-    "packages/*"
+    "apps/*"
   ],
   "scripts": {
-    "dev": "concurrently -k -p \"[{name}]\" -n \"web,api\" -c \"cyan.bold,magenta.bold\" \"npm run dev -w @campus-nav/web\" \"npm run start:dev -w @campus-nav/api\"",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"web,api\" -c \"cyan.bold,green.bold\" \"npm run dev -w @campus-nav/web\" \"python -m uvicorn app.main:app --app-dir apps/api --reload --port 3001\"",
+    "dev:web": "npm run dev -w @campus-nav/web",
+    "dev:api": "python -m uvicorn app.main:app --app-dir apps/api --reload --port 3001",
     "build": "npm run build --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present"
   },

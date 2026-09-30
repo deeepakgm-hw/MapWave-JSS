@@ -3,6 +3,14 @@ node_modules/
 .pnp
 .pnp.js
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
 # Environment variables
 .env
 .env.local
