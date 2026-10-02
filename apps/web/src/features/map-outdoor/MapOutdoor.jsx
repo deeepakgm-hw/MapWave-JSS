@@ -379,7 +379,7 @@ export default function MapOutdoor({
       {/* Geolocation Denied Notice */}
       {geoDenied && (
         <div className="absolute top-16 left-4 z-10 bg-rose-950/95 text-white backdrop-blur-md px-4 py-2 rounded-2xl text-xs font-black border-2 border-rose-500 shadow-xl">
-          ⚠️ GPS Tracking Offline (Manual Zone Drill-Down Active)
+          ⚠️ GPS Location Unavailable (Manual Zone Drill-Down Active)
         </div>
       )}
     </div>

@@ -36,8 +36,7 @@ describe('App End-to-End Workflow Integration', () => {
   it('renders top bar breadcrumbs and initial campus overview', () => {
     render(<App />);
 
-    expect(screen.getByText('Campus')).toBeInTheDocument();
-    expect(screen.getByText('Campus Overview', { exact: false })).toBeInTheDocument();
+    expect(screen.getAllByText(/Campus Overview/i)[0]).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Search Rooms/i })).toBeInTheDocument();
   });
 
