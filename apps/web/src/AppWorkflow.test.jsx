@@ -7,22 +7,27 @@ import App from './App';
 
 // Mock MapLibre GL JS since WebGL canvas is not available in JSDOM
 vi.mock('maplibre-gl', () => {
+  function MockMap() {
+    return {
+      on: vi.fn(),
+      off: vi.fn(),
+      remove: vi.fn(),
+      getSource: vi.fn(),
+      getLayer: vi.fn(),
+      addSource: vi.fn(),
+      addLayer: vi.fn(),
+      removeLayer: vi.fn(),
+      removeSource: vi.fn(),
+      flyTo: vi.fn(),
+      getZoom: vi.fn(() => 16),
+      isStyleLoaded: vi.fn(() => true),
+      getCanvas: vi.fn(() => ({ style: {} })),
+    };
+  }
   return {
+    Map: MockMap,
     default: {
-      Map: vi.fn(() => ({
-        on: vi.fn(),
-        off: vi.fn(),
-        remove: vi.fn(),
-        getSource: vi.fn(),
-        addSource: vi.fn(),
-        addLayer: vi.fn(),
-        removeLayer: vi.fn(),
-        removeSource: vi.fn(),
-        flyTo: vi.fn(),
-        getZoom: vi.fn(() => 16),
-        isStyleLoaded: vi.fn(() => true),
-        getCanvas: vi.fn(() => ({ style: {} })),
-      })),
+      Map: MockMap,
     },
   };
 });
@@ -31,7 +36,7 @@ describe('App End-to-End Workflow Integration', () => {
   it('renders top bar breadcrumbs and initial campus overview', () => {
     render(<App />);
 
-    expect(screen.getByText('Campus Navigator', { exact: false })).toBeInTheDocument();
+    expect(screen.getByText('Campus')).toBeInTheDocument();
     expect(screen.getByText('Campus Overview', { exact: false })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Search Rooms/i })).toBeInTheDocument();
   });

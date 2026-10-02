@@ -302,9 +302,9 @@ export default function MapOutdoor({
         });
       }
     } else {
-      if (map.getLayer('active-route-line')) map.removeLayer('active-route-line');
-      if (map.getLayer('active-route-line-casing')) map.removeLayer('active-route-line-casing');
-      if (map.getSource('active-route-source')) map.removeSource('active-route-source');
+      if (map.getLayer && map.getLayer('active-route-line')) map.removeLayer('active-route-line');
+      if (map.getLayer && map.getLayer('active-route-line-casing')) map.removeLayer('active-route-line-casing');
+      if (map.getSource && map.getSource('active-route-source')) map.removeSource('active-route-source');
     }
   }, [currentState, activeRoute]);
 
