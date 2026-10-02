@@ -40,3 +40,17 @@ class NavEdgeRead(NavEdgeBase):
     updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+NavNodeResponse = NavNodeRead
+
+class RouteRequest(BaseModel):
+    start_node_id: uuid.UUID
+    end_node_id: uuid.UUID
+    accessible: bool = False
+
+class RouteResponse(BaseModel):
+    total_distance_meters: float = 0.0
+    estimated_duration_seconds: int = 0
+    segments: list[Any] = []
+    path_coordinates: list[Any] = []
+
