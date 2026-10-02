@@ -1,1 +1,4 @@
-// MapLibre 3D campus overview and GPS blue dot tracking render here
+import MapOutdoor from './MapOutdoor';
+
+export { MapOutdoor };
+export default MapOutdoor;

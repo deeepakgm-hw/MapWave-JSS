@@ -1,40 +1,42 @@
-# TODO: NavNode, NavEdge, and Route schemas
-from typing import Optional, List
-from pydantic import BaseModel
+import uuid
+from typing import Optional, Any
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict
+from app.models.nav_node import NodeType
+from app.models.nav_edge import EdgeType
 
-class Coordinates(BaseModel):
-    latitude: float
-    longitude: float
-    altitude: Optional[float] = None
-
+# NavNode Schemas
 class NavNodeBase(BaseModel):
-    node_type: str
-    building_id: Optional[str] = None
-    floor_id: Optional[str] = None
-    latitude: float
-    longitude: float
+    floor_id: Optional[uuid.UUID] = None
+    node_type: NodeType
+    lat: float
+    lon: float
 
-class NavNodeResponse(NavNodeBase):
-    id: str
+class NavNodeCreate(NavNodeBase):
+    pass
 
-    class Config:
-        from_attributes = True
+class NavNodeRead(NavNodeBase):
+    id: uuid.UUID
+    geom_local: Optional[Any] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
 
-class RouteRequest(BaseModel):
-    start_node_id: Optional[str] = None
-    end_node_id: Optional[str] = None
-    start_coords: Optional[Coordinates] = None
-    end_coords: Optional[Coordinates] = None
-    accessible_only: bool = False
+    model_config = ConfigDict(from_attributes=True)
 
-class RouteSegment(BaseModel):
-    from_node_id: str
-    to_node_id: str
-    distance_meters: float
-    instruction: str
+# NavEdge Schemas
+class NavEdgeBase(BaseModel):
+    from_node_id: uuid.UUID
+    to_node_id: uuid.UUID
+    weight: float
+    is_accessible: bool = True
+    edge_type: EdgeType
 
-class RouteResponse(BaseModel):
-    total_distance_meters: float
-    estimated_duration_seconds: int
-    segments: List[RouteSegment]
-    path_coordinates: List[Coordinates]
+class NavEdgeCreate(NavEdgeBase):
+    pass
+
+class NavEdgeRead(NavEdgeBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
