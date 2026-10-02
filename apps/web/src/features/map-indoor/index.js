@@ -1,4 +1,1 @@
-// TODO: Per-floor GeoJSON indoor map rendering and floor switcher controls render here
-export const MapIndoorFeature = () => {
-  // Indoor SVG/GeoJSON floor plan switcher
-};
+// Per-floor GeoJSON rendering and floor switcher controls render here

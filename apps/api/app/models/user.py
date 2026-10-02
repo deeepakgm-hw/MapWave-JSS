@@ -1,4 +1,4 @@
-# TODO: User account & RBAC model
+# User entity model
 import uuid
 from sqlalchemy import Column, String, DateTime, func
 from app.db.base import Base

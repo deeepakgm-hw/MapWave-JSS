@@ -1,22 +1,12 @@
 # Campus Navigator
 
-Campus Navigator is a college indoor/outdoor mapping web application featuring:
-- **MapLibre 3D campus overview** with GPS blue dot tracking
-- **Per-floor GeoJSON indoor rendering** and floor level switcher
-- **A* pathfinding** over campus indoor/outdoor navigation graphs powered by NetworkX
-- **QR checkpoint scanning** via `html5-qrcode` to anchor indoor positions
-
-## Tech Stack (Zero TypeScript)
-
-- **Frontend**: React (JavaScript JSX) + Vite + Tailwind CSS (`apps/web`)
-- **Backend**: Python + FastAPI + SQLAlchemy + GeoAlchemy2 + NetworkX (`apps/api`)
-- **Database**: PostgreSQL 16 + PostGIS extension (`infra/docker-compose.yml`)
+Campus Navigator is a college indoor/outdoor mapping web app featuring 3D campus overview, per-floor GeoJSON rendering, A* pathfinding navigation, and QR code scan-to-locate checkpoints.
 
 ## Prerequisites
 
-- **Python**: 3.10+ (tested on Python 3.14)
-- **Node.js**: 20+ or 22+ (for running Vite frontend development server)
-- **Docker & Docker Compose**: For containerized PostGIS database
+- **Node.js**: v20+ or v22+
+- **Python**: 3.10+
+- **Docker & Docker Compose**: For PostgreSQL with PostGIS database
 
 ## Setup Steps
 
@@ -26,48 +16,46 @@ Campus Navigator is a college indoor/outdoor mapping web application featuring:
    cd JssNav
    ```
 
-2. **Configure environment variables**
+2. **Start PostgreSQL with PostGIS**
    ```bash
-   cp .env.example .env
+   docker-compose -f infra/docker-compose.yml up -d
    ```
 
-3. **Install frontend dependencies**
+3. **Backend Setup (Python / FastAPI)**
    ```bash
+   cd apps/api
+   python -m venv .venv
+   # On Windows: .venv\Scripts\activate
+   # On macOS/Linux: source .venv/bin/activate
+   pip install -r requirements.txt
+   uvicorn app.main:app --reload --port 3001
+   ```
+   - API Server: `http://localhost:3001`
+   - Interactive Swagger Docs: `http://localhost:3001/docs`
+
+4. **Frontend Setup (React / Vite)**
+   ```bash
+   # In workspace root or apps/web:
    npm install
-   ```
-
-4. **Install backend dependencies**
-   ```bash
-   pip install -r apps/api/requirements.txt
-   ```
-
-5. **Start PostgreSQL with PostGIS**
-   ```bash
-   docker-compose -f infra/docker-compose.yml up -d postgres
-   ```
-
-6. **Start development servers**
-   ```bash
    npm run dev
    ```
-   - **Frontend**: http://localhost:5173
-   - **Backend API**: http://localhost:3001
-   - **Interactive API Docs (Swagger)**: http://localhost:3001/docs
+   - Web Server: `http://localhost:5173`
 
 ## Repository Structure
 
 ```
 apps/
-  web/                         # React (JavaScript JSX) + Vite frontend
+  web/                          # React 19 + JavaScript (JSX) + Vite 6
     src/
       features/
-        map-outdoor/           # MapLibre 3D campus overview, GPS dot
-        map-indoor/            # per-floor GeoJSON rendering, floor switcher
-        routing/               # A* pathfinding over the nav graph
-        qr-checkpoint/         # html5-qrcode scan-to-locate flow
-        admin/                 # room/occupant editor
-      components/              # shared UI components (buttons, cards, layout)
-      lib/                     # api client, constants
+        map-outdoor/
+        map-indoor/
+        routing/
+        qr-checkpoint/
+        admin/
+      components/
+      lib/
+        apiClient.js            # thin fetch wrapper, reads API base URL from env
       App.jsx
       main.jsx
     index.html
@@ -75,20 +63,37 @@ apps/
     tailwind.config.js
     package.json
 
-  api/                         # Python FastAPI backend
+  api/
     app/
-      api/v1/endpoints/        # auth, buildings, nav_graph, occupants
-      core/                    # config & security
-      db/                      # SQLAlchemy session & Base
-      models/                  # SQLAlchemy / GeoAlchemy2 models
-      schemas/                 # Pydantic models (DTOs)
-      services/                # NetworkX A* pathfinding engine
-      main.py                  # FastAPI application entry point
-    requirements.txt
+      main.py                   # FastAPI app, CORS enabled for localhost:5173
+      core/
+        config.py               # pydantic Settings (env-driven)
+        security.py             # JWT + bcrypt helpers
+      db/
+        base.py
+        session.py
+      models/                   # user.py, building.py, floor.py, room.py, nav_node.py, nav_edge.py
+      schemas/                  # Pydantic validation schemas
+      services/
+        pathfinding.py          # NetworkX A* pathfinding solver
+      api/
+        v1/
+          endpoints/
+            auth.py
+            buildings.py
+            nav_graph.py
+            occupants.py
+          router.py             # aggregates all endpoint routers
+    alembic/                    # migrations folder placeholder
+    requirements.txt            # pinned dependencies
+    pyproject.toml
 
 infra/
-  docker-compose.yml           # postgres+postgis, api, web
-  postgres/init.sql            # postgis extension setup
+  docker-compose.yml            # postgis/postgis:16-3.4, api, web (nginx)
+  postgres/
+    init.sql                    # CREATE EXTENSION postgis; CREATE EXTENSION "uuid-ossp";
 
-.github/workflows/ci.yml       # CI automated tests
+.github/workflows/ci.yml        # ruff (api) and eslint (web) linting on push
+.env.example
+README.md
 ```

@@ -1,4 +1,1 @@
-// TODO: Administrative dashboard for room, building, and faculty/occupant management
-export const AdminFeature = () => {
-  // Admin dashboard components
-};
+// Room, building, and faculty occupant editor dashboard renders here

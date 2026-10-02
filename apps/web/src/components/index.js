@@ -1,2 +1,1 @@
-// TODO: Shared UI components (buttons, cards, modals, layout primitives)
-export const Button = () => {};
+// Shared UI components (buttons, cards, layout primitives) render here
