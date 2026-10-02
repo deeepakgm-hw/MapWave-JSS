@@ -2,8 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { apiClient } from '../../lib/apiClient';
+import { NAV_STATES } from '../../lib/navigationState';
 
-export default function MapOutdoor({ onBuildingSelect }) {
+export default function MapOutdoor({
+  currentState,
+  selectedBuilding,
+  activeRoute,
+  onSelectBuilding,
+  onUpdateLocation,
+}) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const watchIdRef = useRef(null);
@@ -50,7 +57,7 @@ export default function MapOutdoor({ onBuildingSelect }) {
             source: 'campus-buildings',
             filter: ['==', ['get', 'status'], 'existing'],
             paint: {
-              'fill-extrusion-color': '#1E3A8A',
+              'fill-extrusion-color': '#1E40AF',
               'fill-extrusion-height': ['get', 'height_m'],
               'fill-extrusion-base': 0,
               'fill-extrusion-opacity': 0.85,
@@ -79,20 +86,19 @@ export default function MapOutdoor({ onBuildingSelect }) {
       map.on('click', 'existing-buildings-extrusion', (e) => {
         if (!e.features || e.features.length === 0) return;
         const feature = e.features[0];
-        const buildingId = feature.properties.id;
-
-        // Fly camera to building
+        const bProps = feature.properties;
         const coordinates = e.lngLat;
-        map.flyTo({
-          center: [coordinates.lng, coordinates.lat],
-          zoom: 17.5,
-          pitch: 60,
-          bearing: -20,
-          speed: 1.2,
-        });
 
-        if (onBuildingSelect) {
-          onBuildingSelect(buildingId);
+        const buildingObj = {
+          id: bProps.id,
+          name: bProps.name || `Building ${bProps.id}`,
+          status: bProps.status,
+          height_m: bProps.height_m,
+          center: [coordinates.lng, coordinates.lat],
+        };
+
+        if (onSelectBuilding) {
+          onSelectBuilding(buildingObj);
         }
       });
 
@@ -111,9 +117,35 @@ export default function MapOutdoor({ onBuildingSelect }) {
         mapRef.current = null;
       }
     };
-  }, [onBuildingSelect]);
+  }, [onSelectBuilding]);
 
-  // 2. Geolocation Tracking
+  // 2. Camera Swoop Animation reacting to State Machine
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (currentState === NAV_STATES.BUILDING_FLOORS && selectedBuilding?.center) {
+      // Swoop down to building
+      map.flyTo({
+        center: selectedBuilding.center,
+        zoom: 18,
+        pitch: 60,
+        bearing: -20,
+        speed: 1.2,
+      });
+    } else if (currentState === NAV_STATES.OVERVIEW) {
+      // Reset camera to campus overview
+      map.flyTo({
+        center: [77.5946, 12.9716],
+        zoom: 16,
+        pitch: 45,
+        bearing: -17.6,
+        speed: 1.2,
+      });
+    }
+  }, [currentState, selectedBuilding]);
+
+  // 3. Geolocation Tracking
   useEffect(() => {
     if (!navigator.geolocation) {
       setGeoDenied(true);
@@ -123,8 +155,12 @@ export default function MapOutdoor({ onBuildingSelect }) {
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude, accuracy } = position.coords;
-        setUserLocation({ latitude, longitude, accuracy });
+        const loc = { latitude, longitude, accuracy };
+        setUserLocation(loc);
         setGeoDenied(false);
+        if (onUpdateLocation) {
+          onUpdateLocation(loc);
+        }
       },
       (error) => {
         console.warn('Geolocation error / permission denied:', error.message);
@@ -142,9 +178,9 @@ export default function MapOutdoor({ onBuildingSelect }) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, []);
+  }, [onUpdateLocation]);
 
-  // 3. Update GPS Dot & Accuracy Circle on Map
+  // 4. Update GPS Dot & Accuracy Circle on Map
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded() || !userLocation || geoDenied) return;
@@ -200,7 +236,6 @@ export default function MapOutdoor({ onBuildingSelect }) {
       });
     }
 
-    // Dynamic radius update on zoom
     const handleZoom = () => {
       if (map.getLayer('gps-accuracy-circle')) {
         map.setPaintProperty(
@@ -217,7 +252,63 @@ export default function MapOutdoor({ onBuildingSelect }) {
     };
   }, [userLocation, geoDenied]);
 
-  // 4. Poll Nearest Building API
+  // 5. Render Animated Route Path Layer
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    const shouldShowRoute = currentState === NAV_STATES.ROUTE_PREVIEW || currentState === NAV_STATES.ROUTING_ACTIVE;
+
+    if (shouldShowRoute) {
+      const sampleRouteGeoJson = {
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [77.5946, 12.9716],
+            [77.5950, 12.9720],
+            [77.5954, 12.9724],
+          ],
+        },
+      };
+
+      if (map.getSource('active-route-source')) {
+        map.getSource('active-route-source').setData(sampleRouteGeoJson);
+      } else {
+        map.addSource('active-route-source', {
+          type: 'geojson',
+          data: sampleRouteGeoJson,
+        });
+
+        map.addLayer({
+          id: 'active-route-line-casing',
+          type: 'line',
+          source: 'active-route-source',
+          paint: {
+            'line-color': '#1E3A8A',
+            'line-width': 8,
+            'line-opacity': 0.6,
+          },
+        });
+
+        map.addLayer({
+          id: 'active-route-line',
+          type: 'line',
+          source: 'active-route-source',
+          paint: {
+            'line-color': '#3B82F6',
+            'line-width': 5,
+          },
+        });
+      }
+    } else {
+      if (map.getLayer('active-route-line')) map.removeLayer('active-route-line');
+      if (map.getLayer('active-route-line-casing')) map.removeLayer('active-route-line-casing');
+      if (map.getSource('active-route-source')) map.removeSource('active-route-source');
+    }
+  }, [currentState, activeRoute]);
+
+  // 6. Poll Nearest Building API
   useEffect(() => {
     if (!userLocation || geoDenied) return;
 
@@ -245,13 +336,12 @@ export default function MapOutdoor({ onBuildingSelect }) {
   }, [userLocation, geoDenied]);
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-xl overflow-hidden shadow-lg border border-gray-200">
-      {/* MapLibre Canvas Container */}
+    <div className="relative w-full h-full min-h-[500px] rounded-2xl overflow-hidden shadow-lg border border-slate-200">
       <div ref={mapContainer} className="w-full h-full absolute inset-0" />
 
-      {/* Nearest Building Floating Overlay Label */}
+      {/* Nearest Building Floating Overlay Badge */}
       {!geoDenied && nearestInfo && (
-        <div className="absolute top-4 left-4 z-10 bg-white/90 backdrop-blur-md px-4 py-2 rounded-lg shadow-md border border-gray-100 flex items-center gap-2 font-sans text-sm font-semibold text-gray-800">
+        <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-800">
           <span className={`w-2.5 h-2.5 rounded-full ${nearestInfo.confidence === 'inside' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
           {nearestInfo.confidence === 'inside' ? (
             <span>You're in <strong className="text-emerald-700">{nearestInfo.building_name}</strong></span>
@@ -261,10 +351,10 @@ export default function MapOutdoor({ onBuildingSelect }) {
         </div>
       )}
 
-      {/* Geolocation Denied Banner */}
+      {/* Geolocation Denied Notice */}
       {geoDenied && (
-        <div className="absolute top-4 left-4 z-10 bg-amber-50/90 backdrop-blur-md px-3 py-1.5 rounded-md text-xs font-medium text-amber-800 border border-amber-200">
-          GPS Location Unavailable / Permission Denied
+        <div className="absolute top-4 left-4 z-10 bg-amber-50/95 backdrop-blur-md px-3.5 py-2 rounded-xl text-xs font-semibold text-amber-900 border border-amber-300 shadow-md">
+          ⚠️ GPS Location Unavailable (Manual Drill-Down Enabled)
         </div>
       )}
     </div>
