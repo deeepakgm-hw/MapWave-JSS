@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 
 // Mock searchable rooms database for campus search jump
 const SAMPLE_ROOMS = [
-  { id: 'room-101', room_code: 'C-101', name: 'Computer Science Lab 1', room_type: 'Lab', building_name: 'Block C', level_number: 1, department: 'Computer Science' },
-  { id: 'room-102', room_code: 'C-102', name: 'Software Engineering Classroom', room_type: 'Classroom', building_name: 'Block C', level_number: 1, department: 'Computer Science' },
-  { id: 'room-201', room_code: 'C-201', name: 'AI & Data Science Research Lab', room_type: 'Research Lab', building_name: 'Block C', level_number: 2, department: 'Artificial Intelligence' },
-  { id: 'room-202', room_code: 'C-202', name: 'Faculty HOD Office', room_type: 'Office', occupant_name: 'Dr. A. Sharma', building_name: 'Block C', level_number: 2, department: 'Computer Science' },
-  { id: 'room-301', room_code: 'A-301', name: 'Main Campus Auditorium', room_type: 'Auditorium', building_name: 'Admin Block A', level_number: 3, department: 'General' },
-  { id: 'room-105', room_code: 'B-105', name: 'Central Campus Library', room_type: 'Library', building_name: 'Library Block B', level_number: 1, department: 'Academics' },
+  { id: 'room-101', room_code: 'C-101', name: 'Computer Science Lab 1', room_type: 'Lab', building_name: 'JSSATE Block C', level_number: 1, department: 'Computer Science & Engineering' },
+  { id: 'room-102', room_code: 'C-102', name: 'Software Engineering Classroom', room_type: 'Classroom', building_name: 'JSSATE Block C', level_number: 1, department: 'Computer Science & Engineering' },
+  { id: 'room-201', room_code: 'C-201', name: 'AI & Data Science Research Lab', room_type: 'Research Lab', building_name: 'JSSATE Block C', level_number: 2, department: 'Artificial Intelligence & Machine Learning' },
+  { id: 'room-202', room_code: 'C-202', name: 'Faculty HOD Office', room_type: 'Office', occupant_name: 'Dr. A. Sharma', building_name: 'JSSATE Block C', level_number: 2, department: 'Computer Science & Engineering' },
+  { id: 'room-301', room_code: 'A-301', name: 'Main Campus Auditorium', room_type: 'Auditorium', building_name: 'JSSATE Admin Block A', level_number: 3, department: 'General Campus' },
+  { id: 'room-105', room_code: 'B-105', name: 'Central Campus Library', room_type: 'Library', building_name: 'JSSATE Library Block B', level_number: 1, department: 'Academics & Research' },
 ];
 
 export function RoomSearchModal({ isOpen, onClose, onSelectRoom }) {

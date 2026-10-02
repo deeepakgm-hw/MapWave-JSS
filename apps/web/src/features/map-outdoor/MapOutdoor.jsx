@@ -4,14 +4,15 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { apiClient } from '../../lib/apiClient';
 import { NAV_STATES } from '../../lib/navigationState';
 
+// JSS Academy of Technical Education (JSSATE), Bangalore coordinates
+const JSSATE_BANGALORE_CENTER = [77.5057, 12.9015];
+
 export default function MapOutdoor({
   currentState,
   selectedBuilding,
   activeRoute,
   onSelectBuilding,
   onUpdateLocation,
-  onZoomIn,
-  onZoomOut,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -27,7 +28,7 @@ export default function MapOutdoor({
     return Math.max(10, Math.min(200, accuracyMeters / metersPerPixel));
   };
 
-  // 1. Initialize MapLibre Map with Stylized Sky-Blue Theme
+  // 1. Initialize MapLibre Map with ESRI High-Resolution Satellite Map Source
   useEffect(() => {
     if (mapRef.current || !mapContainer.current) return;
 
@@ -35,20 +36,30 @@ export default function MapOutdoor({
       container: mapContainer.current,
       style: {
         version: 8,
-        sources: {},
+        sources: {
+          'esri-satellite': {
+            type: 'raster',
+            tiles: [
+              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            ],
+            tileSize: 256,
+            attribution:
+              'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+          },
+        },
         layers: [
           {
-            id: 'background',
-            type: 'background',
-            paint: {
-              'background-color': '#59B2FE', // Bright BitSummit Sky Blue
-            },
+            id: 'esri-satellite-layer',
+            type: 'raster',
+            source: 'esri-satellite',
+            minzoom: 0,
+            maxzoom: 19,
           },
         ],
       },
-      center: [77.5946, 12.9716],
-      zoom: 16,
-      pitch: 50,
+      center: JSSATE_BANGALORE_CENTER,
+      zoom: 17,
+      pitch: 45,
       bearing: -17.6,
     });
 
@@ -64,17 +75,17 @@ export default function MapOutdoor({
             data: buildingsGeoJson,
           });
 
-          // Layer 1: Existing Buildings (Full Opacity Extrusion - Royal Blue with Gold Roofs)
+          // Layer 1: Existing Buildings (Semi-transparent 3D Extrusion on top of Satellite)
           map.addLayer({
             id: 'existing-buildings-extrusion',
             type: 'fill-extrusion',
             source: 'campus-buildings',
             filter: ['==', ['get', 'status'], 'existing'],
             paint: {
-              'fill-extrusion-color': '#1D4ED8', // Royal Blue
+              'fill-extrusion-color': '#1D4ED8', // Vibrant Royal Blue
               'fill-extrusion-height': ['get', 'height_m'],
               'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.9,
+              'fill-extrusion-opacity': 0.75,
             },
           });
 
@@ -141,16 +152,16 @@ export default function MapOutdoor({
     if (currentState === NAV_STATES.BUILDING_FLOORS && selectedBuilding?.center) {
       map.flyTo({
         center: selectedBuilding.center,
-        zoom: 18,
+        zoom: 18.5,
         pitch: 60,
         bearing: -20,
         speed: 1.2,
       });
     } else if (currentState === NAV_STATES.OVERVIEW) {
       map.flyTo({
-        center: [77.5946, 12.9716],
-        zoom: 16,
-        pitch: 50,
+        center: JSSATE_BANGALORE_CENTER,
+        zoom: 17,
+        pitch: 45,
         bearing: -17.6,
         speed: 1.2,
       });
@@ -277,9 +288,9 @@ export default function MapOutdoor({
         geometry: {
           type: 'LineString',
           coordinates: [
-            [77.5946, 12.9716],
-            [77.5950, 12.9720],
-            [77.5954, 12.9724],
+            [77.5057, 12.9015],
+            [77.5061, 12.9019],
+            [77.5065, 12.9023],
           ],
         },
       };
@@ -348,20 +359,25 @@ export default function MapOutdoor({
   }, [userLocation, geoDenied]);
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-blue-950 bg-gradient-to-b from-sky-300 to-sky-500">
+    <div className="relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-blue-950 bg-slate-900">
       <div ref={mapContainer} className="w-full h-full absolute inset-0" />
 
-      {/* BitSummit-Style Zone Pill Badges overlaying Campus Map */}
+      {/* BitSummit-Style Zone Pill Badges overlaying JSSATE Satellite Map */}
       <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2 pointer-events-none">
         <div className="bg-rose-500 text-white font-black text-xs px-3 py-1 rounded-full border-2 border-white shadow-[0_4px_0_0_#9F1239] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
-          Block C - CS & AI
+          JSSATE Block C - CS & AI
         </div>
         <div className="bg-blue-950 text-yellow-400 font-black text-xs px-3 py-1 rounded-full border-2 border-yellow-400 shadow-[0_4px_0_0_#FACC15] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
           Admin Block A
         </div>
         <div className="bg-emerald-600 text-white font-black text-xs px-3 py-1 rounded-full border-2 border-white shadow-[0_4px_0_0_#065F46] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
-          Library Block B
+          Library & Quadrangle
         </div>
+      </div>
+
+      {/* ESRI High Resolution Satellite Badge Indicator */}
+      <div className="absolute bottom-4 left-4 z-10 bg-blue-950/90 text-yellow-300 font-extrabold text-[10px] px-3 py-1 rounded-full border border-yellow-400/60 shadow-md">
+        🛰️ ESRI High-Res Satellite • JSSATE Bangalore (12.9015° N, 77.5057° E)
       </div>
 
       {/* Nearest Building Floating Overlay Badge */}
@@ -369,7 +385,7 @@ export default function MapOutdoor({
         <div className="absolute top-16 left-4 z-10 bg-blue-950/95 text-white backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl border-2 border-yellow-400 flex items-center gap-2 text-xs font-black">
           <span className={`w-3 h-3 rounded-full ${nearestInfo.confidence === 'inside' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
           {nearestInfo.confidence === 'inside' ? (
-            <span>You're inside <strong className="text-yellow-300">{nearestInfo.building_name}</strong></span>
+            <span>Inside <strong className="text-yellow-300">{nearestInfo.building_name}</strong></span>
           ) : (
             <span>Near <strong className="text-yellow-300">{nearestInfo.building_name}</strong></span>
           )}

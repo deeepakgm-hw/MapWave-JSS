@@ -11,55 +11,73 @@ router = APIRouter()
 SAMPLE_BUILDINGS = [
     {
         "id": "b1000000-0000-0000-0000-000000000001",
-        "name": "Main Academic Block",
+        "name": "JSSATE Academic Block C (CS & AI)",
         "status": "existing",
-        "height_m": 24.0,
-        "latitude": 12.9716,
-        "longitude": 77.5946,
+        "height_m": 22.0,
+        "latitude": 12.9015,
+        "longitude": 77.5057,
         "footprint": {
             "type": "Polygon",
             "coordinates": [[
-                [77.5942, 12.9714],
-                [77.5950, 12.9714],
-                [77.5950, 12.9718],
-                [77.5942, 12.9718],
-                [77.5942, 12.9714]
+                [77.5052, 12.9012],
+                [77.5062, 12.9012],
+                [77.5062, 12.9018],
+                [77.5052, 12.9018],
+                [77.5052, 12.9012]
             ]]
         }
     },
     {
         "id": "b2000000-0000-0000-0000-000000000002",
-        "name": "Science & Innovation Lab",
+        "name": "Administrative Block A & Auditorium",
         "status": "existing",
         "height_m": 18.0,
-        "latitude": 12.9722,
-        "longitude": 77.5952,
+        "latitude": 12.9022,
+        "longitude": 77.5068,
         "footprint": {
             "type": "Polygon",
             "coordinates": [[
-                [77.5948, 12.9720],
-                [77.5956, 12.9720],
-                [77.5956, 12.9724],
-                [77.5948, 12.9724],
-                [77.5948, 12.9720]
+                [77.5064, 12.9019],
+                [77.5073, 12.9019],
+                [77.5073, 12.9025],
+                [77.5064, 12.9025],
+                [77.5064, 12.9019]
             ]]
         }
     },
     {
         "id": "b3000000-0000-0000-0000-000000000003",
-        "name": "Future Student Recreation Complex",
-        "status": "proposed",
+        "name": "Central Library Block B & Tech Hub",
+        "status": "existing",
         "height_m": 15.0,
-        "latitude": 12.9710,
-        "longitude": 77.5955,
+        "latitude": 12.9026,
+        "longitude": 77.5048,
         "footprint": {
             "type": "Polygon",
             "coordinates": [[
-                [77.5952, 12.9708],
-                [77.5958, 12.9708],
-                [77.5958, 12.9712],
-                [77.5952, 12.9712],
-                [77.5952, 12.9708]
+                [77.5044, 12.9023],
+                [77.5052, 12.9023],
+                [77.5052, 12.9029],
+                [77.5044, 12.9029],
+                [77.5044, 12.9023]
+            ]]
+        }
+    },
+    {
+        "id": "b4000000-0000-0000-0000-000000000004",
+        "name": "Proposed JSS Incubation & Tech Complex",
+        "status": "proposed",
+        "height_m": 25.0,
+        "latitude": 12.9010,
+        "longitude": 77.5075,
+        "footprint": {
+            "type": "Polygon",
+            "coordinates": [[
+                [77.5071, 12.9007],
+                [77.5079, 12.9007],
+                [77.5079, 12.9013],
+                [77.5071, 12.9013],
+                [77.5071, 12.9007]
             ]]
         }
     }
@@ -71,8 +89,8 @@ class MockBuildingObject:
         self.name = data["name"]
         self.status = data["status"]
         self.height_m = data.get("height_m", 15.0)
-        self.latitude = data.get("latitude", 12.9716)
-        self.longitude = data.get("longitude", 77.5946)
+        self.latitude = data.get("latitude", 12.9015)
+        self.longitude = data.get("longitude", 77.5057)
         self.footprint = data.get("footprint")
 
 @router.get("")
