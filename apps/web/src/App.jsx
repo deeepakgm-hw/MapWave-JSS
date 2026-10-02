@@ -32,39 +32,35 @@ export default function App() {
     errorMessage,
   } = state;
 
-  // Compute BottomSheet single-line summary badge string based on currentState
   const getBottomSheetSummary = () => {
     switch (currentState) {
       case NAV_STATES.OVERVIEW:
-        return '📍 Tap a campus building or search a room to start';
+        return '⚡ TAP A ZONE OR SEARCH A ROOM TO BEGIN NAVIGATING';
       case NAV_STATES.BUILDING_FLOORS:
-        return `🏢 ${selectedBuilding?.name || 'Building Selected'} • Select a floor`;
+        return `🏢 ZONE: ${selectedBuilding?.name || 'Building Selected'} • SELECT FLOOR`;
       case NAV_STATES.FLOOR_VIEW:
-        return `🗺️ Floor ${selectedFloor?.level_number || 1} • Select a destination room`;
+        return `🗺️ FLOOR ${selectedFloor?.level_number || 1} • SELECT ROOM`;
       case NAV_STATES.ROUTE_PREVIEW:
-        return `🚶 Route to ${destination?.name || destination?.room_code || 'Destination'} • 3 min walk (185m)`;
+        return `🚶 ROUTE TO ${destination?.name || destination?.room_code || 'Destination'} • 3 MIN`;
       case NAV_STATES.ROUTING_ACTIVE:
-        return `🏁 Turn-by-Turn Navigation Active • ${destination?.room_code || 'Destination'}`;
+        return `🏁 NAVIGATION ACTIVE • ${destination?.room_code || 'Destination'}`;
       case NAV_STATES.QR_PROMPT:
-        return '📷 Scan Indoor QR Checkpoint Tag';
+        return '📷 SCAN QR CHECKPOINT TAG';
       case NAV_STATES.ARRIVED:
-        return '🎉 Arrived at Destination!';
+        return '🎉 YOU HAVE ARRIVED!';
       default:
-        return 'Campus Navigator';
+        return 'CAMPUS NAVIGATOR';
     }
   };
 
-  // Handle building selection on 3D Outdoor Map
   const handleSelectBuilding = (building) => {
     dispatch({ type: 'SELECT_BUILDING', payload: building });
   };
 
-  // Handle floor selection inside building
   const handleSelectFloor = (floor) => {
     dispatch({ type: 'SELECT_FLOOR', payload: floor });
   };
 
-  // Handle room destination selection
   const handleSelectRoom = (room) => {
     dispatch({
       type: 'SELECT_ROOM_DESTINATION',
@@ -72,7 +68,6 @@ export default function App() {
     });
   };
 
-  // Handle global search result room selection
   const handleSearchResultSelect = ({ room, building, floor }) => {
     dispatch({
       type: 'SEARCH_ROOM',
@@ -80,10 +75,8 @@ export default function App() {
     });
   };
 
-  // Handle Locate Me button tap
   const handleLocateMe = () => {
     if (gpsLocation && gpsLocation.accuracy > 15.0 && (currentState === NAV_STATES.FLOOR_VIEW || currentState === NAV_STATES.ROUTING_ACTIVE)) {
-      // Low GPS confidence indoors triggers QR prompt
       dispatch({ type: 'TRIGGER_REANCHOR' });
     } else {
       console.log('Recentering camera on GPS position:', gpsLocation);
@@ -91,16 +84,16 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-slate-100 text-slate-900 font-sans overflow-hidden">
-      {/* Top Navigation Bar with Breadcrumbs & Search */}
+    <div className="flex flex-col h-screen w-screen bg-gradient-to-b from-sky-300 via-sky-400 to-sky-500 text-slate-900 font-sans overflow-hidden">
+      {/* BitSummit Styled Top Bar */}
       <TopBar
         state={state}
         onBack={(targetLevel) => dispatch({ type: 'BACK', payload: targetLevel })}
         onOpenSearch={() => setIsSearchOpen(true)}
       />
 
-      {/* Main Map Viewport */}
-      <main className="flex-1 relative w-full h-full p-3 bg-slate-200">
+      {/* Main Stylized Viewport */}
+      <main className="flex-1 relative w-full h-full p-4 bg-transparent">
         <MapOutdoor
           currentState={currentState}
           selectedBuilding={selectedBuilding}
@@ -109,39 +102,67 @@ export default function App() {
           onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
         />
 
-        {/* Persistent Floating Controls (Locate me & Accessible route toggle) */}
+        {/* Floating Controller D-Pad */}
         <FloatingControls
           onLocateMe={handleLocateMe}
+          onZoomIn={() => console.log('Zoom in')}
+          onZoomOut={() => console.log('Zoom out')}
           isAccessibleMode={isAccessibleMode}
           onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
           geoDenied={false}
         />
       </main>
 
-      {/* Mobile-First Reusable Bottom Sheet */}
+      {/* Stylized Bottom Shelf */}
       <BottomSheet summary={getBottomSheetSummary()}>
         {currentState === NAV_STATES.OVERVIEW && (
-          <div className="flex flex-col gap-3 py-2">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-              Campus Overview
+          <div className="flex flex-col gap-4 py-3">
+            <h4 className="text-xs font-black text-yellow-400 uppercase tracking-widest">
+              ⚡ Campus Zones & Department Hubs
             </h4>
-            <p className="text-xs text-slate-600 font-medium leading-relaxed">
-              Explore 3D outdoor building footprints, view indoor floorplans, or search for any faculty office or laboratory across campus.
+            <p className="text-xs text-slate-300 font-semibold leading-relaxed">
+              Explore 3D outdoor building zones, view indoor floorplans, or search for any faculty office or laboratory across campus.
             </p>
-            <div className="flex items-center gap-2 pt-2">
+
+            {/* Quick Department Zone Filter Pills */}
+            <div className="flex flex-wrap gap-2 pt-1">
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(true)}
-                className="flex-1 py-3 bg-blue-900 hover:bg-blue-950 text-white rounded-xl text-xs font-extrabold shadow-md min-h-[44px]"
+                className="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-black border border-blue-700"
               >
-                Search Destination Room 🔍
+                💻 Computer Science & AI
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(true)}
+                className="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-black border border-blue-700"
+              >
+                📚 Central Library
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(true)}
+                className="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-black border border-blue-700"
+              >
+                🏛️ Main Auditorium
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(true)}
+                className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl text-xs font-black border-2 border-white shadow-[0_4px_0_0_#9F1239] min-h-[44px]"
+              >
+                SEARCH DESTINATION ROOM 🔍
               </button>
               <button
                 type="button"
                 onClick={() => setIsAdminOpen(true)}
-                className="px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 min-h-[44px]"
+                className="px-4 py-3 bg-blue-900 hover:bg-blue-800 text-yellow-300 rounded-2xl text-xs font-black border-2 border-yellow-400 min-h-[44px]"
               >
-                Admin ⚙️
+                ADMIN ⚙️
               </button>
             </div>
           </div>
@@ -177,41 +198,41 @@ export default function App() {
 
         {currentState === NAV_STATES.ARRIVED && (
           <div className="flex flex-col gap-4 py-4 text-center items-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-3xl font-extrabold animate-bounce">
+            <div className="w-16 h-16 rounded-full bg-yellow-400 text-blue-950 flex items-center justify-center text-3xl font-black shadow-lg animate-bounce border-2 border-white">
               🎉
             </div>
             <div>
-              <h3 className="text-lg font-black text-slate-900">You Have Arrived!</h3>
-              <p className="text-xs text-slate-600 font-medium mt-1">
-                Destination <strong className="text-emerald-700">{destination?.name || destination?.room_code || 'Room'}</strong> reached.
+              <h3 className="text-lg font-black text-yellow-400 uppercase tracking-wider">You Have Arrived!</h3>
+              <p className="text-xs text-slate-300 font-bold mt-1">
+                Destination <strong className="text-yellow-300">{destination?.name || destination?.room_code || 'Room'}</strong> reached.
               </p>
             </div>
             <button
               type="button"
               onClick={() => dispatch({ type: 'DISMISS' })}
-              className="min-h-[44px] w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-lg transition-all"
+              className="min-h-[44px] w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-2xl border-2 border-white shadow-[0_4px_0_0_#065F46] transition-all"
             >
-              Done & Return to Campus Overview
+              DONE & RETURN TO CAMPUS OVERVIEW
             </button>
           </div>
         )}
       </BottomSheet>
 
-      {/* Global Room Search Modal */}
+      {/* Global Search Modal */}
       <RoomSearchModal
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectRoom={handleSearchResultSelect}
       />
 
-      {/* Indoor QR Re-Anchor Checkpoint Modal */}
+      {/* QR Checkpoint Modal */}
       <QRScannerModal
         isOpen={currentState === NAV_STATES.QR_PROMPT}
         onScanSuccess={(node_id) => dispatch({ type: 'SCAN_SUCCESS', payload: { node_id } })}
         onSkipScan={() => dispatch({ type: 'SKIP_SCAN' })}
       />
 
-      {/* Admin Dashboard Modal */}
+      {/* Admin Dashboard */}
       {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} />}
     </div>
   );

@@ -2,10 +2,10 @@ import React from 'react';
 import { NAV_STATES } from '../lib/navigationState';
 
 export function TopBar({ state, onBack, onOpenSearch }) {
-  const { currentState, selectedBuilding, selectedFloor } = state;
+  const { selectedBuilding, selectedFloor } = state;
 
   const renderBreadcrumb = () => {
-    const items = [{ label: 'Campus', level: NAV_STATES.OVERVIEW }];
+    const items = [{ label: 'Campus Overview', level: NAV_STATES.OVERVIEW }];
 
     if (selectedBuilding) {
       items.push({
@@ -22,12 +22,12 @@ export function TopBar({ state, onBack, onOpenSearch }) {
     }
 
     return (
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm font-semibold overflow-x-auto no-scrollbar">
+      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
             <React.Fragment key={index}>
-              {index > 0 && <span className="text-slate-400 select-none">/</span>}
+              {index > 0 && <span className="text-yellow-300 font-black text-sm select-none">▸</span>}
               <button
                 type="button"
                 onClick={() => {
@@ -36,10 +36,10 @@ export function TopBar({ state, onBack, onOpenSearch }) {
                   }
                 }}
                 disabled={isLast}
-                className={`min-h-[44px] px-2 py-1.5 rounded-lg flex items-center transition-colors ${
+                className={`min-h-[44px] px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all ${
                   isLast
-                    ? 'text-slate-900 font-bold bg-slate-100 cursor-default'
-                    : 'text-blue-700 hover:bg-blue-50 cursor-pointer underline-offset-4 hover:underline'
+                    ? 'bg-yellow-400 text-blue-950 border-2 border-yellow-300 shadow-sm cursor-default'
+                    : 'bg-blue-900/80 hover:bg-blue-800 text-white border border-blue-700 hover:border-yellow-400 cursor-pointer'
                 }`}
               >
                 {item.label}
@@ -52,13 +52,25 @@ export function TopBar({ state, onBack, onOpenSearch }) {
   };
 
   return (
-    <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-2.5 flex items-center justify-between shadow-sm z-30 shrink-0">
-      {/* Brand & Breadcrumbs */}
+    <header className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-950 border-b-4 border-yellow-400 px-4 py-3 flex items-center justify-between shadow-xl z-30 shrink-0">
+      {/* BitSummit-Style Energetic Logo Badge */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-900 to-indigo-900 flex items-center justify-center text-white font-extrabold text-lg shadow-md shrink-0">
-          N
+        <div className="flex items-center gap-2 bg-gradient-to-br from-blue-900 to-indigo-950 border-2 border-yellow-400 rounded-2xl px-3 py-1.5 shadow-[0_4px_0_0_#FACC15]">
+          <div className="w-8 h-8 rounded-xl bg-yellow-400 flex items-center justify-center text-blue-950 font-black text-xl shadow-inner">
+            ⚡
+          </div>
+          <div>
+            <h1 className="text-sm font-black text-white tracking-widest uppercase italic drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+              CAMPUS NAVIGATOR
+            </h1>
+            <p className="text-[10px] font-extrabold text-yellow-300 tracking-wider">
+              3D MAP & INTERACTIVE ZONES
+            </p>
+          </div>
         </div>
-        <div>
+
+        {/* Breadcrumb Navigation */}
+        <div className="hidden md:block">
           {renderBreadcrumb()}
         </div>
       </div>
@@ -69,12 +81,12 @@ export function TopBar({ state, onBack, onOpenSearch }) {
           type="button"
           onClick={onOpenSearch}
           aria-label="Search rooms and occupants"
-          className="min-h-[44px] min-w-[44px] px-3 py-2 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-900 border border-slate-200 rounded-xl flex items-center gap-2 font-medium text-xs sm:text-sm shadow-xs transition-all active:scale-95"
+          className="min-h-[44px] px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white border-2 border-white rounded-2xl flex items-center gap-2 font-black text-xs sm:text-sm shadow-[0_4px_0_0_#9F1239] transition-all active:scale-95"
         >
-          <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg className="w-4 h-4 text-white stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span className="hidden sm:inline">Search Rooms</span>
+          <span className="hidden sm:inline">SEARCH ROOMS</span>
         </button>
       </div>
     </header>

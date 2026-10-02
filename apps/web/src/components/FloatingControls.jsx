@@ -2,52 +2,74 @@ import React from 'react';
 
 export function FloatingControls({
   onLocateMe,
+  onZoomIn,
+  onZoomOut,
   isAccessibleMode,
   onToggleAccessible,
   geoDenied,
 }) {
   return (
-    <div className="absolute right-4 bottom-24 z-10 flex flex-col gap-3 items-end">
-      {/* Accessible Route Toggle Switch */}
-      <div className="bg-white/95 backdrop-blur-md px-3.5 py-2 rounded-2xl shadow-lg border border-slate-200/80 flex items-center gap-2.5 min-h-[44px]">
-        <span className="text-xs font-bold text-slate-700 select-none flex items-center gap-1.5">
-          ♿ Accessible
+    <div className="absolute right-4 bottom-28 z-20 flex flex-col items-end gap-3 select-none">
+      {/* Accessible Route Toggle Chip */}
+      <div className="bg-blue-950/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border-2 border-yellow-400 shadow-[0_4px_0_0_#FACC15] flex items-center gap-2.5 min-h-[44px]">
+        <span className="text-xs font-black text-yellow-300 flex items-center gap-1.5 uppercase">
+          ♿ Wheelchair Mode
         </span>
         <button
           type="button"
           role="switch"
           aria-checked={isAccessibleMode}
           onClick={onToggleAccessible}
-          className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:outline-none ${
-            isAccessibleMode ? 'bg-blue-600' : 'bg-slate-300'
+          className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 border-2 border-white focus-visible:outline-none ${
+            isAccessibleMode ? 'bg-emerald-500' : 'bg-slate-600'
           }`}
         >
           <span
-            className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+            className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform ${
               isAccessibleMode ? 'translate-x-5' : 'translate-x-0'
             }`}
           />
         </button>
       </div>
 
-      {/* Locate Me Floating Action Button */}
-      <button
-        type="button"
-        onClick={onLocateMe}
-        disabled={geoDenied}
-        title={geoDenied ? 'GPS Unavailable' : 'Recenter map on GPS location'}
-        aria-label="Locate my position"
-        className={`min-h-[44px] min-w-[44px] p-3 rounded-2xl shadow-xl border backdrop-blur-md flex items-center justify-center font-semibold text-sm transition-all active:scale-90 ${
-          geoDenied
-            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-            : 'bg-white/95 text-blue-900 hover:bg-blue-50 border-slate-200/80 hover:border-blue-300'
-        }`}
-      >
-        <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="3" strokeWidth="2" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2v3m0 14v3m10-10h-3M5 12H2" />
-        </svg>
-      </button>
+      {/* BitSummit-Style Pink D-Pad / Action Button Cluster */}
+      <div className="bg-blue-950/90 backdrop-blur-md p-2 rounded-3xl border-2 border-yellow-400 shadow-[0_6px_0_0_#FACC15] flex flex-col gap-2 items-center">
+        {/* Zoom In (+) */}
+        <button
+          type="button"
+          onClick={onZoomIn}
+          title="Zoom In"
+          aria-label="Zoom In"
+          className="w-10 h-10 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-90 text-white font-black text-lg flex items-center justify-center border-2 border-white shadow-[0_3px_0_0_#9F1239] transition-all cursor-pointer"
+        >
+          +
+        </button>
+
+        {/* Zoom Out (-) */}
+        <button
+          type="button"
+          onClick={onZoomOut}
+          title="Zoom Out"
+          aria-label="Zoom Out"
+          className="w-10 h-10 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-90 text-white font-black text-lg flex items-center justify-center border-2 border-white shadow-[0_3px_0_0_#9F1239] transition-all cursor-pointer"
+        >
+          −
+        </button>
+
+        {/* Recenter / GPS Locate Me Button */}
+        <button
+          type="button"
+          onClick={onLocateMe}
+          disabled={geoDenied}
+          title={geoDenied ? 'GPS Unavailable' : 'Recenter GPS Position'}
+          aria-label="Recenter my position"
+          className={`w-10 h-10 rounded-full text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-[0_3px_0_0_#9F1239] transition-all active:scale-90 cursor-pointer ${
+            geoDenied ? 'bg-slate-600 opacity-50 cursor-not-allowed' : 'bg-rose-500 hover:bg-rose-600'
+          }`}
+        >
+          🎯
+        </button>
+      </div>
     </div>
   );
 }

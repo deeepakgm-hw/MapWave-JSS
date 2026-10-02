@@ -10,6 +10,8 @@ export default function MapOutdoor({
   activeRoute,
   onSelectBuilding,
   onUpdateLocation,
+  onZoomIn,
+  onZoomOut,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -25,16 +27,28 @@ export default function MapOutdoor({
     return Math.max(10, Math.min(200, accuracyMeters / metersPerPixel));
   };
 
-  // 1. Initialize MapLibre Map
+  // 1. Initialize MapLibre Map with Stylized Sky-Blue Theme
   useEffect(() => {
     if (mapRef.current || !mapContainer.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: 'https://demotiles.maplibre.org/style.json',
+      style: {
+        version: 8,
+        sources: {},
+        layers: [
+          {
+            id: 'background',
+            type: 'background',
+            paint: {
+              'background-color': '#59B2FE', // Bright BitSummit Sky Blue
+            },
+          },
+        ],
+      },
       center: [77.5946, 12.9716],
       zoom: 16,
-      pitch: 45,
+      pitch: 50,
       bearing: -17.6,
     });
 
@@ -50,31 +64,31 @@ export default function MapOutdoor({
             data: buildingsGeoJson,
           });
 
-          // Layer 1: Existing Buildings (Full Opacity Extrusion)
+          // Layer 1: Existing Buildings (Full Opacity Extrusion - Royal Blue with Gold Roofs)
           map.addLayer({
             id: 'existing-buildings-extrusion',
             type: 'fill-extrusion',
             source: 'campus-buildings',
             filter: ['==', ['get', 'status'], 'existing'],
             paint: {
-              'fill-extrusion-color': '#1E40AF',
+              'fill-extrusion-color': '#1D4ED8', // Royal Blue
               'fill-extrusion-height': ['get', 'height_m'],
               'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.85,
+              'fill-extrusion-opacity': 0.9,
             },
           });
 
-          // Layer 2: Proposed Buildings (Semi-transparent Extrusion)
+          // Layer 2: Proposed Buildings (Semi-transparent Gold Extrusion)
           map.addLayer({
             id: 'proposed-buildings-extrusion',
             type: 'fill-extrusion',
             source: 'campus-buildings',
             filter: ['==', ['get', 'status'], 'proposed'],
             paint: {
-              'fill-extrusion-color': '#F59E0B',
+              'fill-extrusion-color': '#FACC15', // Cyber Gold
               'fill-extrusion-height': ['get', 'height_m'],
               'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.35,
+              'fill-extrusion-opacity': 0.5,
             },
           });
         }
@@ -125,7 +139,6 @@ export default function MapOutdoor({
     if (!map) return;
 
     if (currentState === NAV_STATES.BUILDING_FLOORS && selectedBuilding?.center) {
-      // Swoop down to building
       map.flyTo({
         center: selectedBuilding.center,
         zoom: 18,
@@ -134,11 +147,10 @@ export default function MapOutdoor({
         speed: 1.2,
       });
     } else if (currentState === NAV_STATES.OVERVIEW) {
-      // Reset camera to campus overview
       map.flyTo({
         center: [77.5946, 12.9716],
         zoom: 16,
-        pitch: 45,
+        pitch: 50,
         bearing: -17.6,
         speed: 1.2,
       });
@@ -214,23 +226,23 @@ export default function MapOutdoor({
         source: 'gps-location-source',
         paint: {
           'circle-radius': getAccuracyPixelRadius(accuracy, latitude, map.getZoom()),
-          'circle-color': '#3B82F6',
-          'circle-opacity': 0.2,
-          'circle-stroke-width': 1,
-          'circle-stroke-color': '#2563EB',
-          'circle-stroke-opacity': 0.4,
+          'circle-color': '#FF4757',
+          'circle-opacity': 0.25,
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#FF4757',
+          'circle-stroke-opacity': 0.6,
         },
       });
 
-      // Inner Blue GPS Dot
+      // Inner Coral Red GPS Dot
       map.addLayer({
         id: 'gps-location-dot',
         type: 'circle',
         source: 'gps-location-source',
         paint: {
-          'circle-radius': 7,
-          'circle-color': '#2563EB',
-          'circle-stroke-width': 2,
+          'circle-radius': 8,
+          'circle-color': '#FF4757',
+          'circle-stroke-width': 3,
           'circle-stroke-color': '#FFFFFF',
         },
       });
@@ -285,9 +297,9 @@ export default function MapOutdoor({
           type: 'line',
           source: 'active-route-source',
           paint: {
-            'line-color': '#1E3A8A',
-            'line-width': 8,
-            'line-opacity': 0.6,
+            'line-color': '#0F172A',
+            'line-width': 10,
+            'line-opacity': 0.8,
           },
         });
 
@@ -296,8 +308,8 @@ export default function MapOutdoor({
           type: 'line',
           source: 'active-route-source',
           paint: {
-            'line-color': '#3B82F6',
-            'line-width': 5,
+            'line-color': '#FACC15', // Yellow Route Line
+            'line-width': 6,
           },
         });
       }
@@ -336,25 +348,38 @@ export default function MapOutdoor({
   }, [userLocation, geoDenied]);
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-2xl overflow-hidden shadow-lg border border-slate-200">
+    <div className="relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-blue-950 bg-gradient-to-b from-sky-300 to-sky-500">
       <div ref={mapContainer} className="w-full h-full absolute inset-0" />
+
+      {/* BitSummit-Style Zone Pill Badges overlaying Campus Map */}
+      <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2 pointer-events-none">
+        <div className="bg-rose-500 text-white font-black text-xs px-3 py-1 rounded-full border-2 border-white shadow-[0_4px_0_0_#9F1239] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
+          Block C - CS & AI
+        </div>
+        <div className="bg-blue-950 text-yellow-400 font-black text-xs px-3 py-1 rounded-full border-2 border-yellow-400 shadow-[0_4px_0_0_#FACC15] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
+          Admin Block A
+        </div>
+        <div className="bg-emerald-600 text-white font-black text-xs px-3 py-1 rounded-full border-2 border-white shadow-[0_4px_0_0_#065F46] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
+          Library Block B
+        </div>
+      </div>
 
       {/* Nearest Building Floating Overlay Badge */}
       {!geoDenied && nearestInfo && (
-        <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur-md px-4 py-2 rounded-xl shadow-lg border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-800">
-          <span className={`w-2.5 h-2.5 rounded-full ${nearestInfo.confidence === 'inside' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500'}`} />
+        <div className="absolute top-16 left-4 z-10 bg-blue-950/95 text-white backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl border-2 border-yellow-400 flex items-center gap-2 text-xs font-black">
+          <span className={`w-3 h-3 rounded-full ${nearestInfo.confidence === 'inside' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
           {nearestInfo.confidence === 'inside' ? (
-            <span>You're in <strong className="text-emerald-700">{nearestInfo.building_name}</strong></span>
+            <span>You're inside <strong className="text-yellow-300">{nearestInfo.building_name}</strong></span>
           ) : (
-            <span>You're near <strong className="text-blue-700">{nearestInfo.building_name}</strong></span>
+            <span>Near <strong className="text-yellow-300">{nearestInfo.building_name}</strong></span>
           )}
         </div>
       )}
 
       {/* Geolocation Denied Notice */}
       {geoDenied && (
-        <div className="absolute top-4 left-4 z-10 bg-amber-50/95 backdrop-blur-md px-3.5 py-2 rounded-xl text-xs font-semibold text-amber-900 border border-amber-300 shadow-md">
-          ⚠️ GPS Location Unavailable (Manual Drill-Down Enabled)
+        <div className="absolute top-16 left-4 z-10 bg-rose-950/95 text-white backdrop-blur-md px-4 py-2 rounded-2xl text-xs font-black border-2 border-rose-500 shadow-xl">
+          ⚠️ GPS Tracking Offline (Manual Zone Drill-Down Active)
         </div>
       )}
     </div>
