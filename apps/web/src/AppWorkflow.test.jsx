@@ -33,8 +33,19 @@ vi.mock('maplibre-gl', () => {
 });
 
 describe('App End-to-End Workflow Integration', () => {
-  it('renders top bar breadcrumbs and initial campus overview', () => {
+  it('renders MapWave - JSSATE landing page and allows entering 3D campus', () => {
     render(<App />);
+
+    // Landing Page Elements
+    expect(screen.getByText('MAPWAVE')).toBeInTheDocument();
+    expect(screen.getByText('JSSATE')).toBeInTheDocument();
+    expect(screen.getByText(/Please select your map experience/i)).toBeInTheDocument();
+
+    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
+    expect(exploreBtn).toBeInTheDocument();
+
+    // Click Explore to transition to Campus Map View
+    fireEvent.click(exploreBtn);
 
     expect(screen.getAllByText(/Campus Overview/i)[0]).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Search Rooms/i })).toBeInTheDocument();
@@ -42,6 +53,10 @@ describe('App End-to-End Workflow Integration', () => {
 
   it('allows opening search modal and jumping directly to ROUTE_PREVIEW', async () => {
     render(<App />);
+
+    // Transition from landing page
+    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
+    fireEvent.click(exploreBtn);
 
     const searchBtn = screen.getByRole('button', { name: /Search Rooms/i });
     fireEvent.click(searchBtn);
@@ -61,6 +76,10 @@ describe('App End-to-End Workflow Integration', () => {
 
   it('toggles accessible route switch', () => {
     render(<App />);
+
+    // Transition from landing page
+    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
+    fireEvent.click(exploreBtn);
 
     const switchBtn = screen.getByRole('switch');
     expect(switchBtn).toBeInTheDocument();

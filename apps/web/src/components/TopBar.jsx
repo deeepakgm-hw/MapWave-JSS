@@ -1,7 +1,7 @@
 import React from 'react';
 import { NAV_STATES } from '../lib/navigationState';
 
-export function TopBar({ state, onBack, onOpenSearch }) {
+export function TopBar({ state, onBack, onOpenSearch, onOpenLanding }) {
   const { selectedBuilding, selectedFloor } = state;
 
   const renderBreadcrumb = () => {
@@ -53,21 +53,26 @@ export function TopBar({ state, onBack, onOpenSearch }) {
 
   return (
     <header className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-950 border-b-4 border-yellow-400 px-4 py-3 flex items-center justify-between shadow-xl z-30 shrink-0">
-      {/* BitSummit-Style Energetic Logo Badge */}
+      {/* MapWave - JSSATE Branding Logo */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 bg-gradient-to-br from-blue-900 to-indigo-950 border-2 border-yellow-400 rounded-2xl px-3 py-1.5 shadow-[0_4px_0_0_#FACC15]">
+        <button
+          type="button"
+          onClick={onOpenLanding}
+          title="Return to MapWave Landing Page"
+          className="flex items-center gap-2 bg-gradient-to-br from-blue-900 to-indigo-950 border-2 border-yellow-400 rounded-2xl px-3 py-1.5 shadow-[0_4px_0_0_#FACC15] hover:scale-105 transition-transform cursor-pointer text-left"
+        >
           <div className="w-8 h-8 rounded-xl bg-yellow-400 flex items-center justify-center text-blue-950 font-black text-xl shadow-inner">
-            ⚡
+            🌊
           </div>
           <div>
             <h1 className="text-sm font-black text-white tracking-widest uppercase italic drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-              CAMPUS NAVIGATOR
+              MapWave - JSSATE
             </h1>
             <p className="text-[10px] font-extrabold text-yellow-300 tracking-wider">
-              3D MAP & INTERACTIVE ZONES
+              3D INTERACTIVE SATELLITE NAVIGATOR
             </p>
           </div>
-        </div>
+        </button>
 
         {/* Breadcrumb Navigation */}
         <div className="hidden md:block">
@@ -75,8 +80,16 @@ export function TopBar({ state, onBack, onOpenSearch }) {
         </div>
       </div>
 
-      {/* Action Buttons: Room Search Shortcut */}
+      {/* Action Buttons: Landing Return & Room Search */}
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onOpenLanding}
+          className="min-h-[44px] px-3 py-2 bg-blue-900/80 hover:bg-blue-800 text-yellow-300 border-2 border-yellow-400/60 rounded-2xl hidden sm:flex items-center gap-1.5 font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer"
+        >
+          <span>🏠 INTRO</span>
+        </button>
+
         <button
           type="button"
           onClick={onOpenSearch}
