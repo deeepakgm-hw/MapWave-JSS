@@ -1,4 +1,6 @@
 from typing import Optional, Dict, Any
+import json
+from pathlib import Path
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.db.session import get_db
@@ -120,18 +122,28 @@ def get_buildings(db: Session = Depends(get_db)) -> Dict[str, Any]:
                 }
             })
     else:
-        for b in SAMPLE_BUILDINGS:
-            features.append({
-                "type": "Feature",
-                "id": b["id"],
-                "geometry": b["footprint"],
-                "properties": {
+        geojson_path = Path(__file__).resolve().parent.parent.parent.parent / "data" / "campus_buildings.geojson"
+        if geojson_path.exists():
+            try:
+                with open(geojson_path, "r", encoding="utf-8") as f:
+                    file_data = json.load(f)
+                    features = file_data.get("features", [])
+            except Exception as e:
+                features = []
+
+        if not features:
+            for b in SAMPLE_BUILDINGS:
+                features.append({
+                    "type": "Feature",
                     "id": b["id"],
-                    "name": b["name"],
-                    "status": b["status"],
-                    "height_m": b["height_m"]
-                }
-            })
+                    "geometry": b["footprint"],
+                    "properties": {
+                        "id": b["id"],
+                        "name": b["name"],
+                        "status": b["status"],
+                        "height_m": b["height_m"]
+                    }
+                })
 
     return {
         "type": "FeatureCollection",

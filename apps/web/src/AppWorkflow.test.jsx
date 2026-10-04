@@ -88,4 +88,21 @@ describe('App End-to-End Workflow Integration', () => {
     fireEvent.click(switchBtn);
     expect(switchBtn).toHaveAttribute('aria-checked', 'true');
   });
+
+  it('selects a pilot building (Block C) and transitions to BUILDING_FLOORS', () => {
+    render(<App />);
+
+    // Transition from landing page
+    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
+    fireEvent.click(exploreBtn);
+
+    // Click Block C pill button in bottom sheet
+    const blockCBtn = screen.getByRole('button', { name: /Block C \(CS & AI\)/i });
+    expect(blockCBtn).toBeInTheDocument();
+    fireEvent.click(blockCBtn);
+
+    // State machine should transition to BUILDING_FLOORS
+    expect(screen.getByText(/SELECT FLOOR/i)).toBeInTheDocument();
+    expect(screen.getByText(/Floor 1/i)).toBeInTheDocument();
+  });
 });
