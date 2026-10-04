@@ -28,10 +28,18 @@ vi.mock('maplibre-gl', () => {
     this.remove = vi.fn();
   }
 
+  function MockMarker() {
+    this.setLngLat = vi.fn().mockReturnValue(this);
+    this.addTo = vi.fn().mockReturnValue(this);
+    this.remove = vi.fn();
+  }
+
   return {
     Map: MockMap,
+    Marker: MockMarker,
     default: {
       Map: MockMap,
+      Marker: MockMarker,
     },
   };
 });

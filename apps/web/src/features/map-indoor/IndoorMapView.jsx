@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-// Floor data for mapped buildings
+// Floor data for mapped pilot building (Block C)
 const MOCK_FLOORS = [
   { id: 'floor-1', level_number: 1, notes: 'Ground Floor — Department Laboratories & Reception' },
   { id: 'floor-2', level_number: 2, notes: 'Floor 2 — AI Research Centers & Faculty Offices' },
@@ -28,6 +28,12 @@ export function IndoorMapView({ selectedBuilding, selectedFloor, onSelectFloor, 
   const [activeFloorId, setActiveFloorId] = useState(selectedFloor?.id || 'floor-1');
   const [opacity, setOpacity] = useState(1);
 
+  const isIndoorReady =
+    selectedBuilding?.indoor_mapping_status === 'available' ||
+    !selectedBuilding?.indoor_mapping_status ||
+    selectedBuilding?.code === 'BLOCK_C' ||
+    selectedBuilding?.name?.includes('Block C');
+
   // 200ms smooth cross-fade when switching floors
   const handleFloorChange = (floor) => {
     setOpacity(0.2);
@@ -40,6 +46,62 @@ export function IndoorMapView({ selectedBuilding, selectedFloor, onSelectFloor, 
 
   const rooms = MOCK_ROOMS[activeFloorId] || MOCK_ROOMS['floor-1'];
   const currentFloorObj = MOCK_FLOORS.find((f) => f.id === activeFloorId) || MOCK_FLOORS[0];
+
+  if (!isIndoorReady) {
+    return (
+      <div className="flex flex-col gap-3 py-1">
+        {/* Verification and Status Badges */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider bg-amber-500/15 text-amber-400 border border-amber-500/25">
+            Indoor Mapping In Progress
+          </span>
+          <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider border ${
+            selectedBuilding?.verification === 'verified'
+              ? 'bg-blue-500/15 text-blue-400 border-blue-500/25'
+              : 'bg-slate-500/15 text-slate-300 border-slate-500/25'
+          }`}>
+            {selectedBuilding?.verification === 'verified' ? 'Verified 3D Volume' : 'Estimated Footprint'}
+          </span>
+          <span className="text-[10px] font-mono text-white/50">
+            {selectedBuilding?.height_m ? `${selectedBuilding.height_m}m Height` : ''}
+          </span>
+        </div>
+
+        {/* Building Details */}
+        <p className="text-xs text-slate-300 leading-relaxed">
+          {selectedBuilding?.description || 'Campus academic and administrative facility at JSSATE Bangalore.'}
+        </p>
+
+        {selectedBuilding?.departments && selectedBuilding.departments.length > 0 && (
+          <div className="flex flex-col gap-1.5 pt-1">
+            <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider">
+              Departments & Divisions
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {selectedBuilding.departments.map((dept, i) => (
+                <span
+                  key={i}
+                  className="px-2.5 py-1 bg-white/5 text-slate-200 border border-white/10 rounded-lg text-[11px]"
+                >
+                  {dept}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Notice for Pilot Indoors */}
+        <div className="mt-2 p-3 bg-blue-950/40 border border-blue-500/20 rounded-xl flex items-start gap-2.5">
+          <svg className="w-4 h-4 text-blue-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <div className="text-[11px] text-blue-200/90 leading-relaxed">
+            Detailed indoor floor plans and room checkpoints for this building are scheduled in Phase 2. To test turn-by-turn indoor routing right now, switch to <strong className="text-white">Block C (CS & AI)</strong>.
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -101,12 +163,9 @@ export function IndoorMapView({ selectedBuilding, selectedFloor, onSelectFloor, 
                 </div>
               </div>
 
-              <div className="text-xs font-semibold text-blue-400 group-hover:translate-x-1 transition-transform flex items-center gap-1">
-                <span>Navigate</span>
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
+              <span className="text-xs font-medium text-blue-400 group-hover:translate-x-0.5 transition-transform">
+                Navigate →
+              </span>
             </button>
           ))}
         </div>

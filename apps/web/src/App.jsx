@@ -14,6 +14,7 @@ import { RoutePreviewCard, ActiveNavigationHUD } from './features/routing';
 import { QRScannerModal } from './features/qr-checkpoint';
 import { AdminDashboard } from './features/admin';
 import { LandingPage } from './features/landing';
+import { buildingMetadata, CAMPUS_CENTER } from './data';
 
 export const PILOT_BUILDINGS = [
   {
@@ -39,11 +40,50 @@ export const PILOT_BUILDINGS = [
   },
 ];
 
+export const OTHER_CAMPUS_FACILITIES = [
+  {
+    id: 'b4000000-0000-0000-0000-000000000004',
+    name: 'Workshops (Mech & Civil)',
+    status: 'existing',
+    height_m: 12.0,
+    center: [77.5063, 12.8997],
+  },
+  {
+    id: 'b5000000-0000-0000-0000-000000000005',
+    name: 'STEP Incubation',
+    status: 'existing',
+    height_m: 16.0,
+    center: [77.5060, 12.9036],
+  },
+  {
+    id: 'b6000000-0000-0000-0000-000000000006',
+    name: 'Boys Hostel',
+    status: 'existing',
+    height_m: 20.0,
+    center: [77.5047, 12.8992],
+  },
+  {
+    id: 'b7000000-0000-0000-0000-000000000007',
+    name: 'Girls Hostel',
+    status: 'existing',
+    height_m: 20.0,
+    center: [77.5039, 12.8998],
+  },
+  {
+    id: 'b8000000-0000-0000-0000-000000000008',
+    name: 'Cafeteria',
+    status: 'existing',
+    height_m: 8.0,
+    center: [77.5054, 12.9022],
+  },
+];
+
 export default function App() {
   const [state, dispatch] = useReducer(navigationReducer, INITIAL_NAV_STATE);
   const [isLandingOpen, setIsLandingOpen] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [showAllBuildings, setShowAllBuildings] = useState(false);
   const [bearing, setBearing] = useState(0);
   const mapRef = useRef(null);
 
@@ -82,7 +122,17 @@ export default function App() {
   };
 
   const handleSelectBuilding = (building) => {
-    dispatch({ type: 'SELECT_BUILDING', payload: building });
+    const meta = buildingMetadata[building.id] || buildingMetadata[building.code] || {};
+    const enriched = {
+      ...meta,
+      ...building,
+      departments: building.departments || meta.departments || [],
+      facilities: building.facilities || meta.facilities || [],
+      verification: building.verification || meta.verification || 'estimated',
+      indoor_mapping_status: building.indoor_mapping_status || meta.indoor_mapping_status || 'planned',
+      center: building.center || meta.center,
+    };
+    dispatch({ type: 'SELECT_BUILDING', payload: enriched });
   };
 
   const handleSelectFloor = (floor) => {
@@ -183,18 +233,48 @@ export default function App() {
                   Explore 3D outdoor building zones, view indoor floorplans, or search for faculty offices and laboratories across JSS Academy of Technical Education.
                 </p>
 
-                {/* Quick Pilot Building Selection Pills */}
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {PILOT_BUILDINGS.map((building) => (
+                {/* Pilot Building Selection Pills */}
+                <div className="flex flex-col gap-2 pt-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider">
+                      Pilot 3D Zones
+                    </span>
                     <button
-                      key={building.id}
                       type="button"
-                      onClick={() => handleSelectBuilding(building)}
-                      className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
+                      onClick={() => setShowAllBuildings(!showAllBuildings)}
+                      className="text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
                     >
-                      {building.name}
+                      {showAllBuildings ? 'Show Pilot Only' : '+ All Facilities'}
                     </button>
-                  ))}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {PILOT_BUILDINGS.map((building) => (
+                      <button
+                        key={building.id}
+                        type="button"
+                        onClick={() => handleSelectBuilding(building)}
+                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
+                      >
+                        {building.name}
+                      </button>
+                    ))}
+                  </div>
+
+                  {showAllBuildings && (
+                    <div className="flex flex-wrap gap-2 pt-1 border-t border-white/10 mt-1">
+                      {OTHER_CAMPUS_FACILITIES.map((facility) => (
+                        <button
+                          key={facility.id}
+                          type="button"
+                          onClick={() => handleSelectBuilding(facility)}
+                          className="px-3 py-1 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full text-[11px] font-medium border border-white/10 transition-colors cursor-pointer"
+                        >
+                          {facility.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-3 pt-3">

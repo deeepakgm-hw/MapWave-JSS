@@ -24,10 +24,19 @@ vi.mock('maplibre-gl', () => {
       getCanvas: vi.fn(() => ({ style: {} })),
     };
   }
+  function MockMarker() {
+    return {
+      setLngLat: vi.fn().mockReturnThis(),
+      addTo: vi.fn().mockReturnThis(),
+      remove: vi.fn(),
+    };
+  }
   return {
     Map: MockMap,
+    Marker: MockMarker,
     default: {
       Map: MockMap,
+      Marker: MockMarker,
     },
   };
 });

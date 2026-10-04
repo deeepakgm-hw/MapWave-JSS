@@ -1,0 +1,240 @@
+{
+  "b1000000-0000-0000-0000-000000000001": {
+    "id": "b1000000-0000-0000-0000-000000000001",
+    "code": "BLOCK_C",
+    "name": "Block C (CS & AI)",
+    "category": "Academic",
+    "verification": "verified",
+    "height_m": 22.0,
+    "floor_count": 3,
+    "indoor_mapping_status": "available",
+    "center": [77.5057, 12.9015],
+    "description": "Department of Computer Science & Engineering, Artificial Intelligence Labs, Data Science Center, and Faculty Offices.",
+    "departments": [
+      "Computer Science & Engineering",
+      "Artificial Intelligence & Machine Learning",
+      "Data Science & Analytics",
+      "Information Science & Engineering"
+    ],
+    "facilities": [
+      "NVIDIA GPU Computing Lab",
+      "Cloud & Distributed Systems Lab",
+      "IoT Prototyping Workshop",
+      "Seminar Hall C-201",
+      "Faculty Cabin Cluster"
+    ],
+    "operating_hours": "08:30 AM - 05:30 PM",
+    "accessibility": "Wheelchair accessible ground floor ramp, lift access to floors 2 & 3",
+    "floor_levels": [
+      { "level_number": 1, "name": "Ground Floor", "rooms_count": 12, "ready": true },
+      { "level_number": 2, "name": "Second Floor", "rooms_count": 14, "ready": true },
+      { "level_number": 3, "name": "Third Floor", "rooms_count": 10, "ready": true }
+    ]
+  },
+  "b2000000-0000-0000-0000-000000000002": {
+    "id": "b2000000-0000-0000-0000-000000000002",
+    "code": "BLOCK_A",
+    "name": "Admin Block A",
+    "category": "Administrative",
+    "verification": "verified",
+    "height_m": 18.0,
+    "floor_count": 3,
+    "indoor_mapping_status": "in_progress",
+    "center": [77.5068, 12.9022],
+    "description": "Principal's Secretariat, Registrar Office, Admissions, Examination Division, and Main Campus Auditorium.",
+    "departments": [
+      "Principal's Office",
+      "Registrar & Academic Council",
+      "Finance & Accounts Section",
+      "Controller of Examinations",
+      "Admissions & Public Relations"
+    ],
+    "facilities": [
+      "Main Campus Auditorium (750 capacity)",
+      "Board Room & Conference Suites",
+      "Central Examination Vault",
+      "Student Welfare Section"
+    ],
+    "operating_hours": "09:00 AM - 05:00 PM",
+    "accessibility": "Ramp access at main portico, central elevator",
+    "floor_levels": [
+      { "level_number": 1, "name": "Administrative Offices", "rooms_count": 16, "ready": false },
+      { "level_number": 2, "name": "Auditorium & Council", "rooms_count": 8, "ready": false },
+      { "level_number": 3, "name": "Examination Wing", "rooms_count": 10, "ready": false }
+    ]
+  },
+  "b3000000-0000-0000-0000-000000000003": {
+    "id": "b3000000-0000-0000-0000-000000000003",
+    "code": "BLOCK_B",
+    "name": "Library Block B",
+    "category": "Academic",
+    "verification": "verified",
+    "height_m": 15.0,
+    "floor_count": 2,
+    "indoor_mapping_status": "in_progress",
+    "center": [77.5048, 12.9026],
+    "description": "Central Campus Library, Digital Learning Resource Centre, Reading Halls, and IT Server Infrastructure.",
+    "departments": [
+      "Central Library Administration",
+      "Digital Resource Centre",
+      "Campus Network Operations Center (NOC)"
+    ],
+    "facilities": [
+      "Circulation Desk & Reference Stacks",
+      "Silent Research Reading Hall",
+      "Digital Thesis & E-Journal Terminals",
+      "Reprographics Section"
+    ],
+    "operating_hours": "08:00 AM - 08:00 PM",
+    "accessibility": "Ramp entrance, ground floor fully accessible",
+    "floor_levels": [
+      { "level_number": 1, "name": "Main Circulation & Stacks", "rooms_count": 6, "ready": false },
+      { "level_number": 2, "name": "Digital Hall & Reading Section", "rooms_count": 4, "ready": false }
+    ]
+  },
+  "b4000000-0000-0000-0000-000000000004": {
+    "id": "b4000000-0000-0000-0000-000000000004",
+    "code": "WORKSHOP",
+    "name": "Mechanical & Civil Workshops",
+    "category": "Academic",
+    "verification": "estimated",
+    "height_m": 12.0,
+    "floor_count": 2,
+    "indoor_mapping_status": "planned",
+    "center": [77.5063, 12.8997],
+    "description": "Heavy Engineering Workshops, Fluid Mechanics Lab, Manufacturing Practice Labs, and Materials Testing.",
+    "departments": [
+      "Mechanical Engineering",
+      "Civil Engineering",
+      "Industrial Engineering"
+    ],
+    "facilities": [
+      "Machine Shop & Lathe Bays",
+      "Welding & Foundry Section",
+      "Hydraulics & Turbomachinery Lab",
+      "Concrete & Structural Testing Lab"
+    ],
+    "operating_hours": "08:30 AM - 05:00 PM",
+    "accessibility": "Ground floor wide-bay industrial access",
+    "floor_levels": [
+      { "level_number": 1, "name": "Heavy Machinery Bays", "rooms_count": 8, "ready": false },
+      { "level_number": 2, "name": "CAD/CAM & Modeling Labs", "rooms_count": 6, "ready": false }
+    ]
+  },
+  "b5000000-0000-0000-0000-000000000005": {
+    "id": "b5000000-0000-0000-0000-000000000005",
+    "code": "STEP",
+    "name": "STEP Incubation Centre",
+    "category": "Innovation",
+    "verification": "estimated",
+    "height_m": 16.0,
+    "floor_count": 3,
+    "indoor_mapping_status": "planned",
+    "center": [77.5060, 12.9036],
+    "description": "Science & Technology Entrepreneurs Park, Startup Incubator Labs, Prototyping Workshop, and Industry Connect.",
+    "departments": [
+      "Entrepreneurship Cell",
+      "Incubator Management",
+      "Industry-Academia Partnership"
+    ],
+    "facilities": [
+      "Co-working Space for Student Startups",
+      "Rapid Prototyping & 3D Printing Lab",
+      "Investor Pitch Room",
+      "Mentorship Suites"
+    ],
+    "operating_hours": "09:00 AM - 07:00 PM",
+    "accessibility": "Wheelchair accessible entrance",
+    "floor_levels": [
+      { "level_number": 1, "name": "Incubator Hub", "rooms_count": 10, "ready": false },
+      { "level_number": 2, "name": "Startup Suites", "rooms_count": 12, "ready": false },
+      { "level_number": 3, "name": "Mentorship & Conference", "rooms_count": 8, "ready": false }
+    ]
+  },
+  "b6000000-0000-0000-0000-000000000006": {
+    "id": "b6000000-0000-0000-0000-000000000006",
+    "code": "HOSTEL_BOYS",
+    "name": "Boys Hostel Complex",
+    "category": "Residential",
+    "verification": "estimated",
+    "height_m": 20.0,
+    "floor_count": 4,
+    "indoor_mapping_status": "planned",
+    "center": [77.5047, 12.8992],
+    "description": "Student Residential Block, Common Rooms, Study Lounges, and Dining Facilities.",
+    "departments": [
+      "Hostel Administration & Warden Office",
+      "Resident Facilities Service"
+    ],
+    "facilities": [
+      "Resident Dining Mess (300 seating)",
+      "Indoor Sports & Recreation Hall",
+      "24x7 Study Library",
+      "Infirmary & First Aid Center"
+    ],
+    "operating_hours": "24 Hours (Residents)",
+    "accessibility": "Ground floor accessible",
+    "floor_levels": [
+      { "level_number": 1, "name": "Mess & Common Rooms", "rooms_count": 20, "ready": false },
+      { "level_number": 2, "name": "Resident Wing A", "rooms_count": 28, "ready": false },
+      { "level_number": 3, "name": "Resident Wing B", "rooms_count": 28, "ready": false },
+      { "level_number": 4, "name": "Resident Wing C", "rooms_count": 28, "ready": false }
+    ]
+  },
+  "b7000000-0000-0000-0000-000000000007": {
+    "id": "b7000000-0000-0000-0000-000000000007",
+    "code": "HOSTEL_GIRLS",
+    "name": "Girls Hostel Complex",
+    "category": "Residential",
+    "verification": "estimated",
+    "height_m": 20.0,
+    "floor_count": 4,
+    "indoor_mapping_status": "planned",
+    "center": [77.5039, 12.8998],
+    "description": "Student Residential Block, Recreation Hall, Security Desk, and Mess.",
+    "departments": [
+      "Hostel Warden Office",
+      "Security & Resident Safety"
+    ],
+    "facilities": [
+      "Resident Dining Hall",
+      "Badminton Court & Gym",
+      "High-speed Study Lounge",
+      "Medical Room"
+    ],
+    "operating_hours": "24 Hours (Residents)",
+    "accessibility": "Ground floor ramp access",
+    "floor_levels": [
+      { "level_number": 1, "name": "Reception & Dining", "rooms_count": 18, "ready": false },
+      { "level_number": 2, "name": "Resident Wing A", "rooms_count": 26, "ready": false },
+      { "level_number": 3, "name": "Resident Wing B", "rooms_count": 26, "ready": false },
+      { "level_number": 4, "name": "Resident Wing C", "rooms_count": 26, "ready": false }
+    ]
+  },
+  "b8000000-0000-0000-0000-000000000008": {
+    "id": "b8000000-0000-0000-0000-000000000008",
+    "code": "CAFETERIA",
+    "name": "Cafeteria & Food Court",
+    "category": "Dining",
+    "verification": "estimated",
+    "height_m": 8.0,
+    "floor_count": 1,
+    "indoor_mapping_status": "planned",
+    "center": [77.5054, 12.9022],
+    "description": "Central Campus Cafeteria, Student Canteen, Coffee Kiosk, and Outdoor Dining Seating.",
+    "departments": [
+      "Campus Catering & Hospitality"
+    ],
+    "facilities": [
+      "South Indian & North Indian Counters",
+      "Bakery & Juice Bar",
+      "Outdoor Shaded Garden Seating (150 capacity)",
+      "Digital Self-service Kiosks"
+    ],
+    "operating_hours": "07:30 AM - 08:30 PM",
+    "accessibility": "Ground-level level threshold, step-free access",
+    "floor_levels": [
+      { "level_number": 1, "name": "Main Dining Floor", "rooms_count": 5, "ready": false }
+    ]
+  }
+}
