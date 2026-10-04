@@ -87,7 +87,7 @@ export default function MapOutdoor({
             data: buildingsGeoJson,
           });
 
-          // Layer 1: Existing Buildings (Clean 3D Extrusion with subtle border)
+          // Layer 1: Existing Buildings (Clean 3D Extrusion on top of satellite)
           map.addLayer({
             id: 'existing-buildings-extrusion',
             type: 'fill-extrusion',
@@ -97,7 +97,21 @@ export default function MapOutdoor({
               'fill-extrusion-color': '#2563eb',
               'fill-extrusion-height': ['get', 'height_m'],
               'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.75,
+              'fill-extrusion-opacity': 0.8,
+            },
+          });
+
+          // Layer 1b: Hover Highlight State (Subtle brightness shift making 3D buildings visually interactive)
+          map.addLayer({
+            id: 'hovered-building-extrusion',
+            type: 'fill-extrusion',
+            source: 'campus-buildings',
+            filter: ['==', ['get', 'id'], ''],
+            paint: {
+              'fill-extrusion-color': '#60a5fa',
+              'fill-extrusion-height': ['get', 'height_m'],
+              'fill-extrusion-base': 0,
+              'fill-extrusion-opacity': 0.95,
             },
           });
 
@@ -111,7 +125,7 @@ export default function MapOutdoor({
               'fill-extrusion-color': '#f59e0b',
               'fill-extrusion-height': ['get', 'height_m'],
               'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.95,
+              'fill-extrusion-opacity': 0.98,
             },
           });
 
@@ -133,32 +147,62 @@ export default function MapOutdoor({
         console.error('Failed to load campus buildings GeoJSON:', err);
       }
 
-      // Building click interaction
+      // Building hover state tracking
+      let hoveredBuildingId = null;
+
+      map.on('mousemove', 'existing-buildings-extrusion', (e) => {
+        if (!e.features || e.features.length === 0) return;
+        const bId = e.features[0].properties.id;
+        map.getCanvas().style.cursor = 'pointer';
+        if (bId !== hoveredBuildingId) {
+          hoveredBuildingId = bId;
+          if (map.getLayer && map.getLayer('hovered-building-extrusion')) {
+            map.setFilter('hovered-building-extrusion', ['==', ['get', 'id'], bId]);
+          }
+        }
+      });
+
+      map.on('mouseleave', 'existing-buildings-extrusion', () => {
+        hoveredBuildingId = null;
+        map.getCanvas().style.cursor = '';
+        if (map.getLayer && map.getLayer('hovered-building-extrusion')) {
+          map.setFilter('hovered-building-extrusion', ['==', ['get', 'id'], '']);
+        }
+      });
+
+      // Building click interaction (Unified with bottom-sheet selection)
       map.on('click', 'existing-buildings-extrusion', (e) => {
         if (!e.features || e.features.length === 0) return;
         const feature = e.features[0];
         const bProps = feature.properties;
-        const coordinates = e.lngLat;
+
+        // Calculate polygon centroid if polygon geometry is available
+        let centerCoord = [e.lngLat.lng, e.lngLat.lat];
+        if (feature.geometry && feature.geometry.coordinates && feature.geometry.coordinates[0]) {
+          const coords = feature.geometry.coordinates[0];
+          let sumLng = 0;
+          let sumLat = 0;
+          const len = coords.length - 1;
+          if (len > 0) {
+            for (let i = 0; i < len; i++) {
+              sumLng += coords[i][0];
+              sumLat += coords[i][1];
+            }
+            centerCoord = [sumLng / len, sumLat / len];
+          }
+        }
 
         const buildingObj = {
           id: bProps.id,
           name: bProps.name || `Building ${bProps.id}`,
           status: bProps.status,
           height_m: bProps.height_m,
-          center: [coordinates.lng, coordinates.lat],
+          center: centerCoord,
         };
 
         if (onSelectBuilding) {
           onSelectBuilding(buildingObj);
         }
-      });
-
-      // Cursor pointer on hover over existing buildings
-      map.on('mouseenter', 'existing-buildings-extrusion', () => {
-        map.getCanvas().style.cursor = 'pointer';
-      });
-      map.on('mouseleave', 'existing-buildings-extrusion', () => {
-        map.getCanvas().style.cursor = '';
       });
     });
 

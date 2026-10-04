@@ -15,6 +15,30 @@ import { QRScannerModal } from './features/qr-checkpoint';
 import { AdminDashboard } from './features/admin';
 import { LandingPage } from './features/landing';
 
+export const PILOT_BUILDINGS = [
+  {
+    id: 'b1000000-0000-0000-0000-000000000001',
+    name: 'Block C (CS & AI)',
+    status: 'existing',
+    height_m: 22.0,
+    center: [77.5057, 12.9015],
+  },
+  {
+    id: 'b2000000-0000-0000-0000-000000000002',
+    name: 'Admin Block A',
+    status: 'existing',
+    height_m: 18.0,
+    center: [77.5068, 12.9022],
+  },
+  {
+    id: 'b3000000-0000-0000-0000-000000000003',
+    name: 'Library Block B',
+    status: 'existing',
+    height_m: 15.0,
+    center: [77.5048, 12.9026],
+  },
+];
+
 export default function App() {
   const [state, dispatch] = useReducer(navigationReducer, INITIAL_NAV_STATE);
   const [isLandingOpen, setIsLandingOpen] = useState(true);
@@ -159,29 +183,18 @@ export default function App() {
                   Explore 3D outdoor building zones, view indoor floorplans, or search for faculty offices and laboratories across JSS Academy of Technical Education.
                 </p>
 
-                {/* Quick Department Zone Filter Pills */}
+                {/* Quick Pilot Building Selection Pills */}
                 <div className="flex flex-wrap gap-2 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setIsSearchOpen(true)}
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
-                  >
-                    Block C (CS & AI)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsSearchOpen(true)}
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
-                  >
-                    Admin Block A
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsSearchOpen(true)}
-                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
-                  >
-                    Library Block B
-                  </button>
+                  {PILOT_BUILDINGS.map((building) => (
+                    <button
+                      key={building.id}
+                      type="button"
+                      onClick={() => handleSelectBuilding(building)}
+                      className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
+                    >
+                      {building.name}
+                    </button>
+                  ))}
                 </div>
 
                 <div className="flex items-center gap-3 pt-3">

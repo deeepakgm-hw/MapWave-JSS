@@ -1,0 +1,80 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "b1000000-0000-0000-0000-000000000001",
+      "properties": {
+        "id": "b1000000-0000-0000-0000-000000000001",
+        "name": "Block C (CS & AI)",
+        "code": "BLOCK_C",
+        "status": "existing",
+        "height_m": 22.0,
+        "floors_count": 3,
+        "description": "Department of Computer Science & Engineering, Artificial Intelligence Labs, and Faculty Offices"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.50530, 12.90100],
+            [77.50610, 12.90100],
+            [77.50610, 12.90200],
+            [77.50530, 12.90200],
+            [77.50530, 12.90100]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "b2000000-0000-0000-0000-000000000002",
+      "properties": {
+        "id": "b2000000-0000-0000-0000-000000000002",
+        "name": "Admin Block A",
+        "code": "BLOCK_A",
+        "status": "existing",
+        "height_m": 18.0,
+        "floors_count": 3,
+        "description": "Administrative Offices, Principal's Chamber, Accounts, and Main Campus Auditorium"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.50640, 12.90180],
+            [77.50720, 12.90180],
+            [77.50720, 12.90260],
+            [77.50640, 12.90260],
+            [77.50640, 12.90180]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "b3000000-0000-0000-0000-000000000003",
+      "properties": {
+        "id": "b3000000-0000-0000-0000-000000000003",
+        "name": "Library Block B",
+        "code": "BLOCK_B",
+        "status": "existing",
+        "height_m": 15.0,
+        "floors_count": 2,
+        "description": "Central Campus Library, Digital Resource Center, Study Halls, and Tech Hub"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.50440, 12.90220],
+            [77.50520, 12.90220],
+            [77.50520, 12.90300],
+            [77.50440, 12.90300],
+            [77.50440, 12.90220]
+          ]
+        ]
+      }
+    }
+  ]
+}
