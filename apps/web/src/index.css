@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&display=swap');
+@import url('https://use.typekit.net/ogg5vgp.css');
+@import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=Titan+One&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Dela+Gothic+One&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -26,13 +27,24 @@ html, body, #root {
   background-color: #0c0a09;
 }
 
+/* Reference Website: Kenya Kortet Display Typography */
+.font-kenya-title {
+  font-family: "nove", "Lilita One", "Titan One", "Dela Gothic One", sans-serif;
+  letter-spacing: -0.01em;
+  line-height: 0.92;
+  text-transform: uppercase;
+}
+.font-nove {
+  font-family: "nove", "Lilita One", "Titan One", sans-serif;
+}
+
 /* Reference Website: Ghost Button Styling */
 .ghostbutton {
   background-color: rgba(255, 255, 255, 0);
-  box-shadow: 0 9px 10px 1px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 9px 12px 1px rgba(0, 0, 0, 0.5);
   color: #fff;
   transition: background-color 0.4s ease, color 0.25s ease, box-shadow 0.4s ease, border-color 0.4s ease;
-  border: 1px solid rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.85);
 }
 .ghostbutton:hover {
   background-color: #ffffff;
@@ -57,6 +69,61 @@ html, body, #root {
 .resolution_picker:hover .selected_underline,
 .resolution_picker.active .selected_underline {
   transform: scaleX(1);
+}
+
+/* Real Volumetric Cloud Animations (from reference site thekenyamap.com) */
+@keyframes realCloudDriftLeft {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(32px, -16px) scale(1.02);
+  }
+  66% {
+    transform: translate(14px, 18px) scale(0.98);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes realCloudDriftRight {
+  0% {
+    transform: scaleX(-1) translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: scaleX(-1) translate(-36px, 22px) scale(1.03);
+  }
+  66% {
+    transform: scaleX(-1) translate(-14px, -16px) scale(0.98);
+  }
+  100% {
+    transform: scaleX(-1) translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes realCloudPassBy {
+  0% {
+    transform: translateX(-120%) translateY(-20px);
+  }
+  50% {
+    transform: translateX(40vw) translateY(20px);
+  }
+  100% {
+    transform: translateX(120vw) translateY(-20px);
+  }
+}
+
+.cloud-animate-left {
+  animation: realCloudDriftLeft 26s ease-in-out infinite alternate;
+}
+
+.cloud-animate-right {
+  animation: realCloudDriftRight 32s ease-in-out infinite alternate;
+}
+
+.cloud-animate-drift {
+  animation: realCloudPassBy 90s linear infinite;
 }
 
 /* Reference Website: Minimal Compass */
