@@ -1,4 +1,5 @@
 import React from 'react';
+import { Compass } from './Compass';
 
 export function FloatingControls({
   onLocateMe,
@@ -7,67 +8,83 @@ export function FloatingControls({
   isAccessibleMode,
   onToggleAccessible,
   geoDenied,
+  bearing = 0,
+  onResetNorth,
 }) {
   return (
-    <div className="absolute right-4 bottom-28 z-20 flex flex-col items-end gap-3 select-none">
-      {/* Accessible Route Toggle Chip */}
-      <div className="bg-blue-950/90 backdrop-blur-md px-3.5 py-2 rounded-2xl border-2 border-yellow-400 shadow-[0_4px_0_0_#FACC15] flex items-center gap-2.5 min-h-[44px]">
-        <span className="text-xs font-black text-yellow-300 flex items-center gap-1.5 uppercase">
-          ♿ Wheelchair Mode
-        </span>
+    <div className="absolute right-5 bottom-8 z-20 flex flex-col items-center gap-3 select-none pointer-events-auto">
+      {/* Floating Compass Widget from Reference Site */}
+      <Compass bearing={bearing} onResetNorth={onResetNorth} />
+
+      {/* Accessible Route Toggle Pill */}
+      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 shadow-xl min-h-[44px]">
+        <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="4.5" r="2.5" strokeWidth={2} />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 7v7l4 3m-4-3l-4 3m4-7H7" />
+        </svg>
         <button
           type="button"
           role="switch"
           aria-checked={isAccessibleMode}
           onClick={onToggleAccessible}
-          className={`w-11 h-6 rounded-full transition-colors relative flex items-center px-0.5 border-2 border-white focus-visible:outline-none ${
-            isAccessibleMode ? 'bg-emerald-500' : 'bg-slate-600'
+          title="Toggle wheelchair accessible elevators and ramps"
+          className={`w-9 h-5 rounded-full transition-colors relative flex items-center px-0.5 border border-white/30 focus-visible:outline-none cursor-pointer ${
+            isAccessibleMode ? 'bg-blue-600' : 'bg-white/20'
           }`}
         >
           <span
-            className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform ${
-              isAccessibleMode ? 'translate-x-5' : 'translate-x-0'
+            className={`w-3.5 h-3.5 rounded-full bg-white shadow-md transform transition-transform ${
+              isAccessibleMode ? 'translate-x-4' : 'translate-x-0'
             }`}
           />
         </button>
       </div>
 
-      {/* BitSummit-Style Pink D-Pad / Action Button Cluster */}
-      <div className="bg-blue-950/90 backdrop-blur-md p-2 rounded-3xl border-2 border-yellow-400 shadow-[0_6px_0_0_#FACC15] flex flex-col gap-2 items-center">
-        {/* Zoom In (+) */}
+      {/* Floating Zoom & GPS Action Cluster */}
+      <div className="flex flex-col rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl overflow-hidden divide-y divide-white/10">
+        {/* Zoom In */}
         <button
           type="button"
           onClick={onZoomIn}
           title="Zoom In"
           aria-label="Zoom In"
-          className="w-10 h-10 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-90 text-white font-black text-lg flex items-center justify-center border-2 border-white shadow-[0_3px_0_0_#9F1239] transition-all cursor-pointer"
+          className="w-11 h-11 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
         >
-          +
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+          </svg>
         </button>
 
-        {/* Zoom Out (-) */}
+        {/* Zoom Out */}
         <button
           type="button"
           onClick={onZoomOut}
           title="Zoom Out"
           aria-label="Zoom Out"
-          className="w-10 h-10 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-90 text-white font-black text-lg flex items-center justify-center border-2 border-white shadow-[0_3px_0_0_#9F1239] transition-all cursor-pointer"
+          className="w-11 h-11 flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
         >
-          −
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20 12H4" />
+          </svg>
         </button>
 
-        {/* Recenter / GPS Locate Me Button */}
+        {/* Recenter / GPS Locate Me */}
         <button
           type="button"
           onClick={onLocateMe}
           disabled={geoDenied}
-          title={geoDenied ? 'GPS Unavailable' : 'Recenter GPS Position'}
-          aria-label="Recenter my position"
-          className={`w-10 h-10 rounded-full text-white font-black text-sm flex items-center justify-center border-2 border-white shadow-[0_3px_0_0_#9F1239] transition-all active:scale-90 cursor-pointer ${
-            geoDenied ? 'bg-slate-600 opacity-50 cursor-not-allowed' : 'bg-rose-500 hover:bg-rose-600'
+          title={geoDenied ? 'GPS Unavailable' : 'Locate my position'}
+          aria-label="Locate my position"
+          className={`w-11 h-11 flex items-center justify-center transition-colors cursor-pointer ${
+            geoDenied
+              ? 'text-white/20 cursor-not-allowed'
+              : 'text-white/80 hover:text-white hover:bg-white/10'
           }`}
         >
-          🎯
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="3" strokeWidth={2} />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3m10-10h-3M5 12H2" />
+          </svg>
         </button>
       </div>
     </div>

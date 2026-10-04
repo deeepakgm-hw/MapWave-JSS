@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { apiClient } from '../../lib/apiClient';
 import { NAV_STATES } from '../../lib/navigationState';
 
-// JSS Academy of Technical Education (JSSATE), Bangalore coordinates
+// Verified JSS Academy of Technical Education (JSSATE) Bangalore coordinates
 const JSSATE_BANGALORE_CENTER = [77.5057, 12.9015];
 
 export default function MapOutdoor({
@@ -13,6 +13,8 @@ export default function MapOutdoor({
   activeRoute,
   onSelectBuilding,
   onUpdateLocation,
+  onBearingChange,
+  mapRefOut,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -44,7 +46,7 @@ export default function MapOutdoor({
             ],
             tileSize: 256,
             attribution:
-              'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+              'Tiles &copy; Esri &mdash; JSSATE Bangalore Campus',
           },
         },
         layers: [
@@ -58,12 +60,22 @@ export default function MapOutdoor({
         ],
       },
       center: JSSATE_BANGALORE_CENTER,
-      zoom: 17,
+      zoom: 17.2,
       pitch: 45,
       bearing: -17.6,
     });
 
     mapRef.current = map;
+    if (mapRefOut) {
+      mapRefOut.current = map;
+    }
+
+    // Camera rotation & bearing tracking
+    map.on('rotate', () => {
+      if (onBearingChange) {
+        onBearingChange(map.getBearing());
+      }
+    });
 
     map.on('load', async () => {
       try {
@@ -75,31 +87,45 @@ export default function MapOutdoor({
             data: buildingsGeoJson,
           });
 
-          // Layer 1: Existing Buildings (Semi-transparent 3D Extrusion on top of Satellite)
+          // Layer 1: Existing Buildings (Clean 3D Extrusion with subtle border)
           map.addLayer({
             id: 'existing-buildings-extrusion',
             type: 'fill-extrusion',
             source: 'campus-buildings',
             filter: ['==', ['get', 'status'], 'existing'],
             paint: {
-              'fill-extrusion-color': '#1D4ED8', // Vibrant Royal Blue
+              'fill-extrusion-color': '#2563eb',
               'fill-extrusion-height': ['get', 'height_m'],
               'fill-extrusion-base': 0,
               'fill-extrusion-opacity': 0.75,
             },
           });
 
-          // Layer 2: Proposed Buildings (Semi-transparent Gold Extrusion)
+          // Layer 2: Highlighted Selected Building
+          map.addLayer({
+            id: 'selected-building-highlight',
+            type: 'fill-extrusion',
+            source: 'campus-buildings',
+            filter: ['==', ['get', 'id'], ''],
+            paint: {
+              'fill-extrusion-color': '#f59e0b',
+              'fill-extrusion-height': ['get', 'height_m'],
+              'fill-extrusion-base': 0,
+              'fill-extrusion-opacity': 0.95,
+            },
+          });
+
+          // Layer 3: Proposed Buildings
           map.addLayer({
             id: 'proposed-buildings-extrusion',
             type: 'fill-extrusion',
             source: 'campus-buildings',
             filter: ['==', ['get', 'status'], 'proposed'],
             paint: {
-              'fill-extrusion-color': '#FACC15', // Cyber Gold
+              'fill-extrusion-color': '#64748b',
               'fill-extrusion-height': ['get', 'height_m'],
               'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.5,
+              'fill-extrusion-opacity': 0.45,
             },
           });
         }
@@ -107,7 +133,7 @@ export default function MapOutdoor({
         console.error('Failed to load campus buildings GeoJSON:', err);
       }
 
-      // Click event handling for buildings
+      // Building click interaction
       map.on('click', 'existing-buildings-extrusion', (e) => {
         if (!e.features || e.features.length === 0) return;
         const feature = e.features[0];
@@ -142,12 +168,12 @@ export default function MapOutdoor({
         mapRef.current = null;
       }
     };
-  }, [onSelectBuilding]);
+  }, [onSelectBuilding, onBearingChange, mapRefOut]);
 
-  // 2. Camera Swoop Animation reacting to State Machine
+  // 2. Camera Swoop & Highlight reacting to State Machine
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !map.isStyleLoaded()) return;
 
     if (currentState === NAV_STATES.BUILDING_FLOORS && selectedBuilding?.center) {
       map.flyTo({
@@ -157,14 +183,24 @@ export default function MapOutdoor({
         bearing: -20,
         speed: 1.2,
       });
+
+      // Highlight building
+      if (map.getLayer && map.getLayer('selected-building-highlight')) {
+        map.setFilter('selected-building-highlight', ['==', ['get', 'id'], selectedBuilding.id]);
+      }
     } else if (currentState === NAV_STATES.OVERVIEW) {
       map.flyTo({
         center: JSSATE_BANGALORE_CENTER,
-        zoom: 17,
+        zoom: 17.2,
         pitch: 45,
         bearing: -17.6,
         speed: 1.2,
       });
+
+      // Reset highlight
+      if (map.getLayer && map.getLayer('selected-building-highlight')) {
+        map.setFilter('selected-building-highlight', ['==', ['get', 'id'], '']);
+      }
     }
   }, [currentState, selectedBuilding]);
 
@@ -237,30 +273,30 @@ export default function MapOutdoor({
         source: 'gps-location-source',
         paint: {
           'circle-radius': getAccuracyPixelRadius(accuracy, latitude, map.getZoom()),
-          'circle-color': '#FF4757',
-          'circle-opacity': 0.25,
-          'circle-stroke-width': 2,
-          'circle-stroke-color': '#FF4757',
-          'circle-stroke-opacity': 0.6,
+          'circle-color': '#3b82f6',
+          'circle-opacity': 0.2,
+          'circle-stroke-width': 1.5,
+          'circle-stroke-color': '#3b82f6',
+          'circle-stroke-opacity': 0.5,
         },
       });
 
-      // Inner Coral Red GPS Dot
+      // Inner Blue GPS Dot
       map.addLayer({
         id: 'gps-location-dot',
         type: 'circle',
         source: 'gps-location-source',
         paint: {
-          'circle-radius': 8,
-          'circle-color': '#FF4757',
-          'circle-stroke-width': 3,
-          'circle-stroke-color': '#FFFFFF',
+          'circle-radius': 7,
+          'circle-color': '#3b82f6',
+          'circle-stroke-width': 2.5,
+          'circle-stroke-color': '#ffffff',
         },
       });
     }
 
     const handleZoom = () => {
-      if (map.getLayer('gps-accuracy-circle')) {
+      if (map.getLayer && map.getLayer('gps-accuracy-circle')) {
         map.setPaintProperty(
           'gps-accuracy-circle',
           'circle-radius',
@@ -308,9 +344,9 @@ export default function MapOutdoor({
           type: 'line',
           source: 'active-route-source',
           paint: {
-            'line-color': '#0F172A',
-            'line-width': 10,
-            'line-opacity': 0.8,
+            'line-color': '#0f172a',
+            'line-width': 8,
+            'line-opacity': 0.7,
           },
         });
 
@@ -319,8 +355,8 @@ export default function MapOutdoor({
           type: 'line',
           source: 'active-route-source',
           paint: {
-            'line-color': '#FACC15', // Yellow Route Line
-            'line-width': 6,
+            'line-color': '#3b82f6',
+            'line-width': 5,
           },
         });
       }
@@ -359,45 +395,30 @@ export default function MapOutdoor({
   }, [userLocation, geoDenied]);
 
   return (
-    <div className="relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-blue-950 bg-slate-900">
+    <div className="relative w-full h-full min-h-[500px] overflow-hidden bg-stone-950">
       <div ref={mapContainer} className="w-full h-full absolute inset-0" />
 
-      {/* BitSummit-Style Zone Pill Badges overlaying JSSATE Satellite Map */}
-      <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2 pointer-events-none">
-        <div className="bg-rose-500 text-white font-black text-xs px-3 py-1 rounded-full border-2 border-white shadow-[0_4px_0_0_#9F1239] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
-          JSSATE Block C - CS & AI
-        </div>
-        <div className="bg-blue-950 text-yellow-400 font-black text-xs px-3 py-1 rounded-full border-2 border-yellow-400 shadow-[0_4px_0_0_#FACC15] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
-          Admin Block A
-        </div>
-        <div className="bg-emerald-600 text-white font-black text-xs px-3 py-1 rounded-full border-2 border-white shadow-[0_4px_0_0_#065F46] pointer-events-auto cursor-pointer hover:scale-105 transition-transform">
-          Library & Quadrangle
-        </div>
-      </div>
-
-      {/* ESRI High Resolution Satellite Badge Indicator */}
-      <div className="absolute bottom-4 left-4 z-10 bg-blue-950/90 text-yellow-300 font-extrabold text-[10px] px-3 py-1 rounded-full border border-yellow-400/60 shadow-md">
-        🛰️ ESRI High-Res Satellite • JSSATE Bangalore (12.9015° N, 77.5057° E)
-      </div>
-
-      {/* Nearest Building Floating Overlay Badge */}
-      {!geoDenied && nearestInfo && (
-        <div className="absolute top-16 left-4 z-10 bg-blue-950/95 text-white backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl border-2 border-yellow-400 flex items-center gap-2 text-xs font-black">
-          <span className={`w-3 h-3 rounded-full ${nearestInfo.confidence === 'inside' ? 'bg-emerald-400 animate-pulse' : 'bg-rose-500'}`} />
-          {nearestInfo.confidence === 'inside' ? (
-            <span>Inside <strong className="text-yellow-300">{nearestInfo.building_name}</strong></span>
-          ) : (
-            <span>Near <strong className="text-yellow-300">{nearestInfo.building_name}</strong></span>
-          )}
-        </div>
-      )}
-
-      {/* Geolocation Denied Notice */}
+      {/* Geolocation Denied Notice (Restrained) */}
       {geoDenied && (
-        <div className="absolute top-16 left-4 z-10 bg-rose-950/95 text-white backdrop-blur-md px-4 py-2 rounded-2xl text-xs font-black border-2 border-rose-500 shadow-xl">
-          ⚠️ GPS Location Unavailable (Manual Zone Drill-Down Active)
+        <div className="absolute top-20 left-4 z-10 px-3.5 py-1.5 rounded-xl bg-black/60 text-white/80 backdrop-blur-md border border-white/15 text-xs font-medium">
+          GPS Location Unavailable (Manual exploration active)
         </div>
       )}
+
+      {/* Nearest Location Pill */}
+      {!geoDenied && nearestInfo && (
+        <div className="absolute top-20 left-4 z-10 px-3.5 py-1.5 rounded-xl bg-black/60 text-white/90 backdrop-blur-md border border-white/15 text-xs font-medium flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${nearestInfo.confidence === 'inside' ? 'bg-emerald-400' : 'bg-blue-400'}`} />
+          <span>
+            {nearestInfo.confidence === 'inside' ? 'Inside' : 'Near'} <strong className="font-semibold text-white">{nearestInfo.building_name}</strong>
+          </span>
+        </div>
+      )}
+
+      {/* Minimal Map Attribution */}
+      <div className="absolute bottom-2 left-4 z-10 text-[9px] font-mono text-white/40 tracking-wider pointer-events-none">
+        ESRI SATELLITE • 12.9015° N, 77.5057° E
+      </div>
     </div>
   );
 }

@@ -1,28 +1,29 @@
-// Stylized Isometric Theme Tokens (Inspired by BitSummit / Graphic Map UI)
+// MapWave Design Tokens — Clean, Map-Led (Inspired by thekenyamap.com)
 
 export const THEME = {
-  // Vibrant Color Palette
   colors: {
-    skyBg: 'bg-gradient-to-b from-sky-300 via-sky-400 to-sky-500',
-    royalBlue: '#1D4ED8',     // blue-700
-    royalDark: '#0F172A',     // slate-900
-    cyberYellow: '#FACC15',   // yellow-400
-    coralRed: '#FF4757',      // hot pink / coral red
-    coralHover: '#FF6B81',
-    zoneBorder: '#1E40AF',
+    // Restrained neutrals & subtle accents
+    canvasBg: '#0c0a09',
+    surface: 'rgba(15, 23, 42, 0.85)',
+    surfaceBorder: 'rgba(255, 255, 255, 0.15)',
+    surfaceHover: 'rgba(30, 41, 59, 0.95)',
+    textPrimary: '#ffffff',
+    textSecondary: 'rgba(255, 255, 255, 0.7)',
+    textMuted: 'rgba(255, 255, 255, 0.45)',
+    accentBlue: '#3b82f6',
+    accentBlueHover: '#2563eb',
+    accentAmber: '#f59e0b',
   },
-  
-  // Card & Container Styling
+
+  // Minimalist Floating Card Style
   card: {
-    glass: 'bg-white/95 backdrop-blur-md border-2 border-blue-900 shadow-[0_8px_0_0_#1E3A8A] rounded-2xl text-slate-900',
-    headerBadge: 'bg-blue-950 text-white border-2 border-yellow-400 shadow-md rounded-2xl px-4 py-2 font-black',
-    pillBadge: 'px-3 py-1 bg-white border-2 border-rose-500 text-rose-600 font-extrabold text-xs rounded-full shadow-sm',
-    bottomShelf: 'bg-blue-950 border-t-4 border-yellow-400 shadow-[0_-10px_25px_rgba(0,0,0,0.3)] text-white',
+    floating: 'bg-slate-900/90 text-white backdrop-blur-md border border-white/20 rounded-2xl shadow-2xl',
+    compact: 'bg-slate-900/80 text-white backdrop-blur-md border border-white/15 rounded-xl shadow-lg',
   },
 
-  // Floating Control Buttons (Pink/Coral D-Pad style)
-  controlBtn: 'w-11 h-11 rounded-full bg-rose-500 hover:bg-rose-600 active:scale-90 text-white font-extrabold flex items-center justify-center border-2 border-white shadow-[0_4px_0_0_#9F1239] transition-all cursor-pointer select-none',
+  // Floating Control Buttons
+  controlBtn: 'w-10 h-10 rounded-full bg-slate-900/80 hover:bg-slate-800 text-white border border-white/20 shadow-lg flex items-center justify-center transition-all duration-200 cursor-pointer select-none active:scale-95',
 
-  // Tap Target Accessibility (Min 44px)
-  tapTarget: 'min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer select-none transition-all',
+  // Touch Accessibility (Min 44px)
+  tapTarget: 'min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer select-none',
 };

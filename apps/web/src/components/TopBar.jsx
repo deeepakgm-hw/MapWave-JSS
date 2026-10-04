@@ -1,107 +1,98 @@
 import React from 'react';
-import { NAV_STATES } from '../lib/navigationState';
 
-export function TopBar({ state, onBack, onOpenSearch, onOpenLanding }) {
+export function TopBar({
+  state,
+  onBack,
+  onOpenSearch,
+  onOpenLanding,
+  bearing = 0,
+  onResetNorth,
+}) {
   const { selectedBuilding, selectedFloor } = state;
 
-  const renderBreadcrumb = () => {
-    const items = [{ label: 'Campus Overview', level: NAV_STATES.OVERVIEW }];
-
-    if (selectedBuilding) {
-      items.push({
-        label: selectedBuilding.name || `Building ${selectedBuilding.id}`,
-        level: NAV_STATES.BUILDING_FLOORS,
-      });
-    }
-
-    if (selectedFloor) {
-      items.push({
-        label: `Floor ${selectedFloor.level_number}`,
-        level: NAV_STATES.FLOOR_VIEW,
-      });
-    }
-
-    return (
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-        {items.map((item, index) => {
-          const isLast = index === items.length - 1;
-          return (
-            <React.Fragment key={index}>
-              {index > 0 && <span className="text-yellow-300 font-black text-sm select-none">▸</span>}
-              <button
-                type="button"
-                onClick={() => {
-                  if (!isLast) {
-                    onBack(item.level);
-                  }
-                }}
-                disabled={isLast}
-                className={`min-h-[44px] px-3 py-1.5 rounded-xl font-extrabold text-xs transition-all ${
-                  isLast
-                    ? 'bg-yellow-400 text-blue-950 border-2 border-yellow-300 shadow-sm cursor-default'
-                    : 'bg-blue-900/80 hover:bg-blue-800 text-white border border-blue-700 hover:border-yellow-400 cursor-pointer'
-                }`}
-              >
-                {item.label}
-              </button>
-            </React.Fragment>
-          );
-        })}
-      </nav>
-    );
-  };
-
   return (
-    <header className="bg-gradient-to-r from-blue-950 via-blue-900 to-indigo-950 border-b-4 border-yellow-400 px-4 py-3 flex items-center justify-between shadow-xl z-30 shrink-0">
-      {/* MapWave - JSSATE Branding Logo */}
-      <div className="flex items-center gap-3">
+    <div className="absolute top-4 inset-x-4 z-20 flex items-start justify-between pointer-events-none select-none">
+      {/* Top-Left: MapWave Minimal Brand & Search Floating Cluster */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 pointer-events-auto">
+        {/* Brand Pill */}
         <button
           type="button"
           onClick={onOpenLanding}
-          title="Return to MapWave Landing Page"
-          className="flex items-center gap-2 bg-gradient-to-br from-blue-900 to-indigo-950 border-2 border-yellow-400 rounded-2xl px-3 py-1.5 shadow-[0_4px_0_0_#FACC15] hover:scale-105 transition-transform cursor-pointer text-left"
+          title="Return to MapWave Introduction"
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border border-white/20 shadow-xl transition-all duration-200 cursor-pointer text-left group active:scale-95 min-h-[44px]"
         >
-          <div className="w-8 h-8 rounded-xl bg-yellow-400 flex items-center justify-center text-blue-950 font-black text-xl shadow-inner">
-            🌊
+          <div className="w-6 h-6 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-sm">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+            </svg>
           </div>
           <div>
-            <h1 className="text-sm font-black text-white tracking-widest uppercase italic drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
-              MapWave - JSSATE
-            </h1>
-            <p className="text-[10px] font-extrabold text-yellow-300 tracking-wider">
-              3D INTERACTIVE SATELLITE NAVIGATOR
-            </p>
+            <div className="text-xs font-bold tracking-wider uppercase text-white group-hover:text-blue-300 transition-colors">
+              MapWave
+            </div>
+            <div className="text-[9px] font-mono tracking-widest text-white/50 uppercase">
+              JSSATE Bangalore
+            </div>
           </div>
         </button>
 
-        {/* Breadcrumb Navigation */}
-        <div className="hidden md:block">
-          {renderBreadcrumb()}
-        </div>
-      </div>
-
-      {/* Action Buttons: Landing Return & Room Search */}
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onOpenLanding}
-          className="min-h-[44px] px-3 py-2 bg-blue-900/80 hover:bg-blue-800 text-yellow-300 border-2 border-yellow-400/60 rounded-2xl hidden sm:flex items-center gap-1.5 font-black text-xs shadow-md transition-all active:scale-95 cursor-pointer"
-        >
-          <span>🏠 INTRO</span>
-        </button>
-
+        {/* Clean Minimal Search Input Button */}
         <button
           type="button"
           onClick={onOpenSearch}
-          aria-label="Search rooms and occupants"
-          className="min-h-[44px] px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white border-2 border-white rounded-2xl flex items-center gap-2 font-black text-xs sm:text-sm shadow-[0_4px_0_0_#9F1239] transition-all active:scale-95"
+          aria-label="Search campus buildings, rooms, and departments"
+          className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white/80 hover:text-white backdrop-blur-md border border-white/20 shadow-xl transition-all duration-200 cursor-pointer min-h-[44px]"
         >
-          <svg className="w-4 h-4 text-white stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          <svg className="w-4 h-4 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span className="hidden sm:inline">SEARCH ROOMS</span>
+          <span className="text-xs font-medium tracking-wide">
+            Search buildings, rooms, labs...
+          </span>
+          <kbd className="hidden md:inline text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-white/60 border border-white/10">
+            /
+          </kbd>
+        </button>
+
+        {/* Minimal Breadcrumb Capsule (if a building or floor is selected) */}
+        {(selectedBuilding || selectedFloor) && (
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-black/60 text-white/90 backdrop-blur-md border border-white/20 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => onBack('OVERVIEW')}
+              className="hover:text-blue-300 cursor-pointer"
+            >
+              Campus
+            </button>
+            <span className="text-white/40">/</span>
+            <span className="font-semibold text-white">
+              {selectedBuilding?.name || 'Building'}
+            </span>
+            {selectedFloor && (
+              <>
+                <span className="text-white/40">/</span>
+                <span className="text-amber-300 font-semibold">
+                  Floor {selectedFloor.level_number}
+                </span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Top-Right: Return Intro & Compass */}
+      <div className="flex items-center gap-2.5 pointer-events-auto">
+        <button
+          type="button"
+          onClick={onOpenLanding}
+          className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-black/50 hover:bg-black/70 text-white/80 hover:text-white backdrop-blur-md border border-white/20 text-xs font-medium tracking-wider uppercase shadow-xl transition-all min-h-[44px] cursor-pointer"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+          </svg>
+          <span>Intro</span>
         </button>
       </div>
-    </header>
+    </div>
   );
 }

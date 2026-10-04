@@ -1,4 +1,4 @@
-import React, { useReducer, useState } from 'react';
+import React, { useReducer, useState, useRef } from 'react';
 import {
   NAV_STATES,
   INITIAL_NAV_STATE,
@@ -20,6 +20,8 @@ export default function App() {
   const [isLandingOpen, setIsLandingOpen] = useState(true);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
+  const [bearing, setBearing] = useState(0);
+  const mapRef = useRef(null);
 
   const {
     currentState,
@@ -37,19 +39,19 @@ export default function App() {
   const getBottomSheetSummary = () => {
     switch (currentState) {
       case NAV_STATES.OVERVIEW:
-        return '⚡ TAP A ZONE OR SEARCH A ROOM TO BEGIN NAVIGATING';
+        return 'CAMPUS OVERVIEW • SELECT A BUILDING OR SEARCH';
       case NAV_STATES.BUILDING_FLOORS:
-        return `🏢 ZONE: ${selectedBuilding?.name || 'Building Selected'} • SELECT FLOOR`;
+        return `ZONE: ${selectedBuilding?.name || 'BUILDING SELECTED'} • SELECT FLOOR`;
       case NAV_STATES.FLOOR_VIEW:
-        return `🗺️ FLOOR ${selectedFloor?.level_number || 1} • SELECT ROOM`;
+        return `FLOOR ${selectedFloor?.level_number || 1} • SELECT ROOM`;
       case NAV_STATES.ROUTE_PREVIEW:
-        return `🚶 ROUTE TO ${destination?.name || destination?.room_code || 'Destination'} • 3 MIN`;
+        return `ROUTE TO ${destination?.name || destination?.room_code || 'DESTINATION'} • 3 MIN`;
       case NAV_STATES.ROUTING_ACTIVE:
-        return `🏁 NAVIGATION ACTIVE • ${destination?.room_code || 'Destination'}`;
+        return `ACTIVE GUIDANCE • ${destination?.room_code || 'DESTINATION'}`;
       case NAV_STATES.QR_PROMPT:
-        return '📷 SCAN QR CHECKPOINT TAG';
+        return 'SCAN INDOOR CHECKPOINT';
       case NAV_STATES.ARRIVED:
-        return '🎉 YOU HAVE ARRIVED!';
+        return 'DESTINATION REACHED';
       default:
         return 'MAPWAVE - JSSATE';
     }
@@ -82,6 +84,12 @@ export default function App() {
       dispatch({ type: 'TRIGGER_REANCHOR' });
     } else {
       console.log('Recentering camera on GPS position:', gpsLocation);
+      if (gpsLocation && mapRef.current) {
+        mapRef.current.easeTo({
+          center: [gpsLocation.longitude, gpsLocation.latitude],
+          zoom: 18,
+        });
+      }
     }
   };
 
@@ -91,50 +99,64 @@ export default function App() {
   };
 
   return (
-    <div className="relative flex flex-col h-screen w-screen bg-slate-950 text-slate-100 font-sans overflow-hidden">
-      {/* 1. Immersive 3D Interactive Landing Page (Kenya Kortet / MapWave - JSSATE Style) */}
+    <div className="relative flex flex-col h-screen w-screen bg-stone-950 text-slate-100 font-sans overflow-hidden">
+      {/* 1. Immersive 3D Interactive Landing Page (thekenyamap.com Style) */}
       {isLandingOpen ? (
         <LandingPage onExplore={handleExplore} />
       ) : (
         <>
-          {/* Top Bar with MapWave - JSSATE Branding & Return to Intro */}
+          {/* Top Bar with MapWave Minimal Branding & Return to Intro */}
           <TopBar
             state={state}
             onBack={(targetLevel) => dispatch({ type: 'BACK', payload: targetLevel })}
             onOpenSearch={() => setIsSearchOpen(true)}
             onOpenLanding={() => setIsLandingOpen(true)}
+            bearing={bearing}
+            onResetNorth={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45 })}
           />
 
-          {/* Main 3D Satellite Map Viewport */}
-          <main className="flex-1 relative w-full h-full p-3 bg-slate-900">
+          {/* Main 3D Satellite Map Viewport - Full Bleed */}
+          <main className="flex-1 relative w-full h-full bg-stone-950">
             <MapOutdoor
               currentState={currentState}
               selectedBuilding={selectedBuilding}
               activeRoute={activeRoute}
               onSelectBuilding={handleSelectBuilding}
               onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
+              onBearingChange={setBearing}
+              mapRefOut={mapRef}
             />
 
-            {/* Floating Controller D-Pad */}
+            {/* Floating Controller Cluster (Compass, Zoom In/Out, Locate Me, Accessible Toggle) */}
             <FloatingControls
               onLocateMe={handleLocateMe}
-              onZoomIn={() => console.log('Zoom In')}
-              onZoomOut={() => console.log('Zoom Out')}
+              onZoomIn={() => mapRef.current?.zoomIn()}
+              onZoomOut={() => mapRef.current?.zoomOut()}
               isAccessibleMode={isAccessibleMode}
               onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
               geoDenied={false}
+              bearing={bearing}
+              onResetNorth={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45 })}
             />
           </main>
 
-          {/* Stylized Bottom Shelf */}
-          <BottomSheet summary={getBottomSheetSummary()}>
+          {/* Sleek Bottom Sheet */}
+          <BottomSheet
+            summary={getBottomSheetSummary()}
+            onClose={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
+          >
             {currentState === NAV_STATES.OVERVIEW && (
-              <div className="flex flex-col gap-4 py-3">
-                <h4 className="text-xs font-black text-yellow-400 uppercase tracking-widest">
-                  ⚡ JSSATE Campus Zones & Departments
-                </h4>
-                <p className="text-xs text-slate-300 font-semibold leading-relaxed">
-                  Explore 3D outdoor building zones, view indoor floorplans, or search for any faculty office or laboratory across JSS Academy of Technical Education, Bangalore.
+              <div className="flex flex-col gap-3 py-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-white/90 uppercase tracking-wider">
+                    Campus Zones & Navigation
+                  </h4>
+                  <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                    JSSATE Bangalore
+                  </span>
+                </div>
+                <p className="text-xs text-slate-300 font-normal leading-relaxed">
+                  Explore 3D outdoor building zones, view indoor floorplans, or search for faculty offices and laboratories across JSS Academy of Technical Education.
                 </p>
 
                 {/* Quick Department Zone Filter Pills */}
@@ -142,40 +164,47 @@ export default function App() {
                   <button
                     type="button"
                     onClick={() => setIsSearchOpen(true)}
-                    className="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-black border border-blue-700"
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
                   >
-                    💻 Block C (CS & AI)
+                    Block C (CS & AI)
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsSearchOpen(true)}
-                    className="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-black border border-blue-700"
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
                   >
-                    🏛️ Admin Block A
+                    Admin Block A
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsSearchOpen(true)}
-                    className="px-3 py-1.5 bg-blue-900 hover:bg-blue-800 text-white rounded-xl text-xs font-black border border-blue-700"
+                    className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
                   >
-                    📚 Library Block B
+                    Library Block B
                   </button>
                 </div>
 
-                <div className="flex items-center gap-3 pt-2">
+                <div className="flex items-center gap-3 pt-3">
                   <button
                     type="button"
                     onClick={() => setIsSearchOpen(true)}
-                    className="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-2xl text-xs font-black border-2 border-white shadow-[0_4px_0_0_#9F1239] min-h-[44px]"
+                    className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
                   >
-                    SEARCH DESTINATION ROOM 🔍
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Search Rooms & Labs</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsAdminOpen(true)}
-                    className="px-4 py-3 bg-blue-900 hover:bg-blue-800 text-yellow-300 rounded-2xl text-xs font-black border-2 border-yellow-400 min-h-[44px]"
+                    className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white/90 rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
                   >
-                    ADMIN ⚙️
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Admin</span>
                   </button>
                 </div>
               </div>
@@ -210,22 +239,26 @@ export default function App() {
             )}
 
             {currentState === NAV_STATES.ARRIVED && (
-              <div className="flex flex-col gap-4 py-4 text-center items-center">
-                <div className="w-16 h-16 rounded-full bg-yellow-400 text-blue-950 flex items-center justify-center text-3xl font-black shadow-lg animate-bounce border-2 border-white">
-                  🎉
+              <div className="flex flex-col gap-3 py-3 text-center items-center">
+                <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-400/30 flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-yellow-400 uppercase tracking-wider">You Have Arrived!</h3>
-                  <p className="text-xs text-slate-300 font-bold mt-1">
-                    Destination <strong className="text-yellow-300">{destination?.name || destination?.room_code || 'Room'}</strong> reached.
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    You Have Arrived
+                  </h3>
+                  <p className="text-xs text-slate-300 font-medium mt-1">
+                    Destination <span className="text-amber-300 font-semibold">{destination?.name || destination?.room_code || 'Room'}</span> reached.
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => dispatch({ type: 'DISMISS' })}
-                  className="min-h-[44px] w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs rounded-2xl border-2 border-white shadow-[0_4px_0_0_#065F46] transition-all"
+                  className="min-h-[44px] w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs tracking-wider uppercase rounded-full border border-white/20 shadow-lg transition-colors cursor-pointer mt-1"
                 >
-                  DONE & RETURN TO CAMPUS OVERVIEW
+                  Done & Return to Campus Overview
                 </button>
               </div>
             )}

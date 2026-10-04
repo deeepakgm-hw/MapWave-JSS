@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -20,5 +22,52 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #0c0a09;
+}
+
+/* Reference Website: Ghost Button Styling */
+.ghostbutton {
+  background-color: rgba(255, 255, 255, 0);
+  box-shadow: 0 9px 10px 1px rgba(0, 0, 0, 0.45);
+  color: #fff;
+  transition: background-color 0.4s ease, color 0.25s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+.ghostbutton:hover {
+  background-color: #ffffff;
+  color: #000000;
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+}
+
+/* Reference Website: Resolution/Experience Underline Picker */
+.resolution_picker {
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.resolution_picker .selected_underline {
+  background: #ffffff;
+  height: 2px;
+  margin-top: 4px;
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
+  width: 100%;
+}
+.resolution_picker:hover .selected_underline,
+.resolution_picker.active .selected_underline {
+  transform: scaleX(1);
+}
+
+/* Reference Website: Minimal Compass */
+.mapwave-compass {
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 9999px;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+  backdrop-filter: blur(8px);
+  background-color: rgba(15, 23, 42, 0.5);
+}
+.mapwave-compass:hover {
+  border-color: #ffffff;
+  background-color: rgba(15, 23, 42, 0.8);
 }
