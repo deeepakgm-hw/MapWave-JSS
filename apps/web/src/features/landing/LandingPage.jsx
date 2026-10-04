@@ -98,10 +98,23 @@ export function LandingPage({ onExplore }) {
         </div>
       </div>
 
-      {/* 3. Top-Left Header: Minimalist Monochrome Institutional Marks */}
-      <div className="absolute top-7 left-7 z-20 flex items-center gap-4 text-white/90">
+      {/* 3. Top-Left Header: Halfwave Platform Logo beside JSSATE Bangalore */}
+      <div className="absolute top-6 sm:top-7 left-6 sm:left-7 z-20 flex items-center gap-3 sm:gap-4 text-white/90">
+        {/* Halfwave Platform Brand Logo */}
+        <div className="flex items-center">
+          <img
+            src="/halfwave_logo.png"
+            alt="Halfwave"
+            className="h-7 sm:h-8 w-auto object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
+          />
+        </div>
+
+        {/* Minimalist Vertical Divider matching Reference Site */}
+        <div className="h-6 w-[1px] bg-white/25 shrink-0" />
+
+        {/* JSSATE Bangalore Campus Entity */}
         <div className="flex items-center gap-2.5">
-          <svg className="w-6 h-6 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/90 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
           <div className="flex flex-col">
@@ -114,7 +127,7 @@ export function LandingPage({ onExplore }) {
                 Bengaluru
               </span>
             </div>
-            <span className="text-[11px] font-semibold text-white/90 tracking-wide">
+            <span className="text-[11px] sm:text-xs font-semibold text-white/95 tracking-wide whitespace-nowrap drop-shadow-sm">
               JSS Academy of Technical Education
             </span>
           </div>
