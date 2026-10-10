@@ -6,8 +6,9 @@
  */
 
 export const MAP_PROVIDERS = {
-  MAPTILER: 'maptiler',
+  GOOGLE: 'google',
   ESRI: 'esri',
+  MAPTILER: 'maptiler',
   CUSTOM: 'custom',
 };
 
@@ -121,8 +122,76 @@ export function buildMapStyleUrl(apiKey, styleMode = MAP_VIEWS.HYBRID, customUrl
 }
 
 /**
+ * High-Resolution Satellite & Aerial Raster Styles
+ * Provides crystal-clear, sub-meter imagery (Google Ultra-HD & Esri World Imagery 30cm Maxar)
+ * to avoid low-resolution blurry tiles.
+ *
+ * @param {'google' | 'esri' | 'maptiler'} provider
+ * @param {string} apiKey - Optional MapTiler API Key
+ * @returns {object | string} MapLibre style JSON specification or URL
+ */
+export function getSatelliteStyle(provider = MAP_PROVIDERS.GOOGLE, apiKey = '') {
+  if (provider === MAP_PROVIDERS.GOOGLE) {
+    return {
+      version: 8,
+      sources: {
+        'google-satellite': {
+          type: 'raster',
+          tiles: [
+            'https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+            'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+            'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+            'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+          ],
+          tileSize: 256,
+          maxzoom: 20,
+          attribution: 'Tiles &copy; Google Maps Ultra-HD Satellite Imagery',
+        },
+      },
+      layers: [
+        {
+          id: 'satellite-base-layer',
+          type: 'raster',
+          source: 'google-satellite',
+          minzoom: 0,
+          maxzoom: 20,
+        },
+      ],
+    };
+  }
+
+  if (provider === MAP_PROVIDERS.MAPTILER && apiKey) {
+    return buildMapStyleUrl(apiKey, MAP_VIEWS.HYBRID);
+  }
+
+  // Default: Esri High-Resolution World Imagery (30cm Maxar clarity)
+  return {
+    version: 8,
+    sources: {
+      'esri-satellite': {
+        type: 'raster',
+        tiles: [
+          'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        ],
+        tileSize: 256,
+        maxzoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; High-Resolution World Imagery (30cm Maxar)',
+      },
+    },
+    layers: [
+      {
+        id: 'satellite-base-layer',
+        type: 'raster',
+        source: 'esri-satellite',
+        minzoom: 0,
+        maxzoom: 19,
+      },
+    ],
+  };
+}
+
+/**
  * Generates an offline/fallback MapLibre raster style using Esri World Imagery
- * when MapTiler credentials are not yet supplied but fallback testing is active.
  *
  * @returns {object} MapLibre style JSON specification
  */
@@ -136,7 +205,8 @@ export function getFallbackRasterStyle() {
           'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         ],
         tileSize: 256,
-        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxzoom: 19,
+        attribution: 'Tiles &copy; Esri &mdash; High-Resolution World Imagery',
       },
     },
     layers: [
@@ -168,7 +238,8 @@ export function getMapConfig(overrides = {}) {
   const rawLng = overrides.lng !== undefined ? overrides.lng : env.VITE_CAMPUS_LNG;
   const coordValidation = validateCoordinates(rawLat, rawLng);
 
-  const imageryProvider = overrides.imageryProvider || MAP_PROVIDERS.MAPTILER;
+  // If VITE_MAP_PROVIDER is set, use it. Otherwise, default to Google/Esri for ultra-high-definition clarity!
+  const imageryProvider = overrides.imageryProvider || env.VITE_MAP_PROVIDER || MAP_PROVIDERS.GOOGLE;
   const defaultMapView = overrides.defaultMapView || MAP_VIEWS.HYBRID;
   const customStyleUrl = overrides.styleUrl || (env.VITE_MAP_STYLE_URL || '').trim();
 

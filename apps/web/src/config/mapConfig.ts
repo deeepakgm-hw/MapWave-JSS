@@ -8,7 +8,7 @@ export interface MapCoordinates {
 }
 
 export interface MapConfig {
-  imageryProvider: 'maptiler' | 'esri' | 'custom';
+  imageryProvider: 'google' | 'esri' | 'maptiler' | 'custom';
   apiKeyEnvVar: string;
   apiKey: string;
   hasApiKey: boolean;
@@ -45,6 +45,7 @@ export {
   DEFAULT_VIEWPORT,
   validateCoordinates,
   buildMapStyleUrl,
+  getSatelliteStyle,
   getFallbackRasterStyle,
   getMapConfig,
   getMapConfigStatus,

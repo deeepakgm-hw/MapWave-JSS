@@ -5,8 +5,10 @@ import {
   getMapConfig,
   getMapConfigStatus,
   getFallbackRasterStyle,
+  getSatelliteStyle,
   buildMapStyleUrl,
   MAP_VIEWS,
+  MAP_PROVIDERS,
 } from '../../config/mapConfig';
 import { MapSetupScreen } from './MapSetupScreen';
 import {
@@ -397,7 +399,7 @@ export function CampusMap({
 
     const mapStyle = useFallbackMode
       ? getFallbackRasterStyle()
-      : mapConfig.styleUrl || buildMapStyleUrl(mapConfig.apiKey, currentStyleMode);
+      : getSatelliteStyle(mapConfig.imageryProvider, mapConfig.apiKey);
 
     const map = new maplibregl.Map({
       container: mapContainer.current,

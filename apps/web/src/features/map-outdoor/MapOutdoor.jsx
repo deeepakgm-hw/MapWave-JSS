@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import { apiClient } from '../../lib/apiClient';
@@ -13,8 +13,8 @@ import {
 } from '../../data';
 import {
   getMapConfig,
-  buildMapStyleUrl,
-  getFallbackRasterStyle,
+  getSatelliteStyle,
+  MAP_PROVIDERS,
 } from '../../config/mapConfig';
 
 export default function MapOutdoor({
@@ -35,6 +35,10 @@ export default function MapOutdoor({
   const [geoDenied, setGeoDenied] = useState(false);
 
   const mapConfig = getMapConfig();
+  const [currentProvider, setCurrentProvider] = useState(
+    mapConfig.imageryProvider || MAP_PROVIDERS.GOOGLE
+  );
+  const [showProviderMenu, setShowProviderMenu] = useState(false);
 
   // Helper to convert accuracy meters to pixels at given latitude and zoom level
   const getAccuracyPixelRadius = (accuracyMeters, lat, zoom) => {
@@ -43,18 +47,303 @@ export default function MapOutdoor({
     return Math.max(10, Math.min(200, accuracyMeters / metersPerPixel));
   };
 
-  // 1. Initialize MapLibre Map with Configured Imagery Provider (MapTiler or Fallback)
+  // Reusable function to add/restore campus GIS layers
+  const addCampusLayers = useCallback((map, buildingsOverride = null) => {
+    if (!map || !map.isStyleLoaded()) return;
+
+    // 1. Campus Boundary (Official perimeter from geojsonjss.geojson)
+    if (!map.getSource('campus-boundary')) {
+      map.addSource('campus-boundary', {
+        type: 'geojson',
+        data: campusBoundary,
+      });
+
+      map.addLayer({
+        id: 'campus-boundary-fill',
+        type: 'fill',
+        source: 'campus-boundary',
+        paint: {
+          'fill-color': '#0284c7',
+          'fill-opacity': 0.04,
+        },
+      });
+
+      map.addLayer({
+        id: 'campus-boundary-line',
+        type: 'line',
+        source: 'campus-boundary',
+        paint: {
+          'line-color': '#38bdf8',
+          'line-width': 2.2,
+          'line-dasharray': [3, 2],
+          'line-opacity': 0.85,
+        },
+      });
+    }
+
+    // 2. Campus Facilities & Open Spaces (Sports Ground, Courts, Parking, Gardens)
+    if (!map.getSource('campus-facilities')) {
+      map.addSource('campus-facilities', {
+        type: 'geojson',
+        data: campusFacilities,
+      });
+
+      map.addLayer({
+        id: 'campus-facilities-fill',
+        type: 'fill',
+        source: 'campus-facilities',
+        filter: ['==', '$type', 'Polygon'],
+        paint: {
+          'fill-color': [
+            'match',
+            ['get', 'category'],
+            'Sports', '#166534',
+            'Landscape', '#15803d',
+            'Parking', '#334155',
+            '#475569'
+          ],
+          'fill-opacity': [
+            'match',
+            ['get', 'category'],
+            'Sports', 0.45,
+            'Landscape', 0.4,
+            'Parking', 0.55,
+            0.35
+          ],
+        },
+      });
+
+      map.addLayer({
+        id: 'campus-facilities-line',
+        type: 'line',
+        source: 'campus-facilities',
+        filter: ['==', '$type', 'Polygon'],
+        paint: {
+          'line-color': [
+            'match',
+            ['get', 'category'],
+            'Sports', '#22c55e',
+            'Landscape', '#4ade80',
+            'Parking', '#64748b',
+            '#94a3b8'
+          ],
+          'line-width': 1.2,
+          'line-opacity': 0.7,
+        },
+      });
+    }
+
+    // 3. Campus Roads and Pedestrian Walkways
+    if (!map.getSource('campus-paths')) {
+      map.addSource('campus-paths', {
+        type: 'geojson',
+        data: campusPaths,
+      });
+
+      map.addLayer({
+        id: 'campus-paths-casing',
+        type: 'line',
+        source: 'campus-paths',
+        paint: {
+          'line-color': '#0f172a',
+          'line-width': [
+            'match',
+            ['get', 'type'],
+            'road', 5.5,
+            'pedestrian', 3.5,
+            3.0
+          ],
+          'line-opacity': 0.55,
+        },
+      });
+
+      map.addLayer({
+        id: 'campus-paths-surface',
+        type: 'line',
+        source: 'campus-paths',
+        paint: {
+          'line-color': [
+            'match',
+            ['get', 'type'],
+            'road', '#cbd5e1',
+            'pedestrian', '#fbbf24',
+            '#e2e8f0'
+          ],
+          'line-width': [
+            'match',
+            ['get', 'type'],
+            'road', 3.2,
+            'pedestrian', 2.0,
+            1.8
+          ],
+          'line-opacity': 0.85,
+        },
+      });
+    }
+
+    // 4. Campus 3D Buildings (Fill-Extrusion Layer on top of satellite)
+    const buildingsData = buildingsOverride || campusBuildings;
+
+    if (!map.getSource('campus-buildings')) {
+      map.addSource('campus-buildings', {
+        type: 'geojson',
+        data: buildingsData,
+      });
+
+      // Layer 1: Existing Buildings (Clean 3D Extrusion using height_m)
+      map.addLayer({
+        id: 'existing-buildings-extrusion',
+        type: 'fill-extrusion',
+        source: 'campus-buildings',
+        filter: ['==', ['get', 'status'], 'existing'],
+        paint: {
+          'fill-extrusion-color': [
+            'case',
+            ['==', ['get', 'verification'], 'verified'],
+            '#2563eb',
+            '#0284c7'
+          ],
+          'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 0.85,
+        },
+      });
+
+      // Layer 1b: Hover Highlight State (Subtle brightening)
+      map.addLayer({
+        id: 'hovered-building-extrusion',
+        type: 'fill-extrusion',
+        source: 'campus-buildings',
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'fill-extrusion-color': '#60a5fa',
+          'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 0.98,
+        },
+      });
+
+      // Layer 2: Highlighted Selected Building (Amber Glow)
+      map.addLayer({
+        id: 'selected-building-highlight',
+        type: 'fill-extrusion',
+        source: 'campus-buildings',
+        filter: ['==', ['get', 'id'], ''],
+        paint: {
+          'fill-extrusion-color': '#f59e0b',
+          'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 1.0,
+        },
+      });
+
+      // Layer 3: Proposed Buildings
+      map.addLayer({
+        id: 'proposed-buildings-extrusion',
+        type: 'fill-extrusion',
+        source: 'campus-buildings',
+        filter: ['==', ['get', 'status'], 'proposed'],
+        paint: {
+          'fill-extrusion-color': '#64748b',
+          'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
+          'fill-extrusion-base': 0,
+          'fill-extrusion-opacity': 0.45,
+        },
+      });
+    }
+
+    // Render sleek HTML label markers for campus landmarks
+    if (maplibregl.Marker && buildingsData.features) {
+      markersRef.current.forEach((m) => m.remove());
+      markersRef.current = [];
+
+      buildingsData.features.forEach((feat) => {
+        const props = feat.properties || {};
+        const meta = buildingMetadata[props.id] || buildingMetadata[props.code] || {};
+        let center = meta.center;
+
+        if (!center && feat.geometry && feat.geometry.coordinates && feat.geometry.coordinates[0]) {
+          const coords = feat.geometry.coordinates[0];
+          let sumLng = 0;
+          let sumLat = 0;
+          const len = coords.length - 1;
+          if (len > 0) {
+            for (let i = 0; i < len; i++) {
+              sumLng += coords[i][0];
+              sumLat += coords[i][1];
+            }
+            center = [sumLng / len, sumLat / len];
+          }
+        }
+
+        if (center) {
+          const el = document.createElement('div');
+          el.className = 'campus-building-label pointer-events-auto cursor-pointer select-none';
+          el.innerHTML = `
+            <div style="background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; padding: 2px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 5px;">
+              <span style="width: 5px; height: 5px; border-radius: 9999px; background: ${props.verification === 'verified' ? '#38bdf8' : '#a855f7'};"></span>
+              <span style="color: #f8fafc; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap;">${props.name || 'Building'}</span>
+            </div>
+          `;
+
+          const buildingObj = {
+            id: props.id,
+            name: props.name || meta.name || `Building ${props.id}`,
+            code: props.code || meta.code || 'BLDG',
+            category: props.category || meta.category || 'Academic',
+            status: props.status || 'existing',
+            verification: props.verification || meta.verification || 'estimated',
+            height_m: props.height_m || meta.height_m || 15.0,
+            floor_count: props.floor_count || meta.floor_count || 3,
+            indoor_mapping_status: props.indoor_mapping_status || meta.indoor_mapping_status || 'planned',
+            description: props.description || meta.description || '',
+            departments: meta.departments || [],
+            facilities: meta.facilities || [],
+            operating_hours: meta.operating_hours || '',
+            accessibility: meta.accessibility || '',
+            center,
+          };
+
+          el.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            if (onSelectBuilding) {
+              onSelectBuilding(buildingObj);
+            }
+          });
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat(center)
+            .addTo(map);
+
+          markersRef.current.push(marker);
+        }
+      });
+    }
+  }, [onSelectBuilding]);
+
+  // Switch imagery provider at runtime
+  const handleSwitchProvider = (newProvider) => {
+    setCurrentProvider(newProvider);
+    setShowProviderMenu(false);
+    if (mapRef.current) {
+      const newStyle = getSatelliteStyle(newProvider, mapConfig.apiKey);
+      mapRef.current.setStyle(newStyle);
+      mapRef.current.once('styledata', () => {
+        addCampusLayers(mapRef.current);
+      });
+    }
+  };
+
+  // 1. Initialize MapLibre Map with High-Resolution Satellite Map Source
   useEffect(() => {
     if (mapRef.current || !mapContainer.current) return;
 
     const mapCenter = mapConfig.campusCoordinates || CAMPUS_CENTER;
-    const mapStyle = mapConfig.hasApiKey
-      ? (mapConfig.styleUrl || buildMapStyleUrl(mapConfig.apiKey, 'hybrid'))
-      : getFallbackRasterStyle();
+    const initialStyle = getSatelliteStyle(currentProvider, mapConfig.apiKey);
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: mapStyle,
+      style: initialStyle,
       center: mapCenter,
       zoom: mapConfig.initialZoom || 16.8,
       pitch: mapConfig.initialPitch || 45,
@@ -76,287 +365,35 @@ export default function MapOutdoor({
     });
 
     map.on('load', async () => {
-      // 1. Campus Boundary (Official perimeter from geojsonjss.geojson)
-      if (!map.getSource('campus-boundary')) {
-        map.addSource('campus-boundary', {
-          type: 'geojson',
-          data: campusBoundary,
-        });
-
-        map.addLayer({
-          id: 'campus-boundary-fill',
-          type: 'fill',
-          source: 'campus-boundary',
-          paint: {
-            'fill-color': '#0284c7',
-            'fill-opacity': 0.04,
-          },
-        });
-
-        map.addLayer({
-          id: 'campus-boundary-line',
-          type: 'line',
-          source: 'campus-boundary',
-          paint: {
-            'line-color': '#38bdf8',
-            'line-width': 2.2,
-            'line-dasharray': [3, 2],
-            'line-opacity': 0.85,
-          },
-        });
-      }
-
-      // 2. Campus Facilities & Open Spaces (Sports Ground, Courts, Parking, Gardens)
-      if (!map.getSource('campus-facilities')) {
-        map.addSource('campus-facilities', {
-          type: 'geojson',
-          data: campusFacilities,
-        });
-
-        map.addLayer({
-          id: 'campus-facilities-fill',
-          type: 'fill',
-          source: 'campus-facilities',
-          filter: ['==', '$type', 'Polygon'],
-          paint: {
-            'fill-color': [
-              'match',
-              ['get', 'category'],
-              'Sports', '#166534',
-              'Landscape', '#15803d',
-              'Parking', '#334155',
-              '#475569'
-            ],
-            'fill-opacity': [
-              'match',
-              ['get', 'category'],
-              'Sports', 0.45,
-              'Landscape', 0.4,
-              'Parking', 0.55,
-              0.35
-            ],
-          },
-        });
-
-        map.addLayer({
-          id: 'campus-facilities-line',
-          type: 'line',
-          source: 'campus-facilities',
-          filter: ['==', '$type', 'Polygon'],
-          paint: {
-            'line-color': [
-              'match',
-              ['get', 'category'],
-              'Sports', '#22c55e',
-              'Landscape', '#4ade80',
-              'Parking', '#64748b',
-              '#94a3b8'
-            ],
-            'line-width': 1.2,
-            'line-opacity': 0.7,
-          },
-        });
-      }
-
-      // 3. Campus Roads and Pedestrian Walkways
-      if (!map.getSource('campus-paths')) {
-        map.addSource('campus-paths', {
-          type: 'geojson',
-          data: campusPaths,
-        });
-
-        map.addLayer({
-          id: 'campus-paths-casing',
-          type: 'line',
-          source: 'campus-paths',
-          paint: {
-            'line-color': '#0f172a',
-            'line-width': [
-              'match',
-              ['get', 'type'],
-              'road', 5.5,
-              'pedestrian', 3.5,
-              3.0
-            ],
-            'line-opacity': 0.55,
-          },
-        });
-
-        map.addLayer({
-          id: 'campus-paths-surface',
-          type: 'line',
-          source: 'campus-paths',
-          paint: {
-            'line-color': [
-              'match',
-              ['get', 'type'],
-              'road', '#cbd5e1',
-              'pedestrian', '#fbbf24',
-              '#e2e8f0'
-            ],
-            'line-width': [
-              'match',
-              ['get', 'type'],
-              'road', 3.2,
-              'pedestrian', 2.0,
-              1.8
-            ],
-            'line-opacity': 0.85,
-          },
-        });
-      }
-
-      // 4. Campus 3D Buildings (Fill-Extrusion Layer on top of satellite)
+      let finalBuildings = campusBuildings;
       try {
-        let buildingsData = campusBuildings;
-        try {
-          const apiBuildings = await apiClient('/api/v1/buildings');
-          if (apiBuildings && apiBuildings.features && apiBuildings.features.length > 0) {
-            buildingsData = apiBuildings;
-          }
-        } catch {
-          // Graceful offline fallback to static verified campusBuildings dataset
-          buildingsData = campusBuildings;
-        }
-
-        if (!map.getSource('campus-buildings')) {
-          map.addSource('campus-buildings', {
-            type: 'geojson',
-            data: buildingsData,
-          });
-
-          // Layer 1: Existing Buildings (Clean 3D Extrusion using height_m)
-          map.addLayer({
-            id: 'existing-buildings-extrusion',
-            type: 'fill-extrusion',
-            source: 'campus-buildings',
-            filter: ['==', ['get', 'status'], 'existing'],
-            paint: {
-              'fill-extrusion-color': [
-                'match',
-                ['get', 'verification'],
-                'verified', '#2563eb',
-                '#0284c7'
-              ],
-              'fill-extrusion-height': ['get', 'height_m'],
-              'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.82,
-            },
-          });
-
-          // Layer 1b: Hover Highlight State (Subtle brightening)
-          map.addLayer({
-            id: 'hovered-building-extrusion',
-            type: 'fill-extrusion',
-            source: 'campus-buildings',
-            filter: ['==', ['get', 'id'], ''],
-            paint: {
-              'fill-extrusion-color': '#60a5fa',
-              'fill-extrusion-height': ['get', 'height_m'],
-              'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.98,
-            },
-          });
-
-          // Layer 2: Highlighted Selected Building
-          map.addLayer({
-            id: 'selected-building-highlight',
-            type: 'fill-extrusion',
-            source: 'campus-buildings',
-            filter: ['==', ['get', 'id'], ''],
-            paint: {
-              'fill-extrusion-color': '#f59e0b',
-              'fill-extrusion-height': ['get', 'height_m'],
-              'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 1.0,
-            },
-          });
-
-          // Layer 3: Proposed Buildings
-          map.addLayer({
-            id: 'proposed-buildings-extrusion',
-            type: 'fill-extrusion',
-            source: 'campus-buildings',
-            filter: ['==', ['get', 'status'], 'proposed'],
-            paint: {
-              'fill-extrusion-color': '#64748b',
-              'fill-extrusion-height': ['get', 'height_m'],
-              'fill-extrusion-base': 0,
-              'fill-extrusion-opacity': 0.45,
-            },
-          });
-        }
-
-        // Render sleek HTML label markers for campus landmarks
-        if (maplibregl.Marker && buildingsData.features) {
-          markersRef.current.forEach((m) => m.remove());
-          markersRef.current = [];
-
-          buildingsData.features.forEach((feat) => {
-            const props = feat.properties || {};
-            const meta = buildingMetadata[props.id] || buildingMetadata[props.code] || {};
-            let center = meta.center;
-
-            if (!center && feat.geometry && feat.geometry.coordinates && feat.geometry.coordinates[0]) {
-              const coords = feat.geometry.coordinates[0];
-              let sumLng = 0;
-              let sumLat = 0;
-              const len = coords.length - 1;
-              if (len > 0) {
-                for (let i = 0; i < len; i++) {
-                  sumLng += coords[i][0];
-                  sumLat += coords[i][1];
-                }
-                center = [sumLng / len, sumLat / len];
-              }
-            }
-
-            if (center) {
-              const el = document.createElement('div');
-              el.className = 'campus-building-label pointer-events-auto cursor-pointer select-none';
-              el.innerHTML = `
-                <div style="background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 9999px; padding: 2px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 4px; transition: transform 0.15s ease;">
-                  <span style="width: 5px; height: 5px; border-radius: 9999px; background: ${props.verification === 'verified' ? '#38bdf8' : '#a855f7'};"></span>
-                  <span style="color: #f8fafc; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap;">${props.name || 'Building'}</span>
-                </div>
-              `;
-
-              const buildingObj = {
-                id: props.id,
-                name: props.name || meta.name || `Building ${props.id}`,
-                code: props.code || meta.code || 'BLDG',
-                category: props.category || meta.category || 'Academic',
-                status: props.status || 'existing',
-                verification: props.verification || meta.verification || 'estimated',
-                height_m: props.height_m || meta.height_m || 15.0,
-                floor_count: props.floor_count || meta.floor_count || 3,
-                indoor_mapping_status: props.indoor_mapping_status || meta.indoor_mapping_status || 'planned',
-                description: props.description || meta.description || '',
-                departments: meta.departments || [],
-                facilities: meta.facilities || [],
-                operating_hours: meta.operating_hours || '',
-                accessibility: meta.accessibility || '',
-                center,
+        const apiBuildings = await apiClient('/api/v1/buildings');
+        if (apiBuildings && apiBuildings.features && apiBuildings.features.length > 0) {
+          // Merge API status/heights with local rich GIS polygons
+          finalBuildings = {
+            type: 'FeatureCollection',
+            features: campusBuildings.features.map((localFeat) => {
+              const apiMatch = apiBuildings.features.find(
+                (af) => af.id === localFeat.id || af.properties?.id === localFeat.id
+              );
+              return {
+                ...localFeat,
+                properties: {
+                  ...localFeat.properties,
+                  ...(apiMatch ? apiMatch.properties : {}),
+                  height_m: apiMatch?.properties?.height_m || localFeat.properties.height_m || 15.0,
+                  status: apiMatch?.properties?.status || localFeat.properties.status || 'existing',
+                  verification: localFeat.properties.verification || 'verified',
+                },
               };
-
-              el.addEventListener('click', (ev) => {
-                ev.stopPropagation();
-                if (onSelectBuilding) {
-                  onSelectBuilding(buildingObj);
-                }
-              });
-
-              const marker = new maplibregl.Marker({ element: el })
-                .setLngLat(center)
-                .addTo(map);
-
-              markersRef.current.push(marker);
-            }
-          });
+            }),
+          };
         }
-      } catch (err) {
-        console.error('Failed to initialize campus buildings GeoJSON:', err);
+      } catch {
+        finalBuildings = campusBuildings;
       }
+
+      addCampusLayers(map, finalBuildings);
 
       // Building hover state tracking
       let hoveredBuildingId = null;
@@ -388,7 +425,6 @@ export default function MapOutdoor({
         const bProps = feature.properties;
         const meta = buildingMetadata[bProps.id] || buildingMetadata[bProps.code] || {};
 
-        // Calculate polygon centroid if polygon geometry is available
         let centerCoord = meta.center || [e.lngLat.lng, e.lngLat.lat];
         if (!meta.center && feature.geometry && feature.geometry.coordinates && feature.geometry.coordinates[0]) {
           const coords = feature.geometry.coordinates[0];
@@ -436,7 +472,7 @@ export default function MapOutdoor({
         mapRef.current = null;
       }
     };
-  }, [onSelectBuilding, onBearingChange, mapRefOut]);
+  }, [addCampusLayers, onSelectBuilding, onBearingChange, mapRefOut, mapConfig]);
 
   // 2. Camera Swoop & Highlight reacting to State Machine
   useEffect(() => {
@@ -452,7 +488,6 @@ export default function MapOutdoor({
         speed: 1.2,
       });
 
-      // Highlight selected building with golden amber glow
       if (map.getLayer && map.getLayer('selected-building-highlight')) {
         map.setFilter('selected-building-highlight', ['==', ['get', 'id'], selectedBuilding.id]);
       }
@@ -465,7 +500,6 @@ export default function MapOutdoor({
         speed: 1.2,
       });
 
-      // Reset selection highlight
       if (map.getLayer && map.getLayer('selected-building-highlight')) {
         map.setFilter('selected-building-highlight', ['==', ['get', 'id'], '']);
       }
@@ -534,7 +568,6 @@ export default function MapOutdoor({
         data: geojson,
       });
 
-      // Accuracy Outer Circle
       map.addLayer({
         id: 'gps-accuracy-circle',
         type: 'circle',
@@ -549,7 +582,6 @@ export default function MapOutdoor({
         },
       });
 
-      // Inner Blue GPS Dot
       map.addLayer({
         id: 'gps-location-dot',
         type: 'circle',
@@ -666,6 +698,84 @@ export default function MapOutdoor({
     <div className="relative w-full h-full min-h-[500px] overflow-hidden bg-stone-950">
       <div ref={mapContainer} className="w-full h-full absolute inset-0" />
 
+      {/* Floating Satellite HD Imagery Quality Switcher */}
+      <div className="absolute top-4 right-16 z-20">
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowProviderMenu(!showProviderMenu)}
+            className="px-3 py-1.5 rounded-full bg-stone-900/85 backdrop-blur-xl border border-white/20 text-white/90 hover:text-white text-[11px] font-medium tracking-wide flex items-center gap-1.5 shadow-lg transition-all cursor-pointer"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>
+              {currentProvider === MAP_PROVIDERS.GOOGLE
+                ? 'Google Ultra-HD'
+                : currentProvider === MAP_PROVIDERS.ESRI
+                ? 'Esri 30cm HD'
+                : 'MapTiler'}
+            </span>
+            <svg className="w-3 h-3 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showProviderMenu && (
+            <div className="absolute top-full right-0 mt-2 bg-stone-900/95 backdrop-blur-2xl border border-white/15 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 w-52 z-30">
+              <div className="px-2.5 py-1 text-[9px] font-mono text-white/40 uppercase tracking-wider">
+                Satellite HD Provider
+              </div>
+              <button
+                type="button"
+                onClick={() => handleSwitchProvider(MAP_PROVIDERS.GOOGLE)}
+                className={`text-left p-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                  currentProvider === MAP_PROVIDERS.GOOGLE
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'text-white/80 hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  <div className="font-semibold">Google Ultra-HD</div>
+                  <div className="text-[10px] opacity-70">Razor-sharp sub-meter</div>
+                </div>
+                {currentProvider === MAP_PROVIDERS.GOOGLE && <span>✓</span>}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSwitchProvider(MAP_PROVIDERS.ESRI)}
+                className={`text-left p-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                  currentProvider === MAP_PROVIDERS.ESRI
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'text-white/80 hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  <div className="font-semibold">Esri World Imagery</div>
+                  <div className="text-[10px] opacity-70">30cm Maxar aerial</div>
+                </div>
+                {currentProvider === MAP_PROVIDERS.ESRI && <span>✓</span>}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSwitchProvider(MAP_PROVIDERS.MAPTILER)}
+                className={`text-left p-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                  currentProvider === MAP_PROVIDERS.MAPTILER
+                    ? 'bg-blue-600 text-white font-semibold'
+                    : 'text-white/80 hover:bg-white/10'
+                }`}
+              >
+                <div>
+                  <div className="font-semibold">MapTiler Satellite</div>
+                  <div className="text-[10px] opacity-70">Standard vector hybrid</div>
+                </div>
+                {currentProvider === MAP_PROVIDERS.MAPTILER && <span>✓</span>}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Geolocation Denied Notice (Restrained) */}
       {geoDenied && (
         <div className="absolute top-20 left-4 z-10 px-3.5 py-1.5 rounded-xl bg-black/60 text-white/80 backdrop-blur-md border border-white/15 text-xs font-medium">
@@ -685,7 +795,12 @@ export default function MapOutdoor({
 
       {/* Minimal Map Attribution & Coordinates */}
       <div className="absolute bottom-2 left-4 z-10 text-[9px] font-mono text-white/40 tracking-wider pointer-events-none">
-        {mapConfig.hasApiKey ? 'MAPTILER SATELLITE' : 'ESRI SATELLITE'} • 12.9015° N, 77.5057° E • JSSATE BENGALURU
+        {currentProvider === MAP_PROVIDERS.GOOGLE
+          ? 'GOOGLE ULTRA-HD SATELLITE'
+          : currentProvider === MAP_PROVIDERS.ESRI
+          ? 'ESRI WORLD IMAGERY HD'
+          : 'MAPTILER SATELLITE'}{' '}
+        • 12.9015° N, 77.5057° E • JSSATE BENGALURU
       </div>
     </div>
   );
