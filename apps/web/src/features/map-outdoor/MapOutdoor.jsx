@@ -11,6 +11,11 @@ import {
   buildingMetadata,
   CAMPUS_CENTER,
 } from '../../data';
+import {
+  getMapConfig,
+  buildMapStyleUrl,
+  getFallbackRasterStyle,
+} from '../../config/mapConfig';
 
 export default function MapOutdoor({
   currentState,
@@ -29,6 +34,8 @@ export default function MapOutdoor({
   const [nearestInfo, setNearestInfo] = useState(null);
   const [geoDenied, setGeoDenied] = useState(false);
 
+  const mapConfig = getMapConfig();
+
   // Helper to convert accuracy meters to pixels at given latitude and zoom level
   const getAccuracyPixelRadius = (accuracyMeters, lat, zoom) => {
     if (!accuracyMeters || !lat) return 20;
@@ -36,39 +43,24 @@ export default function MapOutdoor({
     return Math.max(10, Math.min(200, accuracyMeters / metersPerPixel));
   };
 
-  // 1. Initialize MapLibre Map with ESRI High-Resolution Satellite Map Source & Campus GIS Datasets
+  // 1. Initialize MapLibre Map with Configured Imagery Provider (MapTiler or Fallback)
   useEffect(() => {
     if (mapRef.current || !mapContainer.current) return;
 
+    const mapCenter = mapConfig.campusCoordinates || CAMPUS_CENTER;
+    const mapStyle = mapConfig.hasApiKey
+      ? (mapConfig.styleUrl || buildMapStyleUrl(mapConfig.apiKey, 'hybrid'))
+      : getFallbackRasterStyle();
+
     const map = new maplibregl.Map({
       container: mapContainer.current,
-      style: {
-        version: 8,
-        sources: {
-          'esri-satellite': {
-            type: 'raster',
-            tiles: [
-              'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-            ],
-            tileSize: 256,
-            attribution:
-              'Tiles &copy; Esri &mdash; JSSATE Bangalore Campus GIS',
-          },
-        },
-        layers: [
-          {
-            id: 'esri-satellite-layer',
-            type: 'raster',
-            source: 'esri-satellite',
-            minzoom: 0,
-            maxzoom: 19,
-          },
-        ],
-      },
-      center: CAMPUS_CENTER,
-      zoom: 16.8,
-      pitch: 45,
-      bearing: -17.6,
+      style: mapStyle,
+      center: mapCenter,
+      zoom: mapConfig.initialZoom || 16.8,
+      pitch: mapConfig.initialPitch || 45,
+      bearing: mapConfig.initialBearing || -17.6,
+      minZoom: mapConfig.minZoom,
+      maxZoom: mapConfig.maxZoom,
     });
 
     mapRef.current = map;
@@ -693,7 +685,7 @@ export default function MapOutdoor({
 
       {/* Minimal Map Attribution & Coordinates */}
       <div className="absolute bottom-2 left-4 z-10 text-[9px] font-mono text-white/40 tracking-wider pointer-events-none">
-        ESRI SATELLITE • 12.9015° N, 77.5057° E • JSSATE BENGALURU
+        {mapConfig.hasApiKey ? 'MAPTILER SATELLITE' : 'ESRI SATELLITE'} • 12.9015° N, 77.5057° E • JSSATE BENGALURU
       </div>
     </div>
   );

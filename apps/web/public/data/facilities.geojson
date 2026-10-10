@@ -1,0 +1,145 @@
+{
+  "type": "FeatureCollection",
+  "name": "JSSATE_Bangalore_Campus_Facilities",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "fac-main-gate",
+      "properties": {
+        "id": "fac-main-gate",
+        "name": "Main Entrance Gate & Security Post",
+        "category": "Entrance",
+        "access": "Public / 24x7",
+        "description": "Primary campus vehicular and pedestrian entrance off Dr. Vishnuvardhan Road"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.50560, 12.90440]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fac-sports-ground",
+      "properties": {
+        "id": "fac-sports-ground",
+        "name": "Main Cricket & Athletics Ground",
+        "category": "Sports",
+        "surface": "Turf Grass",
+        "area_sqm": 9500,
+        "description": "Full-size cricket ground, athletic track, and inter-collegiate tournament field"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.50570, 12.89960],
+            [77.50680, 12.89960],
+            [77.50680, 12.90090],
+            [77.50570, 12.90090],
+            [77.50570, 12.89960]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fac-basketball-court",
+      "properties": {
+        "id": "fac-basketball-court",
+        "name": "Outdoor Basketball & Volleyball Courts",
+        "category": "Sports",
+        "surface": "Synthetic Hardcourt",
+        "floodlit": true,
+        "description": "Floodlit basketball and volleyball courts for student tournaments"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.50630, 12.90105],
+            [77.50690, 12.90105],
+            [77.50690, 12.90165],
+            [77.50630, 12.90165],
+            [77.50630, 12.90105]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fac-central-lawn",
+      "properties": {
+        "id": "fac-central-lawn",
+        "name": "Central Quadrangle & Academic Lawn",
+        "category": "Landscape",
+        "type": "Garden",
+        "description": "Central campus manicured quadrangle lawn connecting Admin, Block C, and Library"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.50520, 12.90185],
+            [77.50590, 12.90185],
+            [77.50590, 12.90230],
+            [77.50520, 12.90230],
+            [77.50520, 12.90185]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fac-admin-parking",
+      "properties": {
+        "id": "fac-admin-parking",
+        "name": "Main Visitor & Faculty Parking",
+        "category": "Parking",
+        "capacity_cars": 85,
+        "capacity_two_wheelers": 200,
+        "description": "Designated vehicular parking for administrative faculty, dignitaries, and campus visitors"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.50645, 12.90270],
+            [77.50720, 12.90270],
+            [77.50720, 12.90350],
+            [77.50645, 12.90350],
+            [77.50645, 12.90270]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fac-student-parking",
+      "properties": {
+        "id": "fac-student-parking",
+        "name": "South Two-Wheeler Stand",
+        "category": "Parking",
+        "capacity_two_wheelers": 450,
+        "description": "Covered two-wheeler parking lot for engineering students and workshop staff"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.50520, 12.89920],
+            [77.50580, 12.89920],
+            [77.50580, 12.89970],
+            [77.50520, 12.89970],
+            [77.50520, 12.89920]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "type": "FeatureCollection",
-  "name": "JSSATE_Bangalore_Campus_Buildings",
+  "name": "MapWave_Campus_Buildings",
   "crs": {
     "type": "name",
     "properties": {
@@ -12,15 +12,18 @@
       "type": "Feature",
       "id": "b1000000-0000-0000-0000-000000000001",
       "properties": {
+        "building_id": "b1000000-0000-0000-0000-000000000001",
         "id": "b1000000-0000-0000-0000-000000000001",
         "name": "Block C (CS & AI)",
         "code": "BLOCK_C",
         "category": "Academic",
         "status": "existing",
+        "verified": true,
         "verification": "verified",
         "height_m": 22.0,
+        "base_height_m": 0.0,
         "floor_count": 3,
-        "indoor_mapping_status": "available",
+        "indoor_mapping_status": "verified",
         "description": "Department of Computer Science & Engineering, Artificial Intelligence Labs, Data Science Center, and Faculty Offices"
       },
       "geometry": {
@@ -40,13 +43,16 @@
       "type": "Feature",
       "id": "b2000000-0000-0000-0000-000000000002",
       "properties": {
+        "building_id": "b2000000-0000-0000-0000-000000000002",
         "id": "b2000000-0000-0000-0000-000000000002",
         "name": "Admin Block A",
         "code": "BLOCK_A",
         "category": "Administrative",
         "status": "existing",
+        "verified": true,
         "verification": "verified",
         "height_m": 18.0,
+        "base_height_m": 0.0,
         "floor_count": 3,
         "indoor_mapping_status": "in_progress",
         "description": "Principal's Secretariat, Registrar Office, Admissions, Examination Division, and Main Campus Auditorium"
@@ -68,13 +74,16 @@
       "type": "Feature",
       "id": "b3000000-0000-0000-0000-000000000003",
       "properties": {
+        "building_id": "b3000000-0000-0000-0000-000000000003",
         "id": "b3000000-0000-0000-0000-000000000003",
         "name": "Library Block B",
         "code": "BLOCK_B",
         "category": "Academic",
         "status": "existing",
+        "verified": true,
         "verification": "verified",
         "height_m": 15.0,
+        "base_height_m": 0.0,
         "floor_count": 2,
         "indoor_mapping_status": "in_progress",
         "description": "Central Campus Library, Digital Learning Resource Centre, Reading Halls, and IT Server Infrastructure"
@@ -96,15 +105,18 @@
       "type": "Feature",
       "id": "b4000000-0000-0000-0000-000000000004",
       "properties": {
+        "building_id": "b4000000-0000-0000-0000-000000000004",
         "id": "b4000000-0000-0000-0000-000000000004",
         "name": "Mechanical & Civil Workshops",
         "code": "WORKSHOP",
         "category": "Academic",
         "status": "existing",
+        "verified": false,
         "verification": "estimated",
         "height_m": 12.0,
+        "base_height_m": 0.0,
         "floor_count": 2,
-        "indoor_mapping_status": "planned",
+        "indoor_mapping_status": "not_started",
         "description": "Heavy Engineering Workshops, Fluid Mechanics Lab, Manufacturing Practice Labs, and Materials Testing"
       },
       "geometry": {
@@ -124,15 +136,18 @@
       "type": "Feature",
       "id": "b5000000-0000-0000-0000-000000000005",
       "properties": {
+        "building_id": "b5000000-0000-0000-0000-000000000005",
         "id": "b5000000-0000-0000-0000-000000000005",
         "name": "STEP Incubation Centre",
         "code": "STEP",
         "category": "Innovation",
         "status": "existing",
+        "verified": false,
         "verification": "estimated",
         "height_m": 16.0,
+        "base_height_m": 0.0,
         "floor_count": 3,
-        "indoor_mapping_status": "planned",
+        "indoor_mapping_status": "not_started",
         "description": "Science & Technology Entrepreneurs Park, Startup Incubator Labs, Prototyping Workshop, and Industry Connect"
       },
       "geometry": {
@@ -152,15 +167,18 @@
       "type": "Feature",
       "id": "b6000000-0000-0000-0000-000000000006",
       "properties": {
+        "building_id": "b6000000-0000-0000-0000-000000000006",
         "id": "b6000000-0000-0000-0000-000000000006",
         "name": "Boys Hostel Complex",
         "code": "HOSTEL_BOYS",
         "category": "Residential",
         "status": "existing",
+        "verified": false,
         "verification": "estimated",
         "height_m": 20.0,
+        "base_height_m": 0.0,
         "floor_count": 4,
-        "indoor_mapping_status": "planned",
+        "indoor_mapping_status": "not_started",
         "description": "Student Residential Block, Common Rooms, Study Lounges, and Dining Facilities"
       },
       "geometry": {
@@ -180,15 +198,18 @@
       "type": "Feature",
       "id": "b7000000-0000-0000-0000-000000000007",
       "properties": {
+        "building_id": "b7000000-0000-0000-0000-000000000007",
         "id": "b7000000-0000-0000-0000-000000000007",
         "name": "Girls Hostel Complex",
         "code": "HOSTEL_GIRLS",
         "category": "Residential",
         "status": "existing",
+        "verified": false,
         "verification": "estimated",
         "height_m": 20.0,
+        "base_height_m": 0.0,
         "floor_count": 4,
-        "indoor_mapping_status": "planned",
+        "indoor_mapping_status": "not_started",
         "description": "Student Residential Block, Recreation Hall, Security Desk, and Mess"
       },
       "geometry": {
@@ -208,15 +229,18 @@
       "type": "Feature",
       "id": "b8000000-0000-0000-0000-000000000008",
       "properties": {
+        "building_id": "b8000000-0000-0000-0000-000000000008",
         "id": "b8000000-0000-0000-0000-000000000008",
         "name": "Cafeteria & Food Court",
         "code": "CAFETERIA",
         "category": "Dining",
         "status": "existing",
+        "verified": false,
         "verification": "estimated",
         "height_m": 8.0,
+        "base_height_m": 0.0,
         "floor_count": 1,
-        "indoor_mapping_status": "planned",
+        "indoor_mapping_status": "not_started",
         "description": "Central Campus Cafeteria, Student Canteen, Coffee Kiosk, and Outdoor Dining Seating"
       },
       "geometry": {
