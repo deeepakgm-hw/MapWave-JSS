@@ -25,6 +25,8 @@ export default function MapOutdoor({
   onUpdateLocation,
   onBearingChange,
   mapRefOut,
+  isTopView: isTopViewProp,
+  onViewModeChange,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -39,6 +41,38 @@ export default function MapOutdoor({
     mapConfig.imageryProvider || MAP_PROVIDERS.GOOGLE
   );
   const [showProviderMenu, setShowProviderMenu] = useState(false);
+  const [localTopView, setLocalTopView] = useState(false);
+  const isTopView = isTopViewProp !== undefined ? isTopViewProp : localTopView;
+
+  const handleSetViewMode = (mode) => {
+    const map = mapRef.current;
+    if (!map) return;
+    const targetTop = mode === 'top';
+    setLocalTopView(targetTop);
+    if (onViewModeChange) {
+      onViewModeChange(targetTop);
+    }
+    if (targetTop) {
+      if (map.easeTo) {
+        map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+      } else if (map.flyTo) {
+        map.flyTo({ pitch: 0, bearing: 0 });
+      }
+    } else {
+      if (map.easeTo) {
+        map.easeTo({
+          pitch: mapConfig.initialPitch || 45,
+          bearing: mapConfig.initialBearing || -17.6,
+          duration: 800,
+        });
+      } else if (map.flyTo) {
+        map.flyTo({
+          pitch: mapConfig.initialPitch || 45,
+          bearing: mapConfig.initialBearing || -17.6,
+        });
+      }
+    }
+  };
 
   // Helper to convert accuracy meters to pixels at given latitude and zoom level
   const getAccuracyPixelRadius = (accuracyMeters, lat, zoom) => {
@@ -300,6 +334,17 @@ export default function MapOutdoor({
       }
     });
 
+    // Pitch tracking to synchronize Top View vs 3D View states
+    map.on('pitch', () => {
+      if (map.getPitch) {
+        const top = map.getPitch() < 12;
+        setLocalTopView(top);
+        if (onViewModeChange) {
+          onViewModeChange(top);
+        }
+      }
+    });
+
     map.on('load', async () => {
       let finalBuildings = campusBuildings;
       try {
@@ -408,7 +453,31 @@ export default function MapOutdoor({
         mapRef.current = null;
       }
     };
-  }, [addCampusLayers, onSelectBuilding, onBearingChange, mapRefOut, mapConfig]);
+  }, [addCampusLayers, onSelectBuilding, onBearingChange, onViewModeChange, mapRefOut, mapConfig]);
+
+  // Synchronize camera when isTopView prop is toggled externally
+  useEffect(() => {
+    if (isTopViewProp === undefined || !mapRef.current) return;
+    const map = mapRef.current;
+    const currentPitch = map.getPitch ? map.getPitch() : 45;
+    if (isTopViewProp && currentPitch > 10) {
+      if (map.easeTo) map.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+      else if (map.flyTo) map.flyTo({ pitch: 0, bearing: 0 });
+    } else if (!isTopViewProp && currentPitch < 10) {
+      if (map.easeTo) {
+        map.easeTo({
+          pitch: mapConfig.initialPitch || 45,
+          bearing: mapConfig.initialBearing || -17.6,
+          duration: 800,
+        });
+      } else if (map.flyTo) {
+        map.flyTo({
+          pitch: mapConfig.initialPitch || 45,
+          bearing: mapConfig.initialBearing || -17.6,
+        });
+      }
+    }
+  }, [isTopViewProp, mapConfig.initialPitch, mapConfig.initialBearing]);
 
   // 2. Camera Swoop & Highlight reacting to State Machine
   useEffect(() => {
@@ -634,8 +703,44 @@ export default function MapOutdoor({
     <div className="relative w-full h-full min-h-[500px] overflow-hidden bg-stone-950">
       <div ref={mapContainer} className="w-full h-full absolute inset-0" />
 
-      {/* Floating Satellite HD Imagery Quality Switcher */}
-      <div className="absolute top-4 right-16 z-20">
+      {/* Floating Top-Right Controls: View Mode Switcher + Satellite Provider */}
+      <div className="absolute top-4 right-16 sm:right-28 z-20 flex items-center gap-2">
+        {/* Top View (2D) / 3D Cross View Segmented Pill */}
+        <div className="flex items-center bg-stone-900/85 backdrop-blur-xl border border-white/20 rounded-full p-0.5 shadow-lg">
+          <button
+            type="button"
+            onClick={() => handleSetViewMode('top')}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+              isTopView
+                ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                : 'text-white/70 hover:text-white hover:bg-white/5'
+            }`}
+            title="Top View (Flat 2D Overhead 0°)"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M9 21V9" />
+            </svg>
+            <span>Top View</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSetViewMode('3d')}
+            className={`px-3 py-1.5 rounded-full text-[11px] font-medium transition-all cursor-pointer flex items-center gap-1.5 ${
+              !isTopView
+                ? 'bg-blue-600 text-white shadow-sm font-semibold'
+                : 'text-white/70 hover:text-white hover:bg-white/5'
+            }`}
+            title="3D Cross View (Tilted Perspective 45°)"
+          >
+            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+            </svg>
+            <span>3D View</span>
+          </button>
+        </div>
+
+        {/* Floating Satellite HD Imagery Quality Switcher */}
         <div className="relative">
           <button
             type="button"

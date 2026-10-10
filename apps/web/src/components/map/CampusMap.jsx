@@ -480,10 +480,28 @@ export function CampusMap({
     }
   }, [show3dExtrusions, mapLoaded]);
 
+  const [isTopView, setIsTopView] = useState(false);
+
+  // Toggle between 2D Top View and 3D Cross View
+  const handleToggleViewMode = () => {
+    if (!mapRef.current) return;
+    const nextTop = !isTopView;
+    setIsTopView(nextTop);
+    if (nextTop) {
+      mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+    } else {
+      mapRef.current.easeTo({
+        pitch: mapConfig.initialPitch || 45,
+        bearing: mapConfig.initialBearing || -17.6,
+        duration: 800,
+      });
+    }
+  };
+
   // Camera reset to north
   const handleResetNorth = () => {
     if (mapRef.current) {
-      mapRef.current.easeTo({ bearing: 0, pitch: 45 });
+      mapRef.current.easeTo({ bearing: 0, pitch: isTopView ? 0 : 45 });
     }
   };
 
@@ -770,6 +788,16 @@ export function CampusMap({
             </div>
           )}
         </div>
+
+        {/* 2D Top View / 3D Cross View Toggle */}
+        <button
+          type="button"
+          onClick={handleToggleViewMode}
+          title={isTopView ? 'Switch to 3D Cross View (Tilt 45°)' : 'Switch to Top View (Flat 2D 0°)'}
+          className="w-10 h-10 rounded-full bg-stone-900/85 backdrop-blur-xl border border-white/15 text-white/90 hover:text-white flex items-center justify-center shadow-lg hover:bg-stone-800 transition-colors cursor-pointer text-xs font-bold"
+        >
+          {isTopView ? '3D' : '2D'}
+        </button>
 
         {/* Reset North Compass */}
         <button

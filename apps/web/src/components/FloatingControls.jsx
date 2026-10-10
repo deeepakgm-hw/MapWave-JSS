@@ -10,6 +10,8 @@ export function FloatingControls({
   geoDenied,
   bearing = 0,
   onResetNorth,
+  isTopView = false,
+  onToggleViewMode,
 }) {
   return (
     <div className="absolute right-5 bottom-8 z-20 flex flex-col items-center gap-3 select-none pointer-events-auto">
@@ -42,6 +44,19 @@ export function FloatingControls({
 
       {/* Floating Zoom & GPS Action Cluster */}
       <div className="flex flex-col rounded-2xl bg-black/60 backdrop-blur-md border border-white/20 shadow-xl overflow-hidden divide-y divide-white/10">
+        {/* 2D Top View / 3D Cross View Toggle Button */}
+        {onToggleViewMode && (
+          <button
+            type="button"
+            onClick={onToggleViewMode}
+            title={isTopView ? 'Switch to 3D Cross View (Tilt 45°)' : 'Switch to Top View (Flat 2D 0°)'}
+            aria-label="Toggle Top View and 3D View"
+            className="w-11 h-11 flex items-center justify-center font-bold text-xs tracking-wider text-white/90 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+          >
+            {isTopView ? '3D' : '2D'}
+          </button>
+        )}
+
         {/* Zoom In */}
         <button
           type="button"

@@ -85,6 +85,7 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [showAllBuildings, setShowAllBuildings] = useState(false);
   const [bearing, setBearing] = useState(0);
+  const [isTopView, setIsTopView] = useState(false);
   const mapRef = useRef(null);
 
   const {
@@ -172,6 +173,25 @@ export default function App() {
     setIsLandingOpen(false);
   };
 
+  const handleToggleViewMode = () => {
+    if (!mapRef.current) return;
+    const nextTop = !isTopView;
+    setIsTopView(nextTop);
+    if (nextTop) {
+      if (mapRef.current.easeTo) {
+        mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 800 });
+      } else if (mapRef.current.flyTo) {
+        mapRef.current.flyTo({ pitch: 0, bearing: 0 });
+      }
+    } else {
+      if (mapRef.current.easeTo) {
+        mapRef.current.easeTo({ pitch: 45, bearing: -17.6, duration: 800 });
+      } else if (mapRef.current.flyTo) {
+        mapRef.current.flyTo({ pitch: 45, bearing: -17.6 });
+      }
+    }
+  };
+
   return (
     <div className="relative flex flex-col h-screen w-screen bg-stone-950 text-slate-100 font-sans overflow-hidden">
       {/* 1. Immersive 3D Interactive Landing Page (thekenyamap.com Style) */}
@@ -186,7 +206,7 @@ export default function App() {
             onOpenSearch={() => setIsSearchOpen(true)}
             onOpenLanding={() => setIsLandingOpen(true)}
             bearing={bearing}
-            onResetNorth={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45 })}
+            onResetNorth={() => mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 })}
           />
 
           {/* Main 3D Satellite Map Viewport - Full Bleed */}
@@ -199,9 +219,11 @@ export default function App() {
               onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
               onBearingChange={setBearing}
               mapRefOut={mapRef}
+              isTopView={isTopView}
+              onViewModeChange={setIsTopView}
             />
 
-            {/* Floating Controller Cluster (Compass, Zoom In/Out, Locate Me, Accessible Toggle) */}
+            {/* Floating Controller Cluster (Compass, Zoom In/Out, Locate Me, Accessible Toggle, 2D/3D View) */}
             <FloatingControls
               onLocateMe={handleLocateMe}
               onZoomIn={() => mapRef.current?.zoomIn()}
@@ -210,7 +232,9 @@ export default function App() {
               onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
               geoDenied={false}
               bearing={bearing}
-              onResetNorth={() => mapRef.current?.easeTo({ bearing: 0, pitch: 45 })}
+              onResetNorth={() => mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 })}
+              isTopView={isTopView}
+              onToggleViewMode={handleToggleViewMode}
             />
           </main>
 
