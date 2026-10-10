@@ -252,74 +252,10 @@ export default function MapOutdoor({
       });
     }
 
-    // Render sleek HTML label markers for campus landmarks
-    if (maplibregl.Marker && buildingsData.features) {
-      markersRef.current.forEach((m) => m.remove());
-      markersRef.current = [];
-
-      buildingsData.features.forEach((feat) => {
-        const props = feat.properties || {};
-        const meta = buildingMetadata[props.id] || buildingMetadata[props.code] || {};
-        let center = meta.center;
-
-        if (!center && feat.geometry && feat.geometry.coordinates && feat.geometry.coordinates[0]) {
-          const coords = feat.geometry.coordinates[0];
-          let sumLng = 0;
-          let sumLat = 0;
-          const len = coords.length - 1;
-          if (len > 0) {
-            for (let i = 0; i < len; i++) {
-              sumLng += coords[i][0];
-              sumLat += coords[i][1];
-            }
-            center = [sumLng / len, sumLat / len];
-          }
-        }
-
-        if (center) {
-          const el = document.createElement('div');
-          el.className = 'campus-building-label pointer-events-auto cursor-pointer select-none';
-          el.innerHTML = `
-            <div style="background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 9999px; padding: 2px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 5px;">
-              <span style="width: 5px; height: 5px; border-radius: 9999px; background: ${props.verification === 'verified' ? '#38bdf8' : '#a855f7'};"></span>
-              <span style="color: #f8fafc; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap;">${props.name || 'Building'}</span>
-            </div>
-          `;
-
-          const buildingObj = {
-            id: props.id,
-            name: props.name || meta.name || `Building ${props.id}`,
-            code: props.code || meta.code || 'BLDG',
-            category: props.category || meta.category || 'Academic',
-            status: props.status || 'existing',
-            verification: props.verification || meta.verification || 'estimated',
-            height_m: props.height_m || meta.height_m || 15.0,
-            floor_count: props.floor_count || meta.floor_count || 3,
-            indoor_mapping_status: props.indoor_mapping_status || meta.indoor_mapping_status || 'planned',
-            description: props.description || meta.description || '',
-            departments: meta.departments || [],
-            facilities: meta.facilities || [],
-            operating_hours: meta.operating_hours || '',
-            accessibility: meta.accessibility || '',
-            center,
-          };
-
-          el.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            if (onSelectBuilding) {
-              onSelectBuilding(buildingObj);
-            }
-          });
-
-          const marker = new maplibregl.Marker({ element: el })
-            .setLngLat(center)
-            .addTo(map);
-
-          markersRef.current.push(marker);
-        }
-      });
-    }
-  }, [onSelectBuilding]);
+    // Clear any markers so map labels are disabled
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+  }, []);
 
   // Switch imagery provider at runtime
   const handleSwitchProvider = (newProvider) => {
@@ -735,7 +671,7 @@ export default function MapOutdoor({
               >
                 <div>
                   <div className="font-semibold">Google Ultra-HD</div>
-                  <div className="text-[10px] opacity-70">Razor-sharp sub-meter</div>
+                  <div className="text-[10px] opacity-70">Razor-sharp sub-meter (Clean)</div>
                 </div>
                 {currentProvider === MAP_PROVIDERS.GOOGLE && <span>✓</span>}
               </button>
@@ -751,7 +687,7 @@ export default function MapOutdoor({
               >
                 <div>
                   <div className="font-semibold">Esri World Imagery</div>
-                  <div className="text-[10px] opacity-70">30cm Maxar aerial</div>
+                  <div className="text-[10px] opacity-70">30cm Maxar aerial (Clean)</div>
                 </div>
                 {currentProvider === MAP_PROVIDERS.ESRI && <span>✓</span>}
               </button>
@@ -767,7 +703,7 @@ export default function MapOutdoor({
               >
                 <div>
                   <div className="font-semibold">MapTiler Satellite</div>
-                  <div className="text-[10px] opacity-70">Standard vector hybrid</div>
+                  <div className="text-[10px] opacity-70">Clean satellite imagery</div>
                 </div>
                 {currentProvider === MAP_PROVIDERS.MAPTILER && <span>✓</span>}
               </button>

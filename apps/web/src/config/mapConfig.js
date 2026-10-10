@@ -138,10 +138,10 @@ export function getSatelliteStyle(provider = MAP_PROVIDERS.GOOGLE, apiKey = '') 
         'google-satellite': {
           type: 'raster',
           tiles: [
-            'https://mt0.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-            'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-            'https://mt2.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
-            'https://mt3.google.com/vt/lyrs=y&x={x}&y={y}&z={z}',
+            'https://mt0.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+            'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+            'https://mt2.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+            'https://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
           ],
           tileSize: 256,
           maxzoom: 20,
@@ -161,7 +161,7 @@ export function getSatelliteStyle(provider = MAP_PROVIDERS.GOOGLE, apiKey = '') 
   }
 
   if (provider === MAP_PROVIDERS.MAPTILER && apiKey) {
-    return buildMapStyleUrl(apiKey, MAP_VIEWS.HYBRID);
+    return buildMapStyleUrl(apiKey, MAP_VIEWS.SATELLITE);
   }
 
   // Default: Esri High-Resolution World Imagery (30cm Maxar clarity)
