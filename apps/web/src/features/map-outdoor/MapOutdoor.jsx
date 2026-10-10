@@ -26,6 +26,7 @@ export default function MapOutdoor({
   onBearingChange,
   mapRefOut,
   currentProvider: providerProp,
+  isTopView = false,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -34,6 +35,18 @@ export default function MapOutdoor({
   const [userLocation, setUserLocation] = useState(null);
   const [nearestInfo, setNearestInfo] = useState(null);
   const [geoDenied, setGeoDenied] = useState(false);
+
+  const onSelectBuildingRef = useRef(onSelectBuilding);
+  onSelectBuildingRef.current = onSelectBuilding;
+
+  const onBearingChangeRef = useRef(onBearingChange);
+  onBearingChangeRef.current = onBearingChange;
+
+  const onUpdateLocationRef = useRef(onUpdateLocation);
+  onUpdateLocationRef.current = onUpdateLocation;
+
+  const prevBuildingRef = useRef(selectedBuilding);
+  const isFirstRender = useRef(true);
 
   const mapConfig = getMapConfig();
   const [currentProvider, setCurrentProvider] = useState(
@@ -295,11 +308,8 @@ export default function MapOutdoor({
 
     // Camera rotation & bearing tracking
     map.on('rotate', () => {
-      if (onBearingChange) {
-        onBearingChange(map.getBearing());
-      }
+      onBearingChangeRef.current?.(map.getBearing());
     });
-
 
     map.on('load', async () => {
       let finalBuildings = campusBuildings;
@@ -395,9 +405,7 @@ export default function MapOutdoor({
           center: centerCoord,
         };
 
-        if (onSelectBuilding) {
-          onSelectBuilding(buildingObj);
-        }
+        onSelectBuildingRef.current?.(buildingObj);
       });
     });
 
@@ -409,7 +417,34 @@ export default function MapOutdoor({
         mapRef.current = null;
       }
     };
-  }, [addCampusLayers, onSelectBuilding, onBearingChange, mapRefOut, mapConfig]);
+  }, []); // Initialize map once on mount
+
+  // React to Top View / 3D Cross View toggle with smooth camera transition
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    const map = mapRef.current;
+    if (!map) return;
+    if (isTopView) {
+      if (map.easeTo) map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+      else if (map.flyTo) map.flyTo({ pitch: 0, bearing: 0 });
+    } else {
+      if (map.easeTo) {
+        map.easeTo({
+          pitch: mapConfig.initialPitch || 45,
+          bearing: mapConfig.initialBearing || -17.6,
+          duration: 600,
+        });
+      } else if (map.flyTo) {
+        map.flyTo({
+          pitch: mapConfig.initialPitch || 45,
+          bearing: mapConfig.initialBearing || -17.6,
+        });
+      }
+    }
+  }, [isTopView, mapConfig.initialPitch, mapConfig.initialBearing]);
 
   // Synchronize imagery provider changes from top bar
   useEffect(() => {
@@ -441,12 +476,12 @@ export default function MapOutdoor({
       if (map.getLayer && map.getLayer('selected-building-highlight')) {
         map.setFilter('selected-building-highlight', ['==', ['get', 'id'], selectedBuilding.id]);
       }
-    } else if (currentState === NAV_STATES.OVERVIEW) {
+    } else if (currentState === NAV_STATES.OVERVIEW && prevBuildingRef.current) {
       map.flyTo({
         center: CAMPUS_CENTER,
         zoom: 16.8,
-        pitch: 45,
-        bearing: -17.6,
+        pitch: isTopView ? 0 : 45,
+        bearing: isTopView ? 0 : -17.6,
         speed: 1.2,
       });
 
@@ -454,7 +489,8 @@ export default function MapOutdoor({
         map.setFilter('selected-building-highlight', ['==', ['get', 'id'], '']);
       }
     }
-  }, [currentState, selectedBuilding]);
+    prevBuildingRef.current = selectedBuilding;
+  }, [currentState, selectedBuilding, isTopView]);
 
   // 3. Geolocation Tracking
   useEffect(() => {
@@ -469,9 +505,7 @@ export default function MapOutdoor({
         const loc = { latitude, longitude, accuracy };
         setUserLocation(loc);
         setGeoDenied(false);
-        if (onUpdateLocation) {
-          onUpdateLocation(loc);
-        }
+        onUpdateLocationRef.current?.(loc);
       },
       (error) => {
         console.warn('Geolocation error / permission denied:', error.message);

@@ -233,6 +233,7 @@ export default function App() {
               onBearingChange={setBearing}
               mapRefOut={mapRef}
               currentProvider={currentProvider}
+              isTopView={isTopView}
             />
 
             {/* Floating Controller Cluster (Compass, Zoom In/Out, Locate Me, Accessible Toggle, 2D/3D View) */}
