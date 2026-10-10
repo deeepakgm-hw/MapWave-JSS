@@ -15,6 +15,7 @@ import { QRScannerModal } from './features/qr-checkpoint';
 import { AdminDashboard } from './features/admin';
 import { LandingPage } from './features/landing';
 import { buildingMetadata, CAMPUS_CENTER } from './data';
+import { getMapConfig, MAP_PROVIDERS } from './config/mapConfig';
 
 export const PILOT_BUILDINGS = [
   {
@@ -86,6 +87,9 @@ export default function App() {
   const [showAllBuildings, setShowAllBuildings] = useState(false);
   const [bearing, setBearing] = useState(0);
   const [isTopView, setIsTopView] = useState(false);
+  const [currentProvider, setCurrentProvider] = useState(
+    getMapConfig().imageryProvider || MAP_PROVIDERS.GOOGLE
+  );
   const mapRef = useRef(null);
 
   const {
@@ -173,23 +177,28 @@ export default function App() {
     setIsLandingOpen(false);
   };
 
-  const handleToggleViewMode = () => {
-    if (!mapRef.current) return;
-    const nextTop = !isTopView;
-    setIsTopView(nextTop);
-    if (nextTop) {
-      if (mapRef.current.easeTo) {
-        mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 800 });
-      } else if (mapRef.current.flyTo) {
-        mapRef.current.flyTo({ pitch: 0, bearing: 0 });
+  const handleSetViewMode = (mode) => {
+    const targetTop = mode === 'top';
+    setIsTopView(targetTop);
+    const map = mapRef.current;
+    if (!map) return;
+    if (targetTop) {
+      if (map.easeTo) {
+        map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+      } else if (map.flyTo) {
+        map.flyTo({ pitch: 0, bearing: 0 });
       }
     } else {
-      if (mapRef.current.easeTo) {
-        mapRef.current.easeTo({ pitch: 45, bearing: -17.6, duration: 800 });
-      } else if (mapRef.current.flyTo) {
-        mapRef.current.flyTo({ pitch: 45, bearing: -17.6 });
+      if (map.easeTo) {
+        map.easeTo({ pitch: 45, bearing: -17.6, duration: 600 });
+      } else if (map.flyTo) {
+        map.flyTo({ pitch: 45, bearing: -17.6 });
       }
     }
+  };
+
+  const handleToggleViewMode = () => {
+    handleSetViewMode(isTopView ? '3d' : 'top');
   };
 
   return (
@@ -207,6 +216,10 @@ export default function App() {
             onOpenLanding={() => setIsLandingOpen(true)}
             bearing={bearing}
             onResetNorth={() => mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 })}
+            isTopView={isTopView}
+            onSetViewMode={handleSetViewMode}
+            currentProvider={currentProvider}
+            onSwitchProvider={setCurrentProvider}
           />
 
           {/* Main 3D Satellite Map Viewport - Full Bleed */}
@@ -219,8 +232,7 @@ export default function App() {
               onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
               onBearingChange={setBearing}
               mapRefOut={mapRef}
-              isTopView={isTopView}
-              onViewModeChange={setIsTopView}
+              currentProvider={currentProvider}
             />
 
             {/* Floating Controller Cluster (Compass, Zoom In/Out, Locate Me, Accessible Toggle, 2D/3D View) */}

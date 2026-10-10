@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { MAP_PROVIDERS } from '../config/mapConfig';
 
 export function TopBar({
   state,
@@ -7,11 +8,16 @@ export function TopBar({
   onOpenLanding,
   bearing = 0,
   onResetNorth,
+  isTopView = false,
+  onSetViewMode,
+  currentProvider = MAP_PROVIDERS.GOOGLE,
+  onSwitchProvider,
 }) {
   const { selectedBuilding, selectedFloor } = state;
+  const [showProviderMenu, setShowProviderMenu] = useState(false);
 
   return (
-    <div className="absolute top-4 inset-x-4 z-20 flex items-start justify-between pointer-events-none select-none">
+    <div className="absolute top-4 inset-x-4 z-30 flex items-start justify-between pointer-events-none select-none">
       {/* Top-Left: MapWave Minimal Brand & Search Floating Cluster */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2.5 pointer-events-auto">
         {/* Brand Pill */}
@@ -80,12 +86,134 @@ export function TopBar({
         )}
       </div>
 
-      {/* Top-Right: Return Intro & Compass */}
-      <div className="flex items-center gap-2.5 pointer-events-auto">
+      {/* Top-Right: View Mode, Satellite Provider & Intro Cluster */}
+      <div className="flex items-center gap-2 pointer-events-auto">
+        {onSetViewMode && (
+          <div className="flex items-center bg-black/60 backdrop-blur-md border border-white/20 rounded-2xl p-1 shadow-xl min-h-[44px]">
+            <button
+              type="button"
+              onClick={() => onSetViewMode('top')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                isTopView
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+              title="Switch to Top View (Flat 2D Overhead 0°)"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <path d="M3 9h18M9 21V9" />
+              </svg>
+              <span>Top View</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onSetViewMode('3d')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                !isTopView
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-white/70 hover:text-white hover:bg-white/10'
+              }`}
+              title="Switch to 3D Cross View (Tilted Perspective 45°)"
+            >
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+              </svg>
+              <span>3D View</span>
+            </button>
+          </div>
+        )}
+
+        {onSwitchProvider && (
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowProviderMenu(!showProviderMenu)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-black/60 hover:bg-black/80 text-white/90 hover:text-white backdrop-blur-md border border-white/20 text-xs font-medium tracking-wide shadow-xl transition-all min-h-[44px] cursor-pointer"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>
+                {currentProvider === MAP_PROVIDERS.GOOGLE
+                  ? 'Google Ultra-HD'
+                  : currentProvider === MAP_PROVIDERS.ESRI
+                  ? 'Esri 30cm HD'
+                  : 'MapTiler'}
+              </span>
+              <svg className="w-3 h-3 text-white/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showProviderMenu && (
+              <div className="absolute top-full right-0 mt-2 bg-stone-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 w-52 z-50">
+                <div className="px-2.5 py-1 text-[9px] font-mono text-white/40 uppercase tracking-wider">
+                  Satellite HD Provider
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSwitchProvider(MAP_PROVIDERS.GOOGLE);
+                    setShowProviderMenu(false);
+                  }}
+                  className={`text-left p-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                    currentProvider === MAP_PROVIDERS.GOOGLE
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'text-white/80 hover:bg-white/10'
+                  }`}
+                >
+                  <div>
+                    <div className="font-semibold">Google Ultra-HD</div>
+                    <div className="text-[10px] opacity-70">Razor-sharp sub-meter (Clean)</div>
+                  </div>
+                  {currentProvider === MAP_PROVIDERS.GOOGLE && <span>✓</span>}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSwitchProvider(MAP_PROVIDERS.ESRI);
+                    setShowProviderMenu(false);
+                  }}
+                  className={`text-left p-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                    currentProvider === MAP_PROVIDERS.ESRI
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'text-white/80 hover:bg-white/10'
+                  }`}
+                >
+                  <div>
+                    <div className="font-semibold">Esri World Imagery</div>
+                    <div className="text-[10px] opacity-70">30cm Maxar aerial (Clean)</div>
+                  </div>
+                  {currentProvider === MAP_PROVIDERS.ESRI && <span>✓</span>}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSwitchProvider(MAP_PROVIDERS.MAPTILER);
+                    setShowProviderMenu(false);
+                  }}
+                  className={`text-left p-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                    currentProvider === MAP_PROVIDERS.MAPTILER
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'text-white/80 hover:bg-white/10'
+                  }`}
+                >
+                  <div>
+                    <div className="font-semibold">MapTiler Satellite</div>
+                    <div className="text-[10px] opacity-70">Clean satellite imagery</div>
+                  </div>
+                  {currentProvider === MAP_PROVIDERS.MAPTILER && <span>✓</span>}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         <button
           type="button"
           onClick={onOpenLanding}
-          className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-black/50 hover:bg-black/70 text-white/80 hover:text-white backdrop-blur-md border border-white/20 text-xs font-medium tracking-wider uppercase shadow-xl transition-all min-h-[44px] cursor-pointer"
+          className="hidden md:flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-black/50 hover:bg-black/70 text-white/80 hover:text-white backdrop-blur-md border border-white/20 text-xs font-medium tracking-wider uppercase shadow-xl transition-all min-h-[44px] cursor-pointer"
         >
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
