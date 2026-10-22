@@ -9,6 +9,7 @@ import { RoomSearchModal } from './components/RoomSearchModal';
 import { BottomSheet } from './components/BottomSheet';
 import { FloatingControls } from './components/FloatingControls';
 import { MapOutdoor } from './features/map-outdoor';
+import { Interactive3DMap } from './features/map-3d';
 import { IndoorMapView } from './features/map-indoor';
 import { RoutePreviewCard, ActiveNavigationHUD } from './features/routing';
 import { QRScannerModal } from './features/qr-checkpoint';
@@ -91,6 +92,7 @@ export default function App() {
     getMapConfig().imageryProvider || MAP_PROVIDERS.GOOGLE
   );
   const mapRef = useRef(null);
+  const topo3DRef = useRef(null);
 
   const {
     currentState,
@@ -159,6 +161,10 @@ export default function App() {
   };
 
   const handleLocateMe = () => {
+    if (currentProvider === MAP_PROVIDERS.TOPO) {
+      topo3DRef.current?.recenter?.();
+      return;
+    }
     if (gpsLocation && gpsLocation.accuracy > 15.0 && (currentState === NAV_STATES.FLOOR_VIEW || currentState === NAV_STATES.ROUTING_ACTIVE)) {
       dispatch({ type: 'TRIGGER_REANCHOR' });
     } else {
@@ -215,37 +221,72 @@ export default function App() {
             onOpenSearch={() => setIsSearchOpen(true)}
             onOpenLanding={() => setIsLandingOpen(true)}
             bearing={bearing}
-            onResetNorth={() => mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 })}
+            onResetNorth={() => {
+              if (currentProvider === MAP_PROVIDERS.TOPO) {
+                topo3DRef.current?.resetNorth?.();
+              } else {
+                mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 });
+              }
+            }}
             isTopView={isTopView}
             onSetViewMode={handleSetViewMode}
             currentProvider={currentProvider}
             onSwitchProvider={setCurrentProvider}
           />
 
-          {/* Main 3D Satellite Map Viewport - Full Bleed */}
+          {/* Main 3D Satellite Map / Interactive 3D Model Viewport - Full Bleed */}
           <main className="flex-1 relative w-full h-full bg-stone-950">
-            <MapOutdoor
-              currentState={currentState}
-              selectedBuilding={selectedBuilding}
-              activeRoute={activeRoute}
-              onSelectBuilding={handleSelectBuilding}
-              onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
-              onBearingChange={setBearing}
-              mapRefOut={mapRef}
-              currentProvider={currentProvider}
-              isTopView={isTopView}
-            />
+            {currentProvider === MAP_PROVIDERS.TOPO ? (
+              <Interactive3DMap
+                ref={topo3DRef}
+                currentState={currentState}
+                selectedBuilding={selectedBuilding}
+                onSelectBuilding={handleSelectBuilding}
+                onBearingChange={setBearing}
+                isTopView={isTopView}
+              />
+            ) : (
+              <MapOutdoor
+                currentState={currentState}
+                selectedBuilding={selectedBuilding}
+                activeRoute={activeRoute}
+                onSelectBuilding={handleSelectBuilding}
+                onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
+                onBearingChange={setBearing}
+                mapRefOut={mapRef}
+                currentProvider={currentProvider}
+                isTopView={isTopView}
+              />
+            )}
 
             {/* Floating Controller Cluster (Compass, Zoom In/Out, Locate Me, Accessible Toggle, 2D/3D View) */}
             <FloatingControls
               onLocateMe={handleLocateMe}
-              onZoomIn={() => mapRef.current?.zoomIn()}
-              onZoomOut={() => mapRef.current?.zoomOut()}
+              onZoomIn={() => {
+                if (currentProvider === MAP_PROVIDERS.TOPO) {
+                  topo3DRef.current?.zoomIn?.();
+                } else {
+                  mapRef.current?.zoomIn?.();
+                }
+              }}
+              onZoomOut={() => {
+                if (currentProvider === MAP_PROVIDERS.TOPO) {
+                  topo3DRef.current?.zoomOut?.();
+                } else {
+                  mapRef.current?.zoomOut?.();
+                }
+              }}
               isAccessibleMode={isAccessibleMode}
               onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
               geoDenied={false}
               bearing={bearing}
-              onResetNorth={() => mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 })}
+              onResetNorth={() => {
+                if (currentProvider === MAP_PROVIDERS.TOPO) {
+                  topo3DRef.current?.resetNorth?.();
+                } else {
+                  mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 });
+                }
+              }}
               isTopView={isTopView}
               onToggleViewMode={handleToggleViewMode}
             />

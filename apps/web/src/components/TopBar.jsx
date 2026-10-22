@@ -133,7 +133,9 @@ export function TopBar({
             >
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>
-                {currentProvider === MAP_PROVIDERS.GOOGLE
+                {currentProvider === MAP_PROVIDERS.TOPO
+                  ? '3D Interactive'
+                  : currentProvider === MAP_PROVIDERS.GOOGLE
                   ? 'Google Ultra-HD'
                   : currentProvider === MAP_PROVIDERS.ESRI
                   ? 'Esri 30cm HD'
@@ -145,9 +147,36 @@ export function TopBar({
             </button>
 
             {showProviderMenu && (
-              <div className="absolute top-full right-0 mt-2 bg-stone-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 w-52 z-50">
+              <div className="absolute top-full right-0 mt-2 bg-stone-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 w-56 z-50">
                 <div className="px-2.5 py-1 text-[9px] font-mono text-white/40 uppercase tracking-wider">
-                  Satellite HD Provider
+                  Map & 3D View Engine
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSwitchProvider(MAP_PROVIDERS.TOPO);
+                    setShowProviderMenu(false);
+                  }}
+                  className={`text-left p-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                    currentProvider === MAP_PROVIDERS.TOPO
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'text-white/80 hover:bg-white/10'
+                  }`}
+                >
+                  <div>
+                    <div className="font-semibold flex items-center gap-1.5">
+                      <span>3D Interactive Map</span>
+                      <span className="text-[9px] font-mono uppercase bg-amber-400 text-black px-1 rounded font-bold">3D GLB</span>
+                    </div>
+                    <div className="text-[10px] opacity-70">Interactive TopoExport 3D model</div>
+                  </div>
+                  {currentProvider === MAP_PROVIDERS.TOPO && <span>✓</span>}
+                </button>
+
+                <div className="my-1 border-t border-white/10" />
+                <div className="px-2.5 py-0.5 text-[9px] font-mono text-white/40 uppercase tracking-wider">
+                  Satellite HD Providers
                 </div>
                 <button
                   type="button"

@@ -10,6 +10,7 @@ export const MAP_PROVIDERS = {
   ESRI: 'esri',
   MAPTILER: 'maptiler',
   CUSTOM: 'custom',
+  TOPO: 'topo',
 };
 
 export const MAP_VIEWS = {
