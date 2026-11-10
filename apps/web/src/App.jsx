@@ -91,6 +91,11 @@ export default function App() {
   const [currentProvider, setCurrentProvider] = useState(
     getMapConfig().imageryProvider || MAP_PROVIDERS.GOOGLE
   );
+  const [isGpsActive, setIsGpsActive] = useState(false);
+  const [isGpsLoading, setIsGpsLoading] = useState(false);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const simulationTimerRef = useRef(null);
+  const simulationIndexRef = useRef(0);
   const mapRef = useRef(null);
   const topo3DRef = useRef(null);
 
@@ -160,49 +165,114 @@ export default function App() {
     });
   };
 
-  const handleLocateMe = () => {
-    // If browser hasn't acquired GPS yet, request it immediately
-    if (!gpsLocation && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const loc = {
-            latitude: pos.coords.latitude,
-            longitude: pos.coords.longitude,
-            accuracy: pos.coords.accuracy,
-          };
-          dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc });
-          if (currentProvider === MAP_PROVIDERS.TOPO) {
-            setTimeout(() => topo3DRef.current?.recenter?.(), 100);
-          } else if (mapRef.current) {
-            mapRef.current.easeTo({
-              center: [loc.longitude, loc.latitude],
-              zoom: 18,
-            });
-          }
-        },
-        (err) => {
-          console.warn('Geolocation permission denied or error:', err);
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
+  const CAMPUS_SIMULATION_WAYPOINTS = [
+    { name: 'Main Campus Gate', latitude: 12.90012, longitude: 77.50650, accuracy: 5.0 },
+    { name: 'Between Admin & Block C', latitude: 12.90147, longitude: 77.50544, accuracy: 4.0 },
+    { name: 'Block C (CS & AI)', latitude: 12.90150, longitude: 77.50570, accuracy: 3.5 },
+    { name: 'Central Quadrangle', latitude: 12.90200, longitude: 77.50510, accuracy: 4.5 },
+    { name: 'Library Block B', latitude: 12.90260, longitude: 77.50480, accuracy: 3.0 },
+    { name: 'Admin Block A', latitude: 12.90220, longitude: 77.50680, accuracy: 3.5 },
+  ];
+
+  const handleToggleSimulateCampus = () => {
+    if (isSimulating) {
+      if (simulationTimerRef.current) clearInterval(simulationTimerRef.current);
+      setIsSimulating(false);
       return;
     }
 
+    setIsSimulating(true);
+    setIsGpsActive(true);
+    simulationIndexRef.current = 0;
+    const firstWp = CAMPUS_SIMULATION_WAYPOINTS[0];
+    dispatch({ type: 'UPDATE_GPS_LOCATION', payload: firstWp });
+
     if (currentProvider === MAP_PROVIDERS.TOPO) {
       topo3DRef.current?.recenter?.();
-      return;
+    } else if (mapRef.current) {
+      mapRef.current.flyTo({
+        center: [firstWp.longitude, firstWp.latitude],
+        zoom: 18.2,
+        pitch: isTopView ? 0 : 45,
+        duration: 1200,
+      });
     }
-    if (gpsLocation && gpsLocation.accuracy > 15.0 && (currentState === NAV_STATES.FLOOR_VIEW || currentState === NAV_STATES.ROUTING_ACTIVE)) {
-      dispatch({ type: 'TRIGGER_REANCHOR' });
-    } else {
-      console.log('Recentering camera on GPS position:', gpsLocation);
-      if (gpsLocation && mapRef.current) {
+
+    if (simulationTimerRef.current) clearInterval(simulationTimerRef.current);
+    simulationTimerRef.current = setInterval(() => {
+      simulationIndexRef.current = (simulationIndexRef.current + 1) % CAMPUS_SIMULATION_WAYPOINTS.length;
+      const wp = CAMPUS_SIMULATION_WAYPOINTS[simulationIndexRef.current];
+      dispatch({ type: 'UPDATE_GPS_LOCATION', payload: wp });
+      if (currentProvider === MAP_PROVIDERS.TOPO) {
+        topo3DRef.current?.recenter?.();
+      } else if (mapRef.current) {
         mapRef.current.easeTo({
+          center: [wp.longitude, wp.latitude],
+          zoom: 18.2,
+          duration: 1000,
+        });
+      }
+    }, 3200);
+  };
+
+  const handleLocateMe = () => {
+    setIsGpsActive(true);
+    if (isSimulating) {
+      if (simulationTimerRef.current) clearInterval(simulationTimerRef.current);
+      setIsSimulating(false);
+    }
+
+    // If coordinates are already cached, immediately fly to them
+    if (gpsLocation) {
+      if (currentProvider === MAP_PROVIDERS.TOPO) {
+        topo3DRef.current?.recenter?.();
+      } else if (mapRef.current) {
+        mapRef.current.flyTo({
           center: [gpsLocation.longitude, gpsLocation.latitude],
-          zoom: 18,
+          zoom: 18.2,
+          pitch: isTopView ? 0 : 45,
+          duration: 1200,
         });
       }
     }
+
+    if (!navigator.geolocation) {
+      console.warn('Geolocation not supported by this browser');
+      return;
+    }
+
+    setIsGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsGpsLoading(false);
+        const loc = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc });
+
+        if (currentProvider === MAP_PROVIDERS.TOPO) {
+          setTimeout(() => topo3DRef.current?.recenter?.(), 100);
+        } else if (mapRef.current) {
+          mapRef.current.flyTo({
+            center: [loc.longitude, loc.latitude],
+            zoom: 18.2,
+            pitch: isTopView ? 0 : 45,
+            duration: 1200,
+          });
+        }
+      },
+      (err) => {
+        console.warn('Geolocation error / permission denied:', err);
+        setIsGpsLoading(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  };
+
+  const handleToggleGps = () => {
+    handleLocateMe();
   };
 
   const handleExplore = (quality) => {
@@ -259,6 +329,10 @@ export default function App() {
             onSetViewMode={handleSetViewMode}
             currentProvider={currentProvider}
             onSwitchProvider={setCurrentProvider}
+            isGpsActive={isGpsActive}
+            isGpsLoading={isGpsLoading}
+            onToggleGps={handleToggleGps}
+            onLocateMe={handleLocateMe}
           />
 
           {/* Main 3D Satellite Map / Interactive 3D Model Viewport - Full Bleed */}
@@ -272,6 +346,8 @@ export default function App() {
                 onBearingChange={setBearing}
                 isTopView={isTopView}
                 gpsLocation={gpsLocation}
+                onSimulateCampusWalk={handleToggleSimulateCampus}
+                isSimulating={isSimulating}
               />
             ) : (
               <MapOutdoor
@@ -284,6 +360,11 @@ export default function App() {
                 mapRefOut={mapRef}
                 currentProvider={currentProvider}
                 isTopView={isTopView}
+                gpsLocation={gpsLocation}
+                isGpsActive={isGpsActive}
+                onToggleGps={handleToggleGps}
+                onSimulateCampusWalk={handleToggleSimulateCampus}
+                isSimulating={isSimulating}
               />
             )}
 
@@ -317,6 +398,7 @@ export default function App() {
               }}
               isTopView={isTopView}
               onToggleViewMode={handleToggleViewMode}
+              isGpsActive={isGpsActive}
             />
           </main>
 

@@ -12,8 +12,12 @@ export function TopBar({
   onSetViewMode,
   currentProvider = MAP_PROVIDERS.GOOGLE,
   onSwitchProvider,
+  isGpsActive = false,
+  isGpsLoading = false,
+  onToggleGps,
+  onLocateMe,
 }) {
-  const { selectedBuilding, selectedFloor } = state;
+  const { selectedBuilding, selectedFloor, gpsLocation } = state;
   const [showProviderMenu, setShowProviderMenu] = useState(false);
 
   return (
@@ -86,8 +90,60 @@ export function TopBar({
         )}
       </div>
 
-      {/* Top-Right: View Mode, Satellite Provider & Intro Cluster */}
+      {/* Top-Right: View Mode, GPS, Satellite Provider & Intro Cluster */}
       <div className="flex items-center gap-2 pointer-events-auto">
+        {/* Real-time GPS Toggle / Locate Me Capsule */}
+        <button
+          type="button"
+          onClick={onToggleGps || onLocateMe}
+          title={
+            isGpsActive
+              ? `Live GPS Active (±${Math.round(gpsLocation?.accuracy || 10)}m) - Click to center on your position`
+              : 'Turn on GPS to find where you are right now'
+          }
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl backdrop-blur-md border shadow-xl transition-all duration-200 cursor-pointer min-h-[44px] ${
+            isGpsLoading
+              ? 'bg-blue-900/70 border-blue-400 text-blue-200 animate-pulse'
+              : isGpsActive
+              ? 'bg-emerald-950/80 border-emerald-500/60 text-emerald-200 hover:bg-emerald-900/90'
+              : 'bg-black/60 hover:bg-black/80 border-white/20 text-white/90 hover:text-white'
+          }`}
+        >
+          <div className="relative flex items-center justify-center">
+            {isGpsActive && (
+              <span className="absolute w-3.5 h-3.5 rounded-full bg-emerald-400 opacity-75 animate-ping" />
+            )}
+            <svg
+              className={`w-4 h-4 ${
+                isGpsActive
+                  ? 'text-emerald-400'
+                  : isGpsLoading
+                  ? 'text-blue-400 animate-spin'
+                  : 'text-white/70'
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <circle cx="12" cy="12" r="3" strokeWidth={2} />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3m10-10h-3M5 12H2" />
+            </svg>
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-bold leading-tight flex items-center gap-1.5">
+              <span>{isGpsLoading ? 'Locating...' : isGpsActive ? 'GPS ON' : 'Turn on GPS'}</span>
+              {isGpsActive && gpsLocation && (
+                <span className="text-[9px] font-mono px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  ±{Math.round(gpsLocation.accuracy || 8)}m
+                </span>
+              )}
+            </span>
+            <span className="text-[9px] text-white/50 leading-tight">
+              {isGpsActive ? 'Click to Recenter' : 'Find where you are'}
+            </span>
+          </div>
+        </button>
+
         {onSetViewMode && (
           <div className="flex items-center bg-black/60 backdrop-blur-md border border-white/20 rounded-2xl p-1 shadow-xl min-h-[44px]">
             <button
@@ -147,8 +203,37 @@ export function TopBar({
             </button>
 
             {showProviderMenu && (
-              <div className="absolute top-full right-0 mt-2 bg-stone-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-1.5 shadow-2xl flex flex-col gap-1 w-56 z-50">
-                <div className="px-2.5 py-1 text-[9px] font-mono text-white/40 uppercase tracking-wider">
+              <div className="absolute top-full right-0 mt-2 bg-stone-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-2 shadow-2xl flex flex-col gap-1 w-64 z-50">
+                {/* GPS Quick Switcher inside Provider Menu */}
+                <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 mb-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-2 h-2 rounded-full ${isGpsActive ? 'bg-emerald-400 animate-pulse' : 'bg-white/40'}`} />
+                      <span className="text-xs font-bold text-white">Live GPS Tracker</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onToggleGps?.();
+                        setShowProviderMenu(false);
+                      }}
+                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                        isGpsActive
+                          ? 'bg-emerald-500 text-black shadow-sm'
+                          : 'bg-blue-600 text-white hover:bg-blue-500'
+                      }`}
+                    >
+                      {isGpsActive ? 'ON' : 'Turn ON'}
+                    </button>
+                  </div>
+                  <div className="text-[10px] text-white/60">
+                    {isGpsActive && gpsLocation
+                      ? `${gpsLocation.latitude.toFixed(4)}°N, ${gpsLocation.longitude.toFixed(4)}°E (±${Math.round(gpsLocation.accuracy)}m)`
+                      : 'Locates and tracks where you are now'}
+                  </div>
+                </div>
+
+                <div className="px-2 py-0.5 text-[9px] font-mono text-white/40 uppercase tracking-wider">
                   Map & 3D View Engine
                 </div>
 

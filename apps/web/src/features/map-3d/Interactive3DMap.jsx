@@ -64,6 +64,8 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
     onBearingChange,
     isTopView = false,
     gpsLocation = null,
+    onSimulateCampusWalk,
+    isSimulating = false,
   },
   ref
 ) {
@@ -200,27 +202,42 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
       return;
     }
 
-    // JSSATE Bangalore calibration constants (Model bounds 0-650m X, 0-968m Y centered at 0,0)
-    const CAMPUS_ORIGIN_LAT = 12.8990;
-    const CAMPUS_ORIGIN_LNG = 77.5028;
-    const METERS_PER_DEG_LAT = 110574;
-    const METERS_PER_DEG_LNG = 111320 * Math.cos((12.9015 * Math.PI) / 180);
+    // Precise geographic extents of JSSATE Bangalore campus footprint
+    const CAMPUS_SW_LAT = 12.898494;
+    const CAMPUS_SW_LNG = 77.503526;
+    const CAMPUS_NE_LAT = 12.904455;
+    const CAMPUS_NE_LNG = 77.507359;
 
-    const relX = (gpsLocation.longitude - CAMPUS_ORIGIN_LNG) * METERS_PER_DEG_LNG;
-    const relY = (gpsLocation.latitude - CAMPUS_ORIGIN_LAT) * METERS_PER_DEG_LAT;
+    const normX = (gpsLocation.longitude - CAMPUS_SW_LNG) / (CAMPUS_NE_LNG - CAMPUS_SW_LNG);
+    const normY = (gpsLocation.latitude - CAMPUS_SW_LAT) / (CAMPUS_NE_LAT - CAMPUS_SW_LAT);
 
-    // Center offset (model centered at 324.8, 483.6)
-    const threeX = relX - 325;
-    const threeZ = 484 - relY;
+    // Map into Three.js centered space (-325 to +325 in X, -484 to +484 in Z)
+    const threeX = (normX * 650) - 325;
+    const threeZ = 484 - (normY * 968);
 
-    // Check if user is reasonably within campus area (+/- 600m)
-    if (Math.abs(threeX) < 650 && Math.abs(threeZ) < 650) {
+    // Check if user is reasonably within campus area (+/- 450m)
+    if (Math.abs(threeX) < 450 && Math.abs(threeZ) < 550) {
       gpsMarkerGroupRef.current.position.set(threeX, 8, threeZ);
       gpsMarkerGroupRef.current.visible = true;
     } else {
       gpsMarkerGroupRef.current.visible = false;
     }
   }, [gpsLocation]);
+
+  const distanceToCampus = gpsLocation
+    ? (() => {
+        const R = 6371;
+        const dLat = ((gpsLocation.latitude - 12.90147) * Math.PI) / 180;
+        const dLon = ((gpsLocation.longitude - 77.50544) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((12.90147 * Math.PI) / 180) *
+            Math.cos((gpsLocation.latitude * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      })()
+    : 0;
 
   // Layer toggle handler
   const toggleLayer = useCallback((layerKey) => {
@@ -641,11 +658,31 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
 
       {/* Real-time GPS Location Status Badge */}
       {gpsLocation && (
-        <div className="absolute top-20 left-4 z-20 px-3.5 py-1.5 rounded-xl bg-black/60 text-white/90 backdrop-blur-md border border-white/15 text-xs font-medium flex items-center gap-2 shadow-lg">
-          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
-          <span>
-            GPS Active • {gpsLocation.latitude.toFixed(5)}°N, {gpsLocation.longitude.toFixed(5)}°E (±{Math.round(gpsLocation.accuracy)}m)
-          </span>
+        <div className="absolute top-20 left-4 z-20 px-3.5 py-2 rounded-2xl bg-black/80 text-white/90 backdrop-blur-md border border-white/20 text-xs font-medium flex flex-col gap-1.5 shadow-xl max-w-sm">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
+            <span className="font-bold text-white">
+              GPS Active • {gpsLocation.latitude.toFixed(4)}°N, {gpsLocation.longitude.toFixed(4)}°E (±{Math.round(gpsLocation.accuracy || 10)}m)
+            </span>
+          </div>
+          {distanceToCampus > 0.6 && (
+            <div className="flex items-center gap-2 text-[11px] text-white/80">
+              <span>You are {distanceToCampus.toFixed(1)} km from campus.</span>
+              {onSimulateCampusWalk && (
+                <button
+                  type="button"
+                  onClick={onSimulateCampusWalk}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                    isSimulating
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'
+                  }`}
+                >
+                  {isSimulating ? 'Stop Demo' : 'Walk on Campus'}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
 

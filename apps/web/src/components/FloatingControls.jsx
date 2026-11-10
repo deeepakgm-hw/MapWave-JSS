@@ -12,6 +12,7 @@ export function FloatingControls({
   onResetNorth,
   isTopView = false,
   onToggleViewMode,
+  isGpsActive = false,
 }) {
   return (
     <div className="absolute right-5 bottom-8 z-20 flex flex-col items-center gap-3 select-none pointer-events-auto">
@@ -88,14 +89,19 @@ export function FloatingControls({
           type="button"
           onClick={onLocateMe}
           disabled={geoDenied}
-          title={geoDenied ? 'GPS Unavailable' : 'Locate my position'}
+          title={geoDenied ? 'GPS Unavailable' : isGpsActive ? 'Locate my real-time position' : 'Turn on GPS & locate me'}
           aria-label="Locate my position"
-          className={`w-11 h-11 flex items-center justify-center transition-colors cursor-pointer ${
+          className={`w-11 h-11 flex items-center justify-center transition-all cursor-pointer relative ${
             geoDenied
               ? 'text-white/20 cursor-not-allowed'
+              : isGpsActive
+              ? 'bg-blue-600/30 text-blue-400 hover:bg-blue-600/50'
               : 'text-white/80 hover:text-white hover:bg-white/10'
           }`}
         >
+          {isGpsActive && (
+            <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+          )}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="3" strokeWidth={2} />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3m10-10h-3M5 12H2" />

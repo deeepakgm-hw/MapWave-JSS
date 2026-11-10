@@ -27,14 +27,27 @@ export default function MapOutdoor({
   mapRefOut,
   currentProvider: providerProp,
   isTopView = false,
+  gpsLocation = null,
+  isGpsActive = false,
+  onToggleGps,
+  onSimulateCampusWalk,
+  isSimulating = false,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const watchIdRef = useRef(null);
-  const [userLocation, setUserLocation] = useState(null);
+  const [userLocation, setUserLocation] = useState(gpsLocation || null);
   const [nearestInfo, setNearestInfo] = useState(null);
   const [geoDenied, setGeoDenied] = useState(false);
+  const hasAutoCentered = useRef(false);
+
+  // Sync external gpsLocation prop
+  useEffect(() => {
+    if (gpsLocation) {
+      setUserLocation(gpsLocation);
+    }
+  }, [gpsLocation]);
 
   const onSelectBuildingRef = useRef(onSelectBuilding);
   onSelectBuildingRef.current = onSelectBuilding;
@@ -52,6 +65,48 @@ export default function MapOutdoor({
   const [currentProvider, setCurrentProvider] = useState(
     providerProp || mapConfig.imageryProvider || MAP_PROVIDERS.GOOGLE
   );
+
+  // Distance calculation helper (Haversine formula in km)
+  const calculateDistanceKm = (lat1, lon1, lat2, lon2) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 0;
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLon = ((lon2 - lon1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  const distanceToCampus = userLocation
+    ? calculateDistanceKm(userLocation.latitude, userLocation.longitude, CAMPUS_CENTER[1], CAMPUS_CENTER[0])
+    : 0;
+
+  const handleCenterOnUser = () => {
+    if (!mapRef.current || !userLocation) return;
+    mapRef.current.flyTo({
+      center: [userLocation.longitude, userLocation.latitude],
+      zoom: 18.2,
+      pitch: isTopView ? 0 : 45,
+      bearing: mapRef.current.getBearing() || 0,
+      duration: 1200,
+    });
+  };
+
+  const handleFlyToCampus = () => {
+    if (!mapRef.current) return;
+    mapRef.current.flyTo({
+      center: CAMPUS_CENTER,
+      zoom: 16.8,
+      pitch: isTopView ? 0 : 45,
+      bearing: isTopView ? 0 : -17.6,
+      duration: 1200,
+    });
+  };
 
   // Helper to convert accuracy meters to pixels at given latitude and zoom level
   const getAccuracyPixelRadius = (accuracyMeters, lat, zoom) => {
@@ -525,6 +580,20 @@ export default function MapOutdoor({
     };
   }, [onUpdateLocation]);
 
+  // Auto-center camera on user location when GPS is activated or updated
+  useEffect(() => {
+    if (userLocation && mapRef.current && isGpsActive && !hasAutoCentered.current) {
+      hasAutoCentered.current = true;
+      mapRef.current.flyTo({
+        center: [userLocation.longitude, userLocation.latitude],
+        zoom: 18.2,
+        pitch: isTopView ? 0 : 45,
+        bearing: mapRef.current.getBearing() || 0,
+        duration: 1200,
+      });
+    }
+  }, [userLocation, isGpsActive, isTopView]);
+
   // 4. Update GPS Dot & Accuracy Circle on Map
   useEffect(() => {
     const map = mapRef.current;
@@ -559,10 +628,21 @@ export default function MapOutdoor({
         paint: {
           'circle-radius': getAccuracyPixelRadius(accuracy, latitude, map.getZoom()),
           'circle-color': '#3b82f6',
-          'circle-opacity': 0.2,
+          'circle-opacity': 0.18,
           'circle-stroke-width': 1.5,
           'circle-stroke-color': '#3b82f6',
           'circle-stroke-opacity': 0.5,
+        },
+      });
+
+      map.addLayer({
+        id: 'gps-pulse-outer',
+        type: 'circle',
+        source: 'gps-location-source',
+        paint: {
+          'circle-radius': 14,
+          'circle-color': '#60a5fa',
+          'circle-opacity': 0.3,
         },
       });
 
@@ -571,8 +651,8 @@ export default function MapOutdoor({
         type: 'circle',
         source: 'gps-location-source',
         paint: {
-          'circle-radius': 7,
-          'circle-color': '#3b82f6',
+          'circle-radius': 7.5,
+          'circle-color': '#2563eb',
           'circle-stroke-width': 2.5,
           'circle-stroke-color': '#ffffff',
         },
@@ -690,8 +770,92 @@ export default function MapOutdoor({
         </div>
       )}
 
-      {/* Nearest Location Pill */}
-      {!geoDenied && nearestInfo && (
+      {/* GPS Off-Campus Locator HUD (if user is outside campus boundary) */}
+      {!geoDenied && userLocation && distanceToCampus > 0.6 && (
+        <div className="absolute top-20 left-4 z-10 max-w-sm px-4 py-2.5 rounded-2xl bg-black/80 text-white backdrop-blur-md border border-white/20 shadow-2xl flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse" />
+              <span className="text-xs font-bold text-white">
+                Live GPS Located
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-white/60">
+              ±{Math.round(userLocation.accuracy || 10)}m accuracy
+            </span>
+          </div>
+          <div className="text-[11px] text-white/80">
+            You are currently <strong className="text-amber-300 font-semibold">{distanceToCampus.toFixed(1)} km</strong> from JSSATE Campus.
+          </div>
+          <div className="flex items-center gap-2 mt-0.5">
+            <button
+              type="button"
+              onClick={handleCenterOnUser}
+              className="px-2.5 py-1 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 shadow-sm"
+            >
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3m10-10h-3M5 12H2" />
+              </svg>
+              <span>My Location</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleFlyToCampus}
+              className="px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1"
+            >
+              <span>🏫 Campus</span>
+            </button>
+            {onSimulateCampusWalk && (
+              <button
+                type="button"
+                onClick={onSimulateCampusWalk}
+                className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                  isSimulating
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-500/40 text-emerald-300'
+                }`}
+              >
+                <span>{isSimulating ? '⏹ Stop Demo' : '🚶 Campus Demo Walk'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* GPS On-Campus Locator HUD (if user is physically inside/near campus boundary) */}
+      {!geoDenied && userLocation && distanceToCampus <= 0.6 && (
+        <div className="absolute top-20 left-4 z-10 px-3.5 py-2 rounded-2xl bg-black/80 text-white backdrop-blur-md border border-emerald-500/40 shadow-2xl flex items-center gap-3">
+          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+          <div className="text-xs">
+            <div className="font-bold text-white flex items-center gap-1.5">
+              <span>Live Campus GPS</span>
+              <span className="text-[10px] font-mono text-emerald-400">±{Math.round(userLocation.accuracy || 5)}m</span>
+            </div>
+            {nearestInfo ? (
+              <div className="text-[11px] text-white/80">
+                {nearestInfo.confidence === 'inside' ? 'Inside' : 'Near'} <strong className="font-semibold text-white">{nearestInfo.building_name}</strong>
+              </div>
+            ) : (
+              <div className="text-[10px] text-white/50">Tracking campus movement...</div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleCenterOnUser}
+            className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs cursor-pointer ml-1"
+            title="Recenter camera on my position"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" strokeWidth={2} />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3m10-10h-3M5 12H2" />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* Legacy Fallback Nearest Location Pill (for unit tests / mock positions) */}
+      {!geoDenied && !userLocation && nearestInfo && (
         <div className="absolute top-20 left-4 z-10 px-3.5 py-1.5 rounded-xl bg-black/60 text-white/90 backdrop-blur-md border border-white/15 text-xs font-medium flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${nearestInfo.confidence === 'inside' ? 'bg-emerald-400' : 'bg-blue-400'}`} />
           <span>
