@@ -19,11 +19,11 @@ export function LandingPage({ onExplore }) {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden select-none bg-stone-950 font-sans">
-      {/* 1. JSSATE Bangalore Campus Aerial Photo Background (Second Image) */}
+      {/* 1. JSSATE Bangalore Campus Aerial Photo Background */}
       <div
         className="absolute inset-0 bg-cover bg-center transition-transform duration-700 ease-out scale-105"
         style={{
-          backgroundImage: `url('/jssate_campus_bg.png')`,
+          backgroundImage: `url('/jssate_campus_aerial.jpg')`,
           transform: `translate(${mousePos.x * 0.25}px, ${mousePos.y * 0.25}px) scale(1.06)`,
         }}
       />
