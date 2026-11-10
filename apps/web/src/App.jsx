@@ -161,6 +161,33 @@ export default function App() {
   };
 
   const handleLocateMe = () => {
+    // If browser hasn't acquired GPS yet, request it immediately
+    if (!gpsLocation && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = {
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+          };
+          dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc });
+          if (currentProvider === MAP_PROVIDERS.TOPO) {
+            setTimeout(() => topo3DRef.current?.recenter?.(), 100);
+          } else if (mapRef.current) {
+            mapRef.current.easeTo({
+              center: [loc.longitude, loc.latitude],
+              zoom: 18,
+            });
+          }
+        },
+        (err) => {
+          console.warn('Geolocation permission denied or error:', err);
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+      return;
+    }
+
     if (currentProvider === MAP_PROVIDERS.TOPO) {
       topo3DRef.current?.recenter?.();
       return;
@@ -244,6 +271,7 @@ export default function App() {
                 onSelectBuilding={handleSelectBuilding}
                 onBearingChange={setBearing}
                 isTopView={isTopView}
+                gpsLocation={gpsLocation}
               />
             ) : (
               <MapOutdoor

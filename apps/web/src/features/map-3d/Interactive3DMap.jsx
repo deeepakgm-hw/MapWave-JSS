@@ -63,6 +63,7 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
     onSelectBuilding,
     onBearingChange,
     isTopView = false,
+    gpsLocation = null,
   },
   ref
 ) {
@@ -77,6 +78,7 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
   const animFrameRef = useRef(null);
   const cameraTargetPosRef = useRef(null);
   const cameraTargetLookAtRef = useRef(null);
+  const gpsMarkerGroupRef = useRef(null);
 
   // Loading & interactive UI states
   const [loadProgress, setLoadProgress] = useState(0);
@@ -134,10 +136,18 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
     },
     recenter: () => {
       if (!controlsRef.current) return;
-      cameraTargetPosRef.current = isTopView
-        ? new THREE.Vector3(0, 950, 0)
-        : new THREE.Vector3(0, 520, 680);
-      cameraTargetLookAtRef.current = new THREE.Vector3(0, 0, 0);
+      if (gpsLocation && gpsMarkerGroupRef.current && gpsMarkerGroupRef.current.visible) {
+        const markerPos = gpsMarkerGroupRef.current.position;
+        cameraTargetLookAtRef.current = markerPos.clone();
+        cameraTargetPosRef.current = isTopView
+          ? new THREE.Vector3(markerPos.x, 900, markerPos.z + 0.001)
+          : new THREE.Vector3(markerPos.x, markerPos.y + 120, markerPos.z + 160);
+      } else {
+        cameraTargetPosRef.current = isTopView
+          ? new THREE.Vector3(0, 950, 0)
+          : new THREE.Vector3(0, 520, 680);
+        cameraTargetLookAtRef.current = new THREE.Vector3(0, 0, 0);
+      }
     },
   }));
 
@@ -181,6 +191,36 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
       );
     }
   }, [selectedBuilding]);
+
+  // Synchronize GPS location into 3D Marker coordinates
+  useEffect(() => {
+    if (!gpsMarkerGroupRef.current) return;
+    if (!gpsLocation || !gpsLocation.latitude || !gpsLocation.longitude) {
+      gpsMarkerGroupRef.current.visible = false;
+      return;
+    }
+
+    // JSSATE Bangalore calibration constants (Model bounds 0-650m X, 0-968m Y centered at 0,0)
+    const CAMPUS_ORIGIN_LAT = 12.8990;
+    const CAMPUS_ORIGIN_LNG = 77.5028;
+    const METERS_PER_DEG_LAT = 110574;
+    const METERS_PER_DEG_LNG = 111320 * Math.cos((12.9015 * Math.PI) / 180);
+
+    const relX = (gpsLocation.longitude - CAMPUS_ORIGIN_LNG) * METERS_PER_DEG_LNG;
+    const relY = (gpsLocation.latitude - CAMPUS_ORIGIN_LAT) * METERS_PER_DEG_LAT;
+
+    // Center offset (model centered at 324.8, 483.6)
+    const threeX = relX - 325;
+    const threeZ = 484 - relY;
+
+    // Check if user is reasonably within campus area (+/- 600m)
+    if (Math.abs(threeX) < 650 && Math.abs(threeZ) < 650) {
+      gpsMarkerGroupRef.current.position.set(threeX, 8, threeZ);
+      gpsMarkerGroupRef.current.visible = true;
+    } else {
+      gpsMarkerGroupRef.current.visible = false;
+    }
+  }, [gpsLocation]);
 
   // Layer toggle handler
   const toggleLayer = useCallback((layerKey) => {
@@ -292,6 +332,53 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
     const grid = new THREE.GridHelper(1400, 28, 0x334155, 0x1e293b);
     grid.position.y = -1.9;
     scene.add(grid);
+
+    // 5.1 Real-time GPS Location 3D Marker
+    const gpsGroup = new THREE.Group();
+    gpsGroup.visible = false;
+
+    // Glowing core blue sphere
+    const sphereGeo = new THREE.SphereGeometry(3.5, 32, 32);
+    const sphereMat = new THREE.MeshBasicMaterial({ color: 0x3b82f6 });
+    const coreSphere = new THREE.Mesh(sphereGeo, sphereMat);
+    coreSphere.position.y = 4;
+    gpsGroup.add(coreSphere);
+
+    // Outer white halo ring
+    const haloGeo = new THREE.RingGeometry(3.8, 4.8, 32);
+    haloGeo.rotateX(-Math.PI / 2);
+    const haloMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+    const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+    haloMesh.position.y = 4;
+    gpsGroup.add(haloMesh);
+
+    // Expanding pulsing accuracy ring
+    const pulseGeo = new THREE.RingGeometry(8, 9, 32);
+    pulseGeo.rotateX(-Math.PI / 2);
+    const pulseMat = new THREE.MeshBasicMaterial({
+      color: 0x60a5fa,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const pulseMesh = new THREE.Mesh(pulseGeo, pulseMat);
+    pulseMesh.position.y = 2.5;
+    gpsGroup.add(pulseMesh);
+    gpsGroup.userData.pulseMesh = pulseMesh;
+
+    // Vertical beacon light beam
+    const beamGeo = new THREE.CylinderGeometry(0.5, 0.5, 50, 16);
+    beamGeo.translate(0, 25, 0);
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: 0x60a5fa,
+      transparent: true,
+      opacity: 0.35,
+    });
+    const beamMesh = new THREE.Mesh(beamGeo, beamMat);
+    gpsGroup.add(beamMesh);
+
+    scene.add(gpsGroup);
+    gpsMarkerGroupRef.current = gpsGroup;
 
     // 6. Raycasting Setup
     const raycaster = new THREE.Raycaster();
@@ -471,8 +558,20 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
 
     // 9. Animation Loop
     let lastBearing = -999;
+    let clock = new THREE.Clock();
     const animate = () => {
       animFrameRef.current = requestAnimationFrame(animate);
+
+      // Pulse GPS accuracy ring if visible
+      if (gpsMarkerGroupRef.current && gpsMarkerGroupRef.current.visible) {
+        const elapsedTime = clock.getElapsedTime();
+        const pulseMesh = gpsMarkerGroupRef.current.userData.pulseMesh;
+        if (pulseMesh) {
+          const s = 1 + (Math.sin(elapsedTime * 3) + 1) * 0.4;
+          pulseMesh.scale.set(s, s, s);
+          pulseMesh.material.opacity = Math.max(0.1, 0.7 - (s - 1) * 0.5);
+        }
+      }
 
       // Smooth camera interpolation if target exists
       if (cameraTargetPosRef.current) {
@@ -539,6 +638,16 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
     <div className="w-full h-full relative overflow-hidden bg-stone-950 select-none">
       {/* 3D Canvas Mount Point */}
       <div ref={containerRef} className="w-full h-full absolute inset-0 z-0" />
+
+      {/* Real-time GPS Location Status Badge */}
+      {gpsLocation && (
+        <div className="absolute top-20 left-4 z-20 px-3.5 py-1.5 rounded-xl bg-black/60 text-white/90 backdrop-blur-md border border-white/15 text-xs font-medium flex items-center gap-2 shadow-lg">
+          <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
+          <span>
+            GPS Active • {gpsLocation.latitude.toFixed(5)}°N, {gpsLocation.longitude.toFixed(5)}°E (±{Math.round(gpsLocation.accuracy)}m)
+          </span>
+        </div>
+      )}
 
       {/* Loading Overlay */}
       {isLoading && (
