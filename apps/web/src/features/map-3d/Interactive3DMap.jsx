@@ -779,10 +779,11 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
       {/* Hover Tooltip / Floating HUD Card */}
       {hoveredInfo && !isLoading && (
         <div
-          className="fixed pointer-events-none z-30 max-w-sm p-4 rounded-2xl bg-stone-900/90 backdrop-blur-xl border border-sky-400/40 text-white shadow-2xl transition-all duration-150 transform -translate-x-1/2 -translate-y-full mb-3"
+          className="fixed pointer-events-none z-50 max-w-sm p-4 rounded-2xl bg-stone-900/95 backdrop-blur-2xl border border-sky-400/50 text-white shadow-[0_12px_40px_rgba(0,0,0,0.85)] transition-all duration-75 select-none"
           style={{
-            left: `${tooltipPos.x}px`,
-            top: `${tooltipPos.y - 14}px`,
+            left: `${Math.min(Math.max(16, tooltipPos.x), window.innerWidth - 380)}px`,
+            top: `${tooltipPos.y > 340 ? tooltipPos.y - 16 : tooltipPos.y + 24}px`,
+            transform: tooltipPos.y > 340 ? 'translate(-50%, -100%)' : 'translate(-50%, 0%)',
           }}
         >
           {/* Header Badge Row */}

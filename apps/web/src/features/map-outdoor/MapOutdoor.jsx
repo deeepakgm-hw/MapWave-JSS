@@ -417,40 +417,63 @@ export default function MapOutdoor({
       // Building hover state tracking with real-time HUD details and area animation
       let hoveredBuildingId = null;
 
-      map.on('mousemove', 'existing-buildings-extrusion', (e) => {
-        if (!e.features || e.features.length === 0) return;
-        const feature = e.features[0];
-        const bProps = feature.properties;
-        const bId = bProps.id;
-        map.getCanvas().style.cursor = 'pointer';
+      const handleMapMouseMove = (e) => {
+        const layers = ['existing-buildings-extrusion', 'hovered-building-extrusion', 'selected-building-highlight'];
+        const existingLayers = layers.filter((l) => map.getLayer && map.getLayer(l));
+        if (!existingLayers.length) return;
 
-        if (bId !== hoveredBuildingId) {
-          hoveredBuildingId = bId;
-          if (map.getLayer && map.getLayer('hovered-building-extrusion')) {
-            map.setFilter('hovered-building-extrusion', ['==', ['get', 'id'], bId]);
+        const features = map.queryRenderedFeatures(e.point, { layers: existingLayers });
+
+        if (features && features.length > 0) {
+          const feature = features[0];
+          const bProps = feature.properties || {};
+          const bId = bProps.id || bProps.building_id;
+          map.getCanvas().style.cursor = 'pointer';
+
+          if (bId !== hoveredBuildingId) {
+            hoveredBuildingId = bId;
+            if (map.getLayer && map.getLayer('hovered-building-extrusion')) {
+              map.setFilter('hovered-building-extrusion', ['==', ['get', 'id'], bId]);
+            }
+            if (map.getLayer && map.getLayer('hovered-building-glow')) {
+              map.setFilter('hovered-building-glow', ['==', ['get', 'id'], bId]);
+            }
           }
-          if (map.getLayer && map.getLayer('hovered-building-glow')) {
-            map.setFilter('hovered-building-glow', ['==', ['get', 'id'], bId]);
+
+          const meta = buildingMetadata[bId] || buildingMetadata[bProps.code] || {};
+          setHoveredBuilding({
+            id: bId,
+            name: bProps.name || meta.name || `Building ${bId}`,
+            code: bProps.code || meta.code || 'ZONE',
+            category: bProps.category || meta.category || 'Academic Complex',
+            description: bProps.description || meta.description || '',
+            departments: meta.departments || bProps.departments || [],
+            facilities: meta.facilities || bProps.facilities || [],
+            height_m: bProps.height_m || meta.height_m || 18.0,
+            floor_count: bProps.floor_count || meta.floor_count || 3,
+            verification: meta.verification || bProps.verification || 'verified',
+            indoor_mapping_status: meta.indoor_mapping_status || bProps.indoor_mapping_status || 'available',
+            cursorX: e.originalEvent.clientX,
+            cursorY: e.originalEvent.clientY,
+          });
+        } else {
+          if (hoveredBuildingId !== null) {
+            hoveredBuildingId = null;
+            map.getCanvas().style.cursor = '';
+            if (map.getLayer && map.getLayer('hovered-building-extrusion')) {
+              map.setFilter('hovered-building-extrusion', ['==', ['get', 'id'], '']);
+            }
+            if (map.getLayer && map.getLayer('hovered-building-glow')) {
+              map.setFilter('hovered-building-glow', ['==', ['get', 'id'], '']);
+            }
+            setHoveredBuilding(null);
           }
         }
+      };
 
-        const meta = buildingMetadata[bProps.id] || buildingMetadata[bProps.code] || {};
-        setHoveredBuilding({
-          id: bProps.id,
-          name: bProps.name || meta.name || `Building ${bProps.id}`,
-          code: bProps.code || meta.code || 'ZONE',
-          category: bProps.category || meta.category || 'Academic Complex',
-          description: bProps.description || meta.description || '',
-          departments: meta.departments || bProps.departments || [],
-          facilities: meta.facilities || bProps.facilities || [],
-          height_m: bProps.height_m || meta.height_m || 18.0,
-          floor_count: bProps.floor_count || meta.floor_count || 3,
-          verification: meta.verification || bProps.verification || 'verified',
-          indoor_mapping_status: meta.indoor_mapping_status || bProps.indoor_mapping_status || 'available',
-        });
-      });
+      map.on('mousemove', handleMapMouseMove);
 
-      map.on('mouseleave', 'existing-buildings-extrusion', () => {
+      map.on('mouseleave', () => {
         hoveredBuildingId = null;
         map.getCanvas().style.cursor = '';
         if (map.getLayer && map.getLayer('hovered-building-extrusion')) {
@@ -463,11 +486,18 @@ export default function MapOutdoor({
       });
 
       // Building click interaction (Unified with bottom-sheet selection)
-      map.on('click', 'existing-buildings-extrusion', (e) => {
-        if (!e.features || e.features.length === 0) return;
-        const feature = e.features[0];
-        const bProps = feature.properties;
-        const meta = buildingMetadata[bProps.id] || buildingMetadata[bProps.code] || {};
+      map.on('click', (e) => {
+        const layers = ['existing-buildings-extrusion', 'hovered-building-extrusion', 'selected-building-highlight'];
+        const existingLayers = layers.filter((l) => map.getLayer && map.getLayer(l));
+        if (!existingLayers.length) return;
+
+        const features = map.queryRenderedFeatures(e.point, { layers: existingLayers });
+        if (!features || features.length === 0) return;
+
+        const feature = features[0];
+        const bProps = feature.properties || {};
+        const bId = bProps.id || bProps.building_id;
+        const meta = buildingMetadata[bId] || buildingMetadata[bProps.code] || {};
 
         let centerCoord = meta.center || [e.lngLat.lng, e.lngLat.lat];
         if (!meta.center && feature.geometry && feature.geometry.coordinates && feature.geometry.coordinates[0]) {
@@ -485,8 +515,8 @@ export default function MapOutdoor({
         }
 
         const buildingObj = {
-          id: bProps.id,
-          name: bProps.name || meta.name || `Building ${bProps.id}`,
+          id: bId,
+          name: bProps.name || meta.name || `Building ${bId}`,
           code: bProps.code || meta.code || 'BLDG',
           category: bProps.category || meta.category || 'Academic',
           status: bProps.status || 'existing',
@@ -921,25 +951,25 @@ export default function MapOutdoor({
       {/* Interactive Animated Building Detail HUD Card on Cursor Hover */}
       {hoveredBuilding && (
         <div
-          className="absolute z-30 pointer-events-auto transition-all duration-200 animate-in fade-in"
+          className="fixed pointer-events-none z-50 transition-all duration-75 select-none"
           style={{
-            top: '80px',
-            right: '16px',
-            maxWidth: '380px',
+            left: `${Math.min(Math.max(16, hoveredBuilding.cursorX || (window.innerWidth / 2)), window.innerWidth - 380)}px`,
+            top: `${(hoveredBuilding.cursorY || 350) > 340 ? (hoveredBuilding.cursorY || 350) - 16 : (hoveredBuilding.cursorY || 350) + 24}px`,
+            transform: (hoveredBuilding.cursorY || 350) > 340 ? 'translate(-50%, -100%)' : 'translate(-50%, 0%)',
           }}
         >
-          <div className="p-4 rounded-2xl bg-stone-900/90 backdrop-blur-xl border border-sky-400/40 text-white shadow-2xl flex flex-col gap-2.5">
+          <div className="w-[360px] max-w-[calc(100vw-32px)] p-4 rounded-2xl bg-stone-900/95 backdrop-blur-2xl border border-sky-400/50 text-white shadow-[0_12px_40px_rgba(0,0,0,0.85)] flex flex-col gap-2.5 pointer-events-auto">
             {/* Top Pill Row */}
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider bg-blue-500/25 text-blue-300 border border-blue-400/35">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider bg-blue-500/30 text-blue-300 border border-blue-400/40">
                   {hoveredBuilding.code}
                 </span>
-                <span className="text-[10px] text-white/50 font-mono">
+                <span className="text-[10px] text-white/60 font-mono">
                   {hoveredBuilding.category}
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Verified Campus Block</span>
               </span>
@@ -947,11 +977,11 @@ export default function MapOutdoor({
 
             {/* Building Title */}
             <div>
-              <h3 className="text-sm sm:text-base font-bold text-white tracking-tight leading-snug drop-shadow-sm">
+              <h3 className="text-base font-bold text-white tracking-tight leading-snug drop-shadow-sm">
                 {hoveredBuilding.name}
               </h3>
               {hoveredBuilding.description && (
-                <p className="text-[11px] text-white/70 mt-1 line-clamp-2 leading-relaxed">
+                <p className="text-[11px] text-white/75 mt-1 leading-relaxed">
                   {hoveredBuilding.description}
                 </p>
               )}
@@ -960,14 +990,14 @@ export default function MapOutdoor({
             {/* Departments Chips */}
             {hoveredBuilding.departments && hoveredBuilding.departments.length > 0 && (
               <div className="flex flex-col gap-1 pt-0.5">
-                <span className="text-[9px] font-mono tracking-widest uppercase text-sky-300/80 font-bold">
+                <span className="text-[9px] font-mono tracking-widest uppercase text-sky-300 font-bold">
                   Housed Departments & Faculties
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {hoveredBuilding.departments.map((dept, i) => (
                     <span
                       key={i}
-                      className="px-2 py-0.5 rounded-md bg-white/10 text-sky-100 border border-white/15 text-[10px] font-medium"
+                      className="px-2.5 py-1 rounded-lg bg-sky-950/70 text-sky-200 border border-sky-500/30 text-[11px] font-semibold shadow-sm"
                     >
                       {dept}
                     </span>
@@ -980,7 +1010,7 @@ export default function MapOutdoor({
             {hoveredBuilding.facilities && hoveredBuilding.facilities.length > 0 && (
               <div className="flex flex-col gap-1 pt-0.5">
                 <span className="text-[9px] font-mono tracking-widest uppercase text-white/45 font-bold">
-                  Key Laboratories & Facilities
+                  Key Laboratories & Infrastructure
                 </span>
                 <div className="text-[11px] text-white/80 space-y-0.5">
                   {hoveredBuilding.facilities.slice(0, 3).map((fac, i) => (
@@ -1000,8 +1030,8 @@ export default function MapOutdoor({
                 <span>•</span>
                 <span>{hoveredBuilding.floor_count} Floors</span>
               </div>
-              <span className="text-emerald-300 font-semibold">
-                Indoor Floorplan Ready
+              <span className="text-emerald-300 font-semibold flex items-center gap-1">
+                <span>✓ Indoor Maps Ready</span>
               </span>
             </div>
 
@@ -1009,11 +1039,11 @@ export default function MapOutdoor({
             <button
               type="button"
               onClick={() => {
-                onSelectBuilding?.(hoveredBuilding);
+                onSelectBuildingRef.current?.(hoveredBuilding);
               }}
-              className="mt-1 w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-blue-900/30"
+              className="mt-1 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-blue-900/40"
             >
-              <span>Explore Floorplans & Rooms</span>
+              <span>Explore Floorplans & Classrooms</span>
               <span>→</span>
             </button>
           </div>
