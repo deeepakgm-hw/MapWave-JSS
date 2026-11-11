@@ -275,9 +275,27 @@ export default function App() {
     handleLocateMe();
   };
 
-  const handleExplore = (quality) => {
-    console.log('Entering MapWave 3D Campus Experience in quality:', quality);
+  const handleExplore = (experience = '3d') => {
+    console.log('Entering MapWave Campus Experience with mode:', experience);
     setIsLandingOpen(false);
+
+    if (experience === '2d') {
+      setIsTopView(true);
+      setCurrentProvider(MAP_PROVIDERS.GOOGLE);
+      if (mapRef.current?.easeTo) {
+        mapRef.current.easeTo({ pitch: 0, bearing: 0, duration: 600 });
+      }
+    } else if (experience === 'indoor') {
+      setIsTopView(false);
+      const pilotC = PILOT_BUILDINGS[0];
+      handleSelectBuilding(pilotC);
+    } else {
+      // 3D Campus Exploration (Featured / Default)
+      setIsTopView(false);
+      if (mapRef.current?.easeTo) {
+        mapRef.current.easeTo({ pitch: 45, bearing: -17.6, duration: 600 });
+      }
+    }
   };
 
   const handleSetViewMode = (mode) => {
