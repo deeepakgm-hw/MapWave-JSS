@@ -36,6 +36,7 @@ export default function MapOutdoor({
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
+  const gpsMarkerRef = useRef(null);
   const watchIdRef = useRef(null);
   const [userLocation, setUserLocation] = useState(gpsLocation || null);
   const [nearestInfo, setNearestInfo] = useState(null);
@@ -46,6 +47,7 @@ export default function MapOutdoor({
   useEffect(() => {
     if (gpsLocation) {
       setUserLocation(gpsLocation);
+      setGeoDenied(false);
     }
   }, [gpsLocation]);
 
@@ -467,6 +469,10 @@ export default function MapOutdoor({
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
+      if (gpsMarkerRef.current) {
+        gpsMarkerRef.current.remove();
+        gpsMarkerRef.current = null;
+      }
       if (mapRef.current) {
         mapRef.current.remove();
         mapRef.current = null;
@@ -594,69 +600,77 @@ export default function MapOutdoor({
     }
   }, [userLocation, isGpsActive, isTopView]);
 
-  // 4. Update GPS Dot & Accuracy Circle on Map
+  // 4. Update GPS Blue Dot Marker (HTML DOM Marker + GeoJSON accuracy circle)
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded() || !userLocation || geoDenied) return;
+    if (!map || !userLocation) return;
 
     const { latitude, longitude, accuracy } = userLocation;
-    const geojson = {
-      type: 'FeatureCollection',
-      features: [
-        {
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [longitude, latitude],
-          },
-        },
-      ],
-    };
 
-    if (map.getSource('gps-location-source')) {
-      map.getSource('gps-location-source').setData(geojson);
+    // Create or update HTML DOM GPS Blue Dot Marker (Guaranteed always visible on top of all 3D layers)
+    if (!gpsMarkerRef.current) {
+      const el = document.createElement('div');
+      el.className = 'mapwave-gps-blue-dot';
+      el.style.width = '36px';
+      el.style.height = '36px';
+      el.style.display = 'flex';
+      el.style.alignItems = 'center';
+      el.style.justifyContent = 'center';
+      el.style.pointerEvents = 'none';
+      el.innerHTML = `
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
+          <div style="position: absolute; width: 32px; height: 32px; border-radius: 9999px; background: rgba(59, 130, 246, 0.4); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="position: absolute; width: 22px; height: 22px; border-radius: 9999px; background: rgba(96, 165, 250, 0.5);"></div>
+          <div style="position: relative; width: 14px; height: 14px; border-radius: 9999px; background: #2563eb; border: 2.5px solid #ffffff; box-shadow: 0 0 14px rgba(37,99,235,1), 0 2px 6px rgba(0,0,0,0.6);"></div>
+        </div>
+      `;
+      gpsMarkerRef.current = new maplibregl.Marker({
+        element: el,
+        anchor: 'center',
+      })
+        .setLngLat([longitude, latitude])
+        .addTo(map);
     } else {
-      map.addSource('gps-location-source', {
-        type: 'geojson',
-        data: geojson,
-      });
+      gpsMarkerRef.current.setLngLat([longitude, latitude]);
+    }
 
-      map.addLayer({
-        id: 'gps-accuracy-circle',
-        type: 'circle',
-        source: 'gps-location-source',
-        paint: {
-          'circle-radius': getAccuracyPixelRadius(accuracy, latitude, map.getZoom()),
-          'circle-color': '#3b82f6',
-          'circle-opacity': 0.18,
-          'circle-stroke-width': 1.5,
-          'circle-stroke-color': '#3b82f6',
-          'circle-stroke-opacity': 0.5,
-        },
-      });
+    // Also update GeoJSON accuracy circle layer if style is loaded
+    if (map.isStyleLoaded && map.isStyleLoaded()) {
+      const geojson = {
+        type: 'FeatureCollection',
+        features: [
+          {
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude],
+            },
+          },
+        ],
+      };
 
-      map.addLayer({
-        id: 'gps-pulse-outer',
-        type: 'circle',
-        source: 'gps-location-source',
-        paint: {
-          'circle-radius': 14,
-          'circle-color': '#60a5fa',
-          'circle-opacity': 0.3,
-        },
-      });
+      if (map.getSource('gps-location-source')) {
+        map.getSource('gps-location-source').setData(geojson);
+      } else {
+        map.addSource('gps-location-source', {
+          type: 'geojson',
+          data: geojson,
+        });
 
-      map.addLayer({
-        id: 'gps-location-dot',
-        type: 'circle',
-        source: 'gps-location-source',
-        paint: {
-          'circle-radius': 7.5,
-          'circle-color': '#2563eb',
-          'circle-stroke-width': 2.5,
-          'circle-stroke-color': '#ffffff',
-        },
-      });
+        map.addLayer({
+          id: 'gps-accuracy-circle',
+          type: 'circle',
+          source: 'gps-location-source',
+          paint: {
+            'circle-radius': getAccuracyPixelRadius(accuracy, latitude, map.getZoom()),
+            'circle-color': '#3b82f6',
+            'circle-opacity': 0.15,
+            'circle-stroke-width': 1.5,
+            'circle-stroke-color': '#3b82f6',
+            'circle-stroke-opacity': 0.5,
+          },
+        });
+      }
     }
 
     const handleZoom = () => {
@@ -673,7 +687,7 @@ export default function MapOutdoor({
     return () => {
       map.off('zoom', handleZoom);
     };
-  }, [userLocation, geoDenied]);
+  }, [userLocation]);
 
   // 5. Render Animated Route Path Layer
   useEffect(() => {

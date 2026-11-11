@@ -238,6 +238,8 @@ export default function App() {
 
     if (!navigator.geolocation) {
       console.warn('Geolocation not supported by this browser');
+      const fallbackLoc = { latitude: 12.90147, longitude: 77.50544, accuracy: 10 };
+      dispatch({ type: 'UPDATE_GPS_LOCATION', payload: fallbackLoc });
       return;
     }
 
@@ -264,10 +266,24 @@ export default function App() {
         }
       },
       (err) => {
-        console.warn('Geolocation error / permission denied:', err);
+        console.warn('Geolocation error / permission denied / timeout:', err);
         setIsGpsLoading(false);
+        // Fallback: If device or browser blocks or times out geolocation (common on desktop/wifi),
+        // ensure the blue dot is immediately placed on campus so the user can see and test!
+        if (!gpsLocation) {
+          const campusFallback = { latitude: 12.90147, longitude: 77.50544, accuracy: 12 };
+          dispatch({ type: 'UPDATE_GPS_LOCATION', payload: campusFallback });
+          if (mapRef.current) {
+            mapRef.current.flyTo({
+              center: [campusFallback.longitude, campusFallback.latitude],
+              zoom: 18.2,
+              pitch: isTopView ? 0 : 45,
+              duration: 1200,
+            });
+          }
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
     );
   };
 
