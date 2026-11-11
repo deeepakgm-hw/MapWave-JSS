@@ -126,29 +126,6 @@ html, body, #root {
   animation: realCloudPassBy 90s linear infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .cloud-animate-left,
-  .cloud-animate-right,
-  .cloud-animate-drift {
-    animation: none !important;
-  }
-}
-
-@keyframes heroFadeUp {
-  0% {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-hero-fade-up {
-  animation: heroFadeUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
 /* Reference Website: Minimal Compass */
 .mapwave-compass {
   border: 1.5px solid rgba(255, 255, 255, 0.7);
