@@ -1,5 +1,5 @@
 @import url('https://use.typekit.net/ogg5vgp.css');
-@import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=Titan+One&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Dela+Gothic+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&family=Lilita+One&family=Titan+One&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Dela+Gothic+One&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -23,19 +23,33 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #0c0a09;
 }
 
-/* Reference Website: Kenya Kortet Display Typography */
-.font-kenya-title {
-  font-family: "nove", "Lilita One", "Titan One", "Dela Gothic One", sans-serif;
-  letter-spacing: -0.01em;
+/* Google Earth Geometric Display Typography */
+.font-google-title {
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.03em;
   line-height: 0.92;
   text-transform: uppercase;
+  font-weight: 800;
+}
+
+.font-google-body {
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Backward-compatible alias for previous title class */
+.font-kenya-title {
+  font-family: "Plus Jakarta Sans", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.03em;
+  line-height: 0.92;
+  text-transform: uppercase;
+  font-weight: 800;
 }
 .font-nove {
-  font-family: "nove", "Lilita One", "Titan One", sans-serif;
+  font-family: "Plus Jakarta Sans", "Inter", sans-serif;
 }
 
 /* Reference Website: Ghost Button Styling */

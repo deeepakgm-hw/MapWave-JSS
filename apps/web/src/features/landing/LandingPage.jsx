@@ -99,14 +99,17 @@ export function LandingPage({ onExplore }) {
       </div>
 
       {/* 3. Top-Left Header: Halfwave Platform Logo beside JSSATE Bangalore */}
-      <div className="absolute top-6 sm:top-7 left-6 sm:left-7 z-20 flex items-center gap-3 sm:gap-4 text-white/90">
+      <div className="absolute top-6 sm:top-7 left-6 sm:left-7 z-20 flex items-center gap-3 sm:gap-4 text-white/90 font-google-body">
         {/* Halfwave Platform Brand Logo */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <img
             src="/halfwave_logo.png"
             alt="Halfwave"
             className="h-7 sm:h-8 w-auto object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.6)]"
           />
+          <span className="hidden sm:inline font-google-body text-xs font-bold tracking-widest uppercase text-white/90">
+            HALFWAVE
+          </span>
         </div>
 
         {/* Minimalist Vertical Divider matching Reference Site */}
@@ -117,8 +120,8 @@ export function LandingPage({ onExplore }) {
           <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white/90 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
           </svg>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-1.5">
+          <div className="flex flex-col font-google-body">
+            <div className="flex items-center gap-1.5 leading-none">
               <span className="text-[10px] font-mono tracking-widest text-amber-200/90 uppercase font-bold">
                 Campus Portal
               </span>
@@ -127,7 +130,7 @@ export function LandingPage({ onExplore }) {
                 Bengaluru
               </span>
             </div>
-            <span className="text-[11px] sm:text-xs font-semibold text-white/95 tracking-wide whitespace-nowrap drop-shadow-sm">
+            <span className="text-[11px] sm:text-xs font-semibold text-white/95 tracking-wide whitespace-nowrap drop-shadow-sm mt-0.5">
               JSS Academy of Technical Education
             </span>
           </div>
@@ -135,25 +138,26 @@ export function LandingPage({ onExplore }) {
       </div>
 
       {/* Top-Right Geographic Tag */}
-      <div className="absolute top-7 right-7 z-20 hidden sm:flex items-center">
-        <div className="px-3.5 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white/75 text-[10px] font-mono tracking-widest">
-          12.9015° N, 77.5057° E • UTM 43N
+      <div className="absolute top-7 right-7 z-20 hidden sm:flex items-center font-google-body">
+        <div className="px-3.5 py-1.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white/80 text-[10px] font-mono tracking-widest flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+          <span>12.9015° N, 77.5057° E • UTM 43N</span>
         </div>
       </div>
 
-      {/* 4. Center Hero Section: Chunky Stylized Title Matching First Image */}
-      <div className="relative z-20 flex flex-col items-center justify-center h-full px-4 text-center">
+      {/* 4. Center Hero Section: Google Earth Modern Geometric Display Typography */}
+      <div className="relative z-20 flex flex-col items-center justify-center h-full px-4 text-center font-google-body">
         <div
           className="relative flex flex-col items-center cursor-default transition-transform duration-500 ease-out"
           style={{
             transform: `perspective(1000px) rotateX(${mousePos.y * -0.2}deg) rotateY(${mousePos.x * 0.2}deg)`,
           }}
         >
-          {/* Main Title Stack in Chunky Kenya-Kortet Style Font */}
+          {/* Main Title Stack in Google Earth Style Modern Geometric Font */}
           <div className="flex flex-col items-center justify-center relative">
             {/* Word 1: MAPWAVE with Integrated Navigation Arrow */}
             <div className="relative flex items-center justify-center">
-              <span className="font-kenya-title text-6xl sm:text-8xl md:text-9xl text-white tracking-wider drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)] select-none">
+              <span className="font-google-title text-6xl sm:text-8xl md:text-9xl text-white tracking-tight font-extrabold drop-shadow-[0_12px_32px_rgba(0,0,0,0.85)] select-none">
                 MAPWAVE
               </span>
               {/* Bent Navigation Arrow */}
@@ -167,8 +171,8 @@ export function LandingPage({ onExplore }) {
             </div>
 
             {/* Word 2: JSSATE with Horizontal Lower Navigation Arrow */}
-            <div className="relative flex items-center justify-center -mt-2 sm:-mt-4">
-              <span className="font-kenya-title text-6xl sm:text-8xl md:text-9xl text-white tracking-wider drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)] select-none">
+            <div className="relative flex items-center justify-center -mt-2 sm:-mt-3">
+              <span className="font-google-title text-6xl sm:text-8xl md:text-9xl text-white tracking-tight font-extrabold drop-shadow-[0_12px_32px_rgba(0,0,0,0.85)] select-none">
                 JSSATE
               </span>
               {/* Long Bottom Navigation Arrow */}
@@ -182,8 +186,8 @@ export function LandingPage({ onExplore }) {
             </div>
           </div>
 
-          {/* Subtitle from First Image: Serif Italic */}
-          <p className="mt-8 sm:mt-10 text-base sm:text-lg text-white/95 font-serif italic tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+          {/* Subtitle in Google Earth Style Clean Typography */}
+          <p className="mt-7 sm:mt-9 text-base sm:text-lg text-white/95 font-google-body font-medium tracking-wide drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
             Please select your map experience.
           </p>
 
@@ -228,19 +232,19 @@ export function LandingPage({ onExplore }) {
             </svg>
           </div>
 
-          {/* 6. Resolution Fidelity Selector (Low / Medium / High) */}
-          <div className="flex items-center justify-between w-60 px-3 py-1 text-sm font-semibold text-white">
+          {/* 6. Resolution Fidelity Selector in Clean Google Earth Typo */}
+          <div className="flex items-center justify-between w-64 px-3 py-1 text-sm font-semibold text-white font-google-body">
             {['Low', 'Medium', 'High'].map((quality) => {
               const isActive = selectedQuality === quality;
               return (
                 <div
                   key={quality}
                   onClick={() => setSelectedQuality(quality)}
-                  className={`resolution_picker px-2 py-1 ${
+                  className={`resolution_picker px-2.5 py-1 ${
                     isActive ? 'active text-white' : 'text-white/60 hover:text-white/80'
                   }`}
                 >
-                  <span className="font-serif text-sm sm:text-base tracking-wide drop-shadow-md">
+                  <span className="font-google-body text-xs sm:text-sm font-semibold tracking-wider uppercase drop-shadow-md">
                     {quality}
                   </span>
                   <div className={`selected_underline ${isActive ? 'scale-x-100' : ''}`} />
@@ -249,21 +253,28 @@ export function LandingPage({ onExplore }) {
             })}
           </div>
 
-          {/* 7. Primary Action: Capsule Ghost Button from Reference */}
-          <div className="mt-8 sm:mt-10">
+          {/* 7. Primary Action: Google Earth Style Outlined Ghost Button */}
+          <div className="mt-7 sm:mt-9 flex flex-col items-center">
             <button
               type="button"
               onClick={() => onExplore(selectedQuality)}
-              className="ghostbutton min-h-[44px] px-10 py-2.5 rounded-full text-xs sm:text-sm font-bold tracking-[0.2em] uppercase cursor-pointer transition-all duration-300"
+              className="ghostbutton min-h-[44px] px-10 py-2.5 rounded-md text-xs sm:text-sm font-google-body font-bold tracking-[0.2em] uppercase cursor-pointer transition-all duration-300 border border-white/85 hover:bg-white hover:text-black shadow-xl"
             >
               EXPLORE
             </button>
+
+            {/* Google Earth Downward Chevron Indicator */}
+            <div className="mt-5 sm:mt-6 text-white/60 hover:text-white transition-colors cursor-pointer animate-bounce pointer-events-auto">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Footer Tagline */}
-      <div className="absolute bottom-5 inset-x-0 text-center text-[10px] font-mono tracking-widest text-white/40 uppercase z-20">
+      <div className="absolute bottom-4 inset-x-0 text-center text-[10px] font-mono tracking-widest text-white/45 uppercase z-20 font-google-body">
         MapWave • Explore. Navigate. Discover.
       </div>
     </div>
