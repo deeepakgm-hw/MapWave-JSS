@@ -1,95 +1,103 @@
 {
   "b1000000-0000-0000-0000-000000000001": {
     "id": "b1000000-0000-0000-0000-000000000001",
-    "code": "BLOCK_C",
-    "name": "Block C (CS & AI)",
+    "code": "BLOCK_A",
+    "alias_codes": ["BLOCK_C"],
+    "name": "Block A (CSE, ISE, Robotics, Mechanical)",
+    "short_name": "Block A",
     "category": "Academic",
     "verification": "verified",
     "height_m": 22.0,
     "floor_count": 3,
     "indoor_mapping_status": "available",
     "center": [77.5057, 12.9015],
-    "description": "Department of Computer Science & Engineering, Artificial Intelligence Labs, Data Science Center, and Faculty Offices.",
+    "description": "Main Academic Complex housing Computer Science & Engineering, Information Science & Engineering, Robotics & Automation, and Mechanical Engineering departments and advanced laboratories.",
     "departments": [
-      "Computer Science & Engineering",
-      "Artificial Intelligence & Machine Learning",
-      "Data Science & Analytics",
-      "Information Science & Engineering"
+      "Computer Science & Engineering (CSE)",
+      "Information Science & Engineering (ISE)",
+      "Robotics & Automation",
+      "Mechanical Engineering"
     ],
     "facilities": [
-      "NVIDIA GPU Computing Lab",
-      "Cloud & Distributed Systems Lab",
-      "IoT Prototyping Workshop",
-      "Seminar Hall C-201",
-      "Faculty Cabin Cluster"
+      "NVIDIA GPU AI Computing Lab",
+      "Robotics & Autonomous Systems Lab",
+      "IoT & Embedded Prototyping Workshop",
+      "CAD/CAM Advanced Engineering Centre",
+      "Department Faculty Chambers & Seminar Halls"
     ],
     "operating_hours": "08:30 AM - 05:30 PM",
-    "accessibility": "Wheelchair accessible ground floor ramp, lift access to floors 2 & 3",
+    "accessibility": "Wheelchair accessible ground floor ramp, central elevator access to all floors",
     "floor_levels": [
-      { "level_number": 1, "name": "Ground Floor", "rooms_count": 12, "ready": true },
-      { "level_number": 2, "name": "Second Floor", "rooms_count": 14, "ready": true },
-      { "level_number": 3, "name": "Third Floor", "rooms_count": 10, "ready": true }
-    ]
-  },
-  "b2000000-0000-0000-0000-000000000002": {
-    "id": "b2000000-0000-0000-0000-000000000002",
-    "code": "BLOCK_A",
-    "name": "Admin Block A",
-    "category": "Administrative",
-    "verification": "verified",
-    "height_m": 18.0,
-    "floor_count": 3,
-    "indoor_mapping_status": "in_progress",
-    "center": [77.5068, 12.9022],
-    "description": "Principal's Secretariat, Registrar Office, Admissions, Examination Division, and Main Campus Auditorium.",
-    "departments": [
-      "Principal's Office",
-      "Registrar & Academic Council",
-      "Finance & Accounts Section",
-      "Controller of Examinations",
-      "Admissions & Public Relations"
-    ],
-    "facilities": [
-      "Main Campus Auditorium (750 capacity)",
-      "Board Room & Conference Suites",
-      "Central Examination Vault",
-      "Student Welfare Section"
-    ],
-    "operating_hours": "09:00 AM - 05:00 PM",
-    "accessibility": "Ramp access at main portico, central elevator",
-    "floor_levels": [
-      { "level_number": 1, "name": "Administrative Offices", "rooms_count": 16, "ready": false },
-      { "level_number": 2, "name": "Auditorium & Council", "rooms_count": 8, "ready": false },
-      { "level_number": 3, "name": "Examination Wing", "rooms_count": 10, "ready": false }
+      { "level_number": 1, "name": "Ground Floor — Dept Labs & Entrance", "rooms_count": 14, "ready": true },
+      { "level_number": 2, "name": "Second Floor — AI Labs & Robotics Suites", "rooms_count": 16, "ready": true },
+      { "level_number": 3, "name": "Third Floor — CAD/CAM Labs & Lecture Halls", "rooms_count": 12, "ready": true }
     ]
   },
   "b3000000-0000-0000-0000-000000000003": {
     "id": "b3000000-0000-0000-0000-000000000003",
     "code": "BLOCK_B",
-    "name": "Library Block B",
+    "alias_codes": ["LIBRARY"],
+    "name": "Block B (ECE, EIE & Library)",
+    "short_name": "Block B",
     "category": "Academic",
     "verification": "verified",
-    "height_m": 15.0,
-    "floor_count": 2,
-    "indoor_mapping_status": "in_progress",
-    "center": [77.5048, 12.9026],
-    "description": "Central Campus Library, Digital Learning Resource Centre, Reading Halls, and IT Server Infrastructure.",
+    "height_m": 18.0,
+    "floor_count": 3,
+    "indoor_mapping_status": "available",
+    "center": [77.50495, 12.9027],
+    "description": "Academic & Research Complex housing Electronics & Communication Engineering, Electronics & Instrumentation Engineering, and the Central Campus Library with digital stack repositories.",
     "departments": [
-      "Central Library Administration",
-      "Digital Resource Centre",
-      "Campus Network Operations Center (NOC)"
+      "Electronics & Communication Engineering (ECE)",
+      "Electronics & Instrumentation Engineering (EIE)",
+      "Central Campus Library & Information Centre"
     ],
     "facilities": [
-      "Circulation Desk & Reference Stacks",
-      "Silent Research Reading Hall",
-      "Digital Thesis & E-Journal Terminals",
-      "Reprographics Section"
+      "Central Library Reading Halls & Reference Stacks",
+      "Digital Learning Resource Centre & E-Journal Terminals",
+      "VLSI & Embedded Systems Design Lab",
+      "Analog & Digital Communication Systems Lab",
+      "Process Control & Industrial Instrumentation Lab"
     ],
     "operating_hours": "08:00 AM - 08:00 PM",
-    "accessibility": "Ramp entrance, ground floor fully accessible",
+    "accessibility": "Step-free ramp entrance, elevator to upper reading floors & labs",
     "floor_levels": [
-      { "level_number": 1, "name": "Main Circulation & Stacks", "rooms_count": 6, "ready": false },
-      { "level_number": 2, "name": "Digital Hall & Reading Section", "rooms_count": 4, "ready": false }
+      { "level_number": 1, "name": "Ground Floor — Central Library & Stacks", "rooms_count": 10, "ready": true },
+      { "level_number": 2, "name": "Second Floor — ECE Labs & VLSI Design", "rooms_count": 12, "ready": true },
+      { "level_number": 3, "name": "Third Floor — EIE Labs & Digital Research", "rooms_count": 8, "ready": true }
+    ]
+  },
+  "b2000000-0000-0000-0000-000000000002": {
+    "id": "b2000000-0000-0000-0000-000000000002",
+    "code": "BLOCK_CIVIL",
+    "alias_codes": ["CIVIL_BLOCK", "BLOCK_CIVIL_ENG"],
+    "name": "Civil Block",
+    "short_name": "Civil Block",
+    "category": "Academic",
+    "verification": "verified",
+    "height_m": 20.0,
+    "floor_count": 4,
+    "indoor_mapping_status": "available",
+    "center": [77.5068, 12.9022],
+    "description": "Dedicated Engineering Complex for Civil Engineering, Structural Mechanics, Geotechnical & Soil Labs, Advanced Surveying, and Environmental Testing.",
+    "departments": [
+      "Civil Engineering",
+      "Structural Engineering & Mechanics",
+      "Environmental & Geotechnical Engineering"
+    ],
+    "facilities": [
+      "Heavy Structures & Concrete Testing Laboratory",
+      "Geotechnical & Soil Mechanics Facility",
+      "Total Station & Advanced Geomatics Surveying Lab",
+      "Environmental Engineering & Water Quality Lab",
+      "Computer-Aided Structural Drafting & GIS Centre"
+    ],
+    "operating_hours": "08:30 AM - 05:00 PM",
+    "accessibility": "Ground floor level entrance ramp, elevator serving all four levels",
+    "floor_levels": [
+      { "level_number": 1, "name": "Ground Floor — Heavy Structural & Concrete Lab", "rooms_count": 8, "ready": true },
+      { "level_number": 2, "name": "Second Floor — Geotechnical & Soil Mechanics", "rooms_count": 10, "ready": true },
+      { "level_number": 3, "name": "Third Floor — Surveying & Environmental Labs", "rooms_count": 10, "ready": true },
+      { "level_number": 4, "name": "Fourth Floor — CAD Drafting & Faculty Chambers", "rooms_count": 8, "ready": true }
     ]
   },
   "b4000000-0000-0000-0000-000000000004": {

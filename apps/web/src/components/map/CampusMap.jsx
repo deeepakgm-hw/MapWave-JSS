@@ -53,6 +53,7 @@ export function CampusMap({
   const [userLocation, setUserLocation] = useState(null);
   const [geoDenied, setGeoDenied] = useState(false);
   const [selectedBuilding, setSelectedBuilding] = useState(propSelectedBuilding || null);
+  const [hoveredBuilding, setHoveredBuilding] = useState(null);
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
@@ -259,17 +260,31 @@ export function CampusMap({
           },
         });
 
-        // Hover Brightening Layer
+        // Hover Brightening Layer (Elevated animated extrusion)
         map.addLayer({
           id: 'campus-buildings-hover',
           type: 'fill-extrusion',
           source: 'campus-buildings',
           filter: ['==', ['get', 'id'], ''],
           paint: {
-            'fill-extrusion-color': '#60a5fa',
-            'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
+            'fill-extrusion-color': '#38bdf8',
+            'fill-extrusion-height': ['+', ['coalesce', ['get', 'height_m'], 15.0], 3.0],
             'fill-extrusion-base': ['coalesce', ['get', 'base_height_m'], 0],
-            'fill-extrusion-opacity': 0.98,
+            'fill-extrusion-opacity': 0.95,
+          },
+        });
+
+        // Hover Perimeter Glowing Line
+        map.addLayer({
+          id: 'campus-buildings-hover-glow',
+          type: 'line',
+          source: 'campus-buildings',
+          filter: ['==', ['get', 'id'], ''],
+          paint: {
+            'line-color': '#38bdf8',
+            'line-width': 4.5,
+            'line-blur': 2.5,
+            'line-opacity': 0.95,
           },
         });
 
@@ -388,14 +403,33 @@ export function CampusMap({
 
       map.on('mousemove', 'campus-buildings-extrusion', (e) => {
         if (!e.features?.length) return;
-        const bId = e.features[0].properties.id;
+        const feature = e.features[0];
+        const bProps = feature.properties;
+        const bId = bProps.id;
         map.getCanvas().style.cursor = 'pointer';
         if (bId !== hoveredId) {
           hoveredId = bId;
           if (map.getLayer && map.getLayer('campus-buildings-hover')) {
             map.setFilter('campus-buildings-hover', ['==', ['get', 'id'], bId]);
           }
+          if (map.getLayer && map.getLayer('campus-buildings-hover-glow')) {
+            map.setFilter('campus-buildings-hover-glow', ['==', ['get', 'id'], bId]);
+          }
         }
+
+        const meta = buildingMetadata[bProps.building_id || bProps.id] || buildingMetadata[bProps.code] || {};
+        setHoveredBuilding({
+          id: bProps.building_id || bProps.id,
+          name: bProps.name || meta.name || `Building ${bProps.id}`,
+          code: bProps.code || meta.code || 'ZONE',
+          category: bProps.category || meta.category || 'Academic Complex',
+          description: bProps.description || meta.description || '',
+          departments: meta.departments || bProps.departments || [],
+          facilities: meta.facilities || bProps.facilities || [],
+          height_m: bProps.height_m || meta.height_m || 18.0,
+          floor_count: bProps.floor_count || meta.floor_count || 3,
+          verified: bProps.verified || meta.verification === 'verified',
+        });
       });
 
       map.on('mouseleave', 'campus-buildings-extrusion', () => {
@@ -404,6 +438,10 @@ export function CampusMap({
         if (map.getLayer && map.getLayer('campus-buildings-hover')) {
           map.setFilter('campus-buildings-hover', ['==', ['get', 'id'], '']);
         }
+        if (map.getLayer && map.getLayer('campus-buildings-hover-glow')) {
+          map.setFilter('campus-buildings-hover-glow', ['==', ['get', 'id'], '']);
+        }
+        setHoveredBuilding(null);
       });
 
       map.on('click', 'campus-buildings-extrusion', (e) => {
@@ -853,6 +891,108 @@ export function CampusMap({
           </button>
         </div>
       </div>
+
+      {/* Interactive Animated Building Detail HUD Card on Cursor Hover */}
+      {hoveredBuilding && !selectedBuilding && (
+        <div
+          className="absolute z-30 pointer-events-auto transition-all duration-200 animate-in fade-in"
+          style={{
+            top: '80px',
+            right: '16px',
+            maxWidth: '380px',
+          }}
+        >
+          <div className="p-4 rounded-2xl bg-stone-900/90 backdrop-blur-xl border border-sky-400/40 text-white shadow-2xl flex flex-col gap-2.5">
+            {/* Top Pill Row */}
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider bg-blue-500/25 text-blue-300 border border-blue-400/35">
+                  {hoveredBuilding.code}
+                </span>
+                <span className="text-[10px] text-white/50 font-mono">
+                  {hoveredBuilding.category}
+                </span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span>Verified Campus Block</span>
+              </span>
+            </div>
+
+            {/* Building Title */}
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-white tracking-tight leading-snug drop-shadow-sm">
+                {hoveredBuilding.name}
+              </h3>
+              {hoveredBuilding.description && (
+                <p className="text-[11px] text-white/70 mt-1 line-clamp-2 leading-relaxed">
+                  {hoveredBuilding.description}
+                </p>
+              )}
+            </div>
+
+            {/* Departments Chips */}
+            {hoveredBuilding.departments && hoveredBuilding.departments.length > 0 && (
+              <div className="flex flex-col gap-1 pt-0.5">
+                <span className="text-[9px] font-mono tracking-widest uppercase text-sky-300/80 font-bold">
+                  Housed Departments & Faculties
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {hoveredBuilding.departments.map((dept, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-0.5 rounded-md bg-white/10 text-sky-100 border border-white/15 text-[10px] font-medium"
+                    >
+                      {dept}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Facilities preview */}
+            {hoveredBuilding.facilities && hoveredBuilding.facilities.length > 0 && (
+              <div className="flex flex-col gap-1 pt-0.5">
+                <span className="text-[9px] font-mono tracking-widest uppercase text-white/45 font-bold">
+                  Key Laboratories & Facilities
+                </span>
+                <div className="text-[11px] text-white/80 space-y-0.5">
+                  {hoveredBuilding.facilities.slice(0, 3).map((fac, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <span className="w-1 h-1 rounded-full bg-sky-400" />
+                      <span className="truncate">{fac}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Metrics Row */}
+            <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] text-white/60 font-mono">
+              <div className="flex items-center gap-2">
+                <span>{hoveredBuilding.height_m}m Height</span>
+                <span>•</span>
+                <span>{hoveredBuilding.floor_count} Floors</span>
+              </div>
+              <span className="text-emerald-300 font-semibold">
+                Indoor Floorplan Ready
+              </span>
+            </div>
+
+            {/* Direct Click Action */}
+            <button
+              type="button"
+              onClick={() => {
+                handleSelectBuildingInternal(hoveredBuilding);
+              }}
+              className="mt-1 w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-blue-900/30"
+            >
+              <span>Select Block & View Floors</span>
+              <span>→</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* 4. Selected Building Contextual Information Panel (Unobtrusive) */}
       {selectedBuilding && (

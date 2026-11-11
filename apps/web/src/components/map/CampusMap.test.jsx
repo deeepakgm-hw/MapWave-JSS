@@ -156,8 +156,8 @@ describe('CampusMap Component', () => {
     );
 
     const searchInput = screen.getByPlaceholderText(/Search buildings & campus/i);
-    fireEvent.change(searchInput, { target: { value: 'Block C' } });
+    fireEvent.change(searchInput, { target: { value: 'Block A' } });
 
-    expect(screen.getByText(/Block C \(CS & AI\)/i)).toBeInTheDocument();
+    expect(screen.getByText(/Block A \(CSE, ISE, Robotics, Mechanical\)/i)).toBeInTheDocument();
   });
 });

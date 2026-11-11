@@ -6,53 +6,102 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 // Predefined landmark buildings identified in the TopoExport model
 const KNOWN_BUILDING_MAP = {
   TPX_Buildings_108: {
-    name: 'Block C (CS, AI & Data Science)',
-    code: 'BLOCK_C',
-    category: 'Academic Block',
+    name: 'Block A (CSE, ISE, Robotics, Mechanical)',
+    code: 'BLOCK_A',
+    category: 'Academic Complex',
+    floors: 3,
+    height_m: 22.0,
+    departments: [
+      'Computer Science & Engineering (CSE)',
+      'Information Science & Engineering (ISE)',
+      'Robotics & Automation',
+      'Mechanical Engineering',
+    ],
+    facilities: [
+      'NVIDIA GPU AI Computing Lab',
+      'Robotics & Autonomous Systems Lab',
+      'IoT Prototyping Workshop',
+      'CAD/CAM Advanced Engineering Centre',
+    ],
+    description: 'Main Academic Complex housing Computer Science, Information Science, Robotics & Automation, and Mechanical Engineering departments.',
+  },
+  TPX_Buildings_210: {
+    name: 'Block B (ECE, EIE & Library)',
+    code: 'BLOCK_B',
+    category: 'Academic & Library Complex',
+    floors: 3,
+    height_m: 18.0,
+    departments: [
+      'Electronics & Communication Engineering (ECE)',
+      'Electronics & Instrumentation Engineering (EIE)',
+      'Central Campus Library',
+    ],
+    facilities: [
+      'Central Library Reading Halls & Reference Stacks',
+      'Digital Learning Resource Centre & E-Journals',
+      'VLSI & Embedded Systems Design Lab',
+      'Analog & Digital Communication Lab',
+    ],
+    description: 'Academic & Research Complex housing Electronics & Communication Engineering, Electronics & Instrumentation, and the Central Library.',
+  },
+  TPX_Buildings_240: {
+    name: 'Civil Block',
+    code: 'BLOCK_CIVIL',
+    category: 'Engineering Complex',
     floors: 4,
-    description: 'Main academic complex housing Computer Science, AI, and Central Auditoriums',
+    height_m: 20.0,
+    departments: [
+      'Civil Engineering',
+      'Structural Engineering & Mechanics',
+      'Environmental & Geotechnical Engineering',
+    ],
+    facilities: [
+      'Heavy Structures & Concrete Testing Lab',
+      'Geotechnical & Soil Mechanics Facility',
+      'Total Station & Advanced Surveying Lab',
+      'Computer-Aided Structural Drafting & GIS',
+    ],
+    description: 'Civil Engineering Complex with Concrete, Geotechnical, Environmental & Advanced Surveying Laboratories.',
   },
   TPX_Buildings_220: {
     name: 'Workshops (Mechanical & Civil)',
     code: 'WORKSHOPS',
-    category: 'Engineering Labs',
+    category: 'Engineering Workshops',
     floors: 2,
-    description: 'Heavy machinery, fluid dynamics, and civil structural testing workshops',
-  },
-  TPX_Buildings_210: {
-    name: 'Library & Information Centre',
-    code: 'LIBRARY',
-    category: 'Central Library',
-    floors: 3,
-    description: 'Central campus library, digital research repositories, and quiet study zones',
+    height_m: 12.0,
+    departments: ['Mechanical Engineering', 'Civil Engineering'],
+    facilities: ['Machine Shop & Lathe Bays', 'Welding & Foundry', 'Hydraulics Lab'],
+    description: 'Heavy machinery, fluid dynamics, and civil structural testing workshops.',
   },
   TPX_Buildings_133: {
     name: 'Boys Hostel Complex',
     code: 'BOYS_HOSTEL',
     category: 'Residential',
     floors: 5,
-    description: 'Campus residential hostel with dining and recreation areas',
+    height_m: 20.0,
+    departments: ['Hostel Administration'],
+    facilities: ['Resident Mess (300 capacity)', 'Indoor Sports & Gym', '24x7 Study Library'],
+    description: 'Campus residential hostel with dining and recreation areas.',
   },
   TPX_Buildings_135: {
     name: 'Girls Hostel Complex',
     code: 'GIRLS_HOSTEL',
     category: 'Residential',
     floors: 5,
-    description: 'Campus residential hostel with 24/7 security and dedicated study halls',
-  },
-  TPX_Buildings_240: {
-    name: 'Campus Cafeteria & Food Court',
-    code: 'CAFETERIA',
-    category: 'Amenities',
-    floors: 2,
-    description: 'Multi-cuisine campus dining, student lounge, and snack kiosks',
+    height_m: 20.0,
+    departments: ['Hostel Administration'],
+    facilities: ['Resident Dining Hall', 'Badminton Court & Gym', 'Study Lounge'],
+    description: 'Campus residential hostel with 24/7 security and dedicated study halls.',
   },
   TPX_Buildings_178: {
     name: 'STEP Incubation & Research Centre',
     code: 'STEP',
     category: 'Research & Innovation',
     floors: 3,
-    description: 'Science & Technology Entrepreneurs Park with startup incubator labs',
+    height_m: 16.0,
+    departments: ['Entrepreneurship Cell', 'Industry Connect'],
+    facilities: ['Startup Incubator Suites', 'Rapid Prototyping & 3D Printing Lab', 'Pitch Room'],
+    description: 'Science & Technology Entrepreneurs Park with startup incubator labs.',
   },
 };
 
@@ -504,9 +553,13 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
           const known = KNOWN_BUILDING_MAP[hit.name];
           setHoveredInfo({
             name: known?.name || `Campus Building (${hit.name.replace('TPX_Buildings_', 'Block ')})`,
+            code: known?.code || hit.name,
             category: known?.category || 'Campus Facility',
             description: known?.description || 'Extruded 3D architectural zone from TopoExport CAD/GIS dataset',
             floors: known?.floors || Math.max(1, Math.round((hit.geometry?.boundingBox?.max?.z || 12) / 3)),
+            height_m: known?.height_m || 18.0,
+            departments: known?.departments || [],
+            facilities: known?.facilities || [],
           });
         }
       } else {
@@ -723,26 +776,64 @@ export const Interactive3DMap = forwardRef(function Interactive3DMap(
         </div>
       )}
 
-      {/* Hover Tooltip / Floating Card */}
+      {/* Hover Tooltip / Floating HUD Card */}
       {hoveredInfo && !isLoading && (
         <div
-          className="fixed pointer-events-none z-30 px-3 py-2 rounded-xl bg-black/85 backdrop-blur-md border border-blue-500/40 text-white shadow-2xl transition-all duration-150 transform -translate-x-1/2 -translate-y-full mb-3"
+          className="fixed pointer-events-none z-30 max-w-sm p-4 rounded-2xl bg-stone-900/90 backdrop-blur-xl border border-sky-400/40 text-white shadow-2xl transition-all duration-150 transform -translate-x-1/2 -translate-y-full mb-3"
           style={{
             left: `${tooltipPos.x}px`,
             top: `${tooltipPos.y - 14}px`,
           }}
         >
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
-            <div className="text-xs font-bold text-white tracking-wide">
-              {hoveredInfo.name}
+          {/* Header Badge Row */}
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider bg-blue-500/20 text-blue-300 border border-blue-400/30">
+              {hoveredInfo.code || 'ZONE'}
+            </span>
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Verified Zone</span>
+            </span>
+          </div>
+
+          {/* Building Name */}
+          <div className="text-sm font-bold text-white tracking-tight leading-snug drop-shadow-sm">
+            {hoveredInfo.name}
+          </div>
+
+          {/* Building Summary */}
+          {hoveredInfo.description && (
+            <div className="text-[11px] text-white/70 mt-1 line-clamp-2 leading-relaxed">
+              {hoveredInfo.description}
             </div>
+          )}
+
+          {/* Department Chips */}
+          {hoveredInfo.departments && hoveredInfo.departments.length > 0 && (
+            <div className="flex flex-wrap gap-1 mt-2.5">
+              {hoveredInfo.departments.map((dept, idx) => (
+                <span
+                  key={idx}
+                  className="px-2 py-0.5 rounded-md bg-white/10 text-sky-200 border border-white/10 text-[10px] font-medium"
+                >
+                  {dept}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Quick Metrics */}
+          <div className="flex items-center gap-3 pt-2.5 mt-2 border-t border-white/10 text-[10px] text-white/60 font-mono">
+            <span>{hoveredInfo.height_m}m Height</span>
+            <span>•</span>
+            <span>{hoveredInfo.floors} Floors</span>
+            <span>•</span>
+            <span className="text-emerald-300">Indoor Maps Active</span>
           </div>
-          <div className="text-[10px] text-blue-300 font-medium mt-0.5">
-            {hoveredInfo.category} • ~{hoveredInfo.floors} Floors
-          </div>
-          <div className="text-[9px] text-slate-400 max-w-xs mt-1 leading-snug">
-            Click to focus and view floorplans
+
+          <div className="text-[9px] text-sky-300 font-semibold tracking-wide mt-1.5 flex items-center gap-1">
+            <span>Click block to enter floor navigation</span>
+            <span>→</span>
           </div>
         </div>
       )}

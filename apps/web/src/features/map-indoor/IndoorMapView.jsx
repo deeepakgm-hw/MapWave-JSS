@@ -1,38 +1,113 @@
 import React, { useState } from 'react';
 
-// Floor data for mapped pilot building (Block C)
-const MOCK_FLOORS = [
-  { id: 'floor-1', level_number: 1, notes: 'Ground Floor — Department Laboratories & Reception' },
-  { id: 'floor-2', level_number: 2, notes: 'Floor 2 — AI Research Centers & Faculty Offices' },
+// Floor data for mapped buildings
+const BUILDING_FLOOR_DATA = {
+  BLOCK_A: {
+    floors: [
+      { id: 'floor-1', level_number: 1, notes: 'Ground Floor — CSE Programming Labs, Mechanical Workshop & Reception' },
+      { id: 'floor-2', level_number: 2, notes: 'Floor 2 — AI Research Center & Robotics Systems Laboratory' },
+      { id: 'floor-3', level_number: 3, notes: 'Floor 3 — Information Science Labs, Mechanical CAD/CAM & Seminar Hall' },
+    ],
+    rooms: {
+      'floor-1': [
+        { id: 'room-a101', room_code: 'A-101', name: 'Computer Science Programming Lab', room_type: 'Laboratory', department: 'Computer Science & Engineering' },
+        { id: 'room-a102', room_code: 'A-102', name: 'ISE Systems & Networking Lab', room_type: 'Laboratory', department: 'Information Science & Engineering' },
+        { id: 'room-a103', room_code: 'A-103', name: 'Mechanical Thermodynamics Lab', room_type: 'Laboratory', department: 'Mechanical Engineering' },
+      ],
+      'floor-2': [
+        { id: 'room-a201', room_code: 'A-201', name: 'NVIDIA AI & Deep Learning Lab', room_type: 'Research Lab', department: 'Computer Science & Engineering' },
+        { id: 'room-a202', room_code: 'A-202', name: 'Robotics & Automation Prototyping Workshop', room_type: 'Laboratory', department: 'Robotics & Automation' },
+        { id: 'room-a203', room_code: 'A-203', name: 'HOD Office — Computing & Robotics', room_type: 'Faculty Office', occupant_name: 'Dr. A. Sharma', department: 'CSE & Robotics' },
+      ],
+      'floor-3': [
+        { id: 'room-a301', room_code: 'A-301', name: 'CAD/CAM & FEA Modeling Centre', room_type: 'Laboratory', department: 'Mechanical Engineering' },
+        { id: 'room-a302', room_code: 'A-302', name: 'Information Science Seminar Hall A-302', room_type: 'Auditorium', department: 'Information Science & Engineering' },
+        { id: 'room-a303', room_code: 'A-303', name: 'Autonomous Drone Flight Testing Lab', room_type: 'Laboratory', department: 'Robotics & Automation' },
+      ],
+    },
+  },
+  BLOCK_B: {
+    floors: [
+      { id: 'floor-1', level_number: 1, notes: 'Ground Floor — Central Library Stacks, Circulation Desk & Digital Reading' },
+      { id: 'floor-2', level_number: 2, notes: 'Floor 2 — Electronics & Communication (ECE) Labs & VLSI Design' },
+      { id: 'floor-3', level_number: 3, notes: 'Floor 3 — Electronics & Instrumentation (EIE) Labs & Sensors Wing' },
+    ],
+    rooms: {
+      'floor-1': [
+        { id: 'room-b101', room_code: 'B-101', name: 'Central Library Reference Stack & Circulation', room_type: 'Library', department: 'Central Library' },
+        { id: 'room-b102', room_code: 'B-102', name: 'Digital Learning Resource Centre', room_type: 'Digital Stack', department: 'Central Library' },
+      ],
+      'floor-2': [
+        { id: 'room-b201', room_code: 'B-201', name: 'VLSI & Embedded Systems Design Lab', room_type: 'Laboratory', department: 'ECE' },
+        { id: 'room-b202', room_code: 'B-202', name: 'Digital Signal Processing (DSP) Lab', room_type: 'Laboratory', department: 'ECE' },
+        { id: 'room-b203', room_code: 'B-203', name: 'ECE Department HOD Chamber', room_type: 'Faculty Office', occupant_name: 'Dr. B. K. Ramesh', department: 'ECE' },
+      ],
+      'floor-3': [
+        { id: 'room-b301', room_code: 'B-301', name: 'Sensors & Process Instrumentation Lab', room_type: 'Laboratory', department: 'EIE' },
+        { id: 'room-b302', room_code: 'B-302', name: 'Industrial Automation & PLC Lab', room_type: 'Laboratory', department: 'EIE' },
+      ],
+    },
+  },
+  BLOCK_CIVIL: {
+    floors: [
+      { id: 'floor-1', level_number: 1, notes: 'Ground Floor — Concrete Testing Lab & Heavy Structural Mechanics' },
+      { id: 'floor-2', level_number: 2, notes: 'Floor 2 — Soil Mechanics, Geotechnical & Highway Engineering Lab' },
+      { id: 'floor-3', level_number: 3, notes: 'Floor 3 — Total Station Surveying & Environmental Engineering Lab' },
+      { id: 'floor-4', level_number: 4, notes: 'Floor 4 — Computer-Aided Civil Design, GIS & Faculty Chambers' },
+    ],
+    rooms: {
+      'floor-1': [
+        { id: 'room-cv101', room_code: 'CV-101', name: 'Structural Materials & Concrete Testing Lab', room_type: 'Laboratory', department: 'Civil Engineering' },
+        { id: 'room-cv102', room_code: 'CV-102', name: 'Hydraulics & Fluid Mechanics Facility', room_type: 'Laboratory', department: 'Civil Engineering' },
+      ],
+      'floor-2': [
+        { id: 'room-cv201', room_code: 'CV-201', name: 'Geotechnical & Soil Mechanics Testing Lab', room_type: 'Laboratory', department: 'Civil Engineering' },
+        { id: 'room-cv202', room_code: 'CV-202', name: 'Highway & Transportation Materials Lab', room_type: 'Laboratory', department: 'Civil Engineering' },
+      ],
+      'floor-3': [
+        { id: 'room-cv301', room_code: 'CV-301', name: 'Advanced Geomatics & Total Station Lab', room_type: 'Laboratory', department: 'Civil Engineering' },
+        { id: 'room-cv302', room_code: 'CV-302', name: 'Environmental Water Quality Testing Lab', room_type: 'Laboratory', department: 'Civil Engineering' },
+        { id: 'room-cv303', room_code: 'CV-303', name: 'Civil HOD Office & Faculty Chambers', room_type: 'Faculty Office', occupant_name: 'Dr. S. Patil', department: 'Civil Engineering' },
+      ],
+      'floor-4': [
+        { id: 'room-cv401', room_code: 'CV-401', name: 'STAAD.Pro & Civil CAD Drafting Centre', room_type: 'Computer Lab', department: 'Civil Engineering' },
+        { id: 'room-cv402', room_code: 'CV-402', name: 'GIS & Remote Sensing Mapping Studio', room_type: 'Research Lab', department: 'Civil Engineering' },
+      ],
+    },
+  },
+};
+
+const DEFAULT_FLOORS = [
+  { id: 'floor-1', level_number: 1, notes: 'Ground Floor — Reception & Core Department Laboratories' },
+  { id: 'floor-2', level_number: 2, notes: 'Floor 2 — Research Centers & Faculty Offices' },
   { id: 'floor-3', level_number: 3, notes: 'Floor 3 — Smart Classrooms & Seminar Halls' },
 ];
-
-const MOCK_ROOMS = {
-  'floor-1': [
-    { id: 'room-101', room_code: 'C-101', name: 'Computer Science Lab 1', room_type: 'Laboratory', department: 'Computer Science & Engineering' },
-    { id: 'room-102', room_code: 'C-102', name: 'Software Systems Lab', room_type: 'Laboratory', department: 'Computer Science & Engineering' },
-    { id: 'room-103', room_code: 'C-103', name: 'Seminar Hall A', room_type: 'Auditorium', department: 'Academics' },
-  ],
-  'floor-2': [
-    { id: 'room-201', room_code: 'C-201', name: 'AI & Machine Learning Lab', room_type: 'Research Lab', department: 'AI & Data Science' },
-    { id: 'room-202', room_code: 'C-202', name: 'HOD Office', room_type: 'Faculty Office', occupant_name: 'Dr. A. Sharma', department: 'Computer Science & Engineering' },
-    { id: 'room-203', room_code: 'C-203', name: 'Robotics & Embedded Systems Lab', room_type: 'Laboratory', department: 'Electronics & Computer' },
-  ],
-  'floor-3': [
-    { id: 'room-301', room_code: 'C-301', name: 'Classroom 301', room_type: 'Lecture Hall', department: 'Academics' },
-    { id: 'room-302', room_code: 'C-302', name: 'Classroom 302', room_type: 'Lecture Hall', department: 'Academics' },
-  ],
-};
 
 export function IndoorMapView({ selectedBuilding, selectedFloor, onSelectFloor, onSelectRoom }) {
   const [activeFloorId, setActiveFloorId] = useState(selectedFloor?.id || 'floor-1');
   const [opacity, setOpacity] = useState(1);
 
+  // Normalize building code
+  const code = (selectedBuilding?.code || '').toUpperCase();
+  const name = (selectedBuilding?.name || '').toUpperCase();
+  const bData =
+    code.includes('CIVIL') || name.includes('CIVIL')
+      ? BUILDING_FLOOR_DATA.BLOCK_CIVIL
+      : code === 'BLOCK_B' || name.includes('BLOCK B') || code === 'LIBRARY'
+      ? BUILDING_FLOOR_DATA.BLOCK_B
+      : BUILDING_FLOOR_DATA.BLOCK_A;
+
+  const floors = bData?.floors || DEFAULT_FLOORS;
+  const roomsMap = bData?.rooms || {};
+
   const isIndoorReady =
     selectedBuilding?.indoor_mapping_status === 'available' ||
     !selectedBuilding?.indoor_mapping_status ||
+    selectedBuilding?.code === 'BLOCK_A' ||
+    selectedBuilding?.code === 'BLOCK_B' ||
+    selectedBuilding?.code === 'BLOCK_CIVIL' ||
     selectedBuilding?.code === 'BLOCK_C' ||
-    selectedBuilding?.name?.includes('Block C');
+    selectedBuilding?.name?.includes('Block');
 
   // 200ms smooth cross-fade when switching floors
   const handleFloorChange = (floor) => {
@@ -44,8 +119,8 @@ export function IndoorMapView({ selectedBuilding, selectedFloor, onSelectFloor, 
     }, 200);
   };
 
-  const rooms = MOCK_ROOMS[activeFloorId] || MOCK_ROOMS['floor-1'];
-  const currentFloorObj = MOCK_FLOORS.find((f) => f.id === activeFloorId) || MOCK_FLOORS[0];
+  const rooms = roomsMap[activeFloorId] || roomsMap['floor-1'] || [];
+  const currentFloorObj = floors.find((f) => f.id === activeFloorId) || floors[0] || { notes: 'Select a floor' };
 
   if (!isIndoorReady) {
     return (
@@ -108,7 +183,7 @@ export function IndoorMapView({ selectedBuilding, selectedFloor, onSelectFloor, 
       {/* Floor Selection Pills */}
       <div className="flex items-center justify-between border-b border-white/10 pb-3">
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-          {MOCK_FLOORS.map((floor) => {
+          {floors.map((floor) => {
             const isActive = floor.id === activeFloorId;
             return (
               <button

@@ -21,24 +21,30 @@ import { getMapConfig, MAP_PROVIDERS } from './config/mapConfig';
 export const PILOT_BUILDINGS = [
   {
     id: 'b1000000-0000-0000-0000-000000000001',
-    name: 'Block C (CS & AI)',
+    name: 'Block A (CSE, ISE, Robotics, Mechanical)',
+    shortName: 'Block A',
+    code: 'BLOCK_A',
     status: 'existing',
     height_m: 22.0,
     center: [77.5057, 12.9015],
   },
   {
-    id: 'b2000000-0000-0000-0000-000000000002',
-    name: 'Admin Block A',
+    id: 'b3000000-0000-0000-0000-000000000003',
+    name: 'Block B (ECE, EIE & Library)',
+    shortName: 'Block B',
+    code: 'BLOCK_B',
     status: 'existing',
     height_m: 18.0,
-    center: [77.5068, 12.9022],
+    center: [77.50495, 12.9027],
   },
   {
-    id: 'b3000000-0000-0000-0000-000000000003',
-    name: 'Library Block B',
+    id: 'b2000000-0000-0000-0000-000000000002',
+    name: 'Civil Block',
+    shortName: 'Civil Block',
+    code: 'BLOCK_CIVIL',
     status: 'existing',
-    height_m: 15.0,
-    center: [77.5048, 12.9026],
+    height_m: 20.0,
+    center: [77.5068, 12.9022],
   },
 ];
 
