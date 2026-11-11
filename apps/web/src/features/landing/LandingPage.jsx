@@ -39,60 +39,60 @@ export function LandingPage({ onExplore }) {
       <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-transparent to-stone-950/60 pointer-events-none" />
       <div className="absolute inset-0 shadow-[inset_0_0_120px_rgba(0,0,0,0.85)] pointer-events-none" />
 
-      {/* 2. REAL VOLUMETRIC CLOUDS WITH AUTHENTIC ANIMATIONS (from thekenyamap.com) */}
-      {/* High-Altitude Drifting Background Cloud */}
+      {/* 2. REALISTIC, LIGHT-DENSITY ATMOSPHERIC CLOUDS */}
+      {/* Subtle High-Altitude Drifting Cirrus Wisp */}
       <div
-        className="absolute top-6 left-0 pointer-events-none opacity-40 mix-blend-screen z-10 cloud-animate-drift"
+        className="absolute top-2 left-0 pointer-events-none opacity-20 mix-blend-screen z-10 cloud-animate-drift"
         style={{
-          width: '420px',
+          width: '320px',
         }}
       >
         <img
           src="/cloud_1.png"
           alt=""
-          className="w-full h-auto filter blur-[1px] brightness-110"
+          className="w-full h-auto filter blur-[2px] brightness-105"
         />
       </div>
 
-      {/* Real Cloud 1: Giant Volumetric Fluffy Cloud Bank (Left Side) */}
+      {/* Atmospheric Cloud 1: Upper-Left Sky Perimeter (Frames Corner, Leaves Center Open) */}
       <div
-        className="absolute -top-6 -left-16 sm:-left-12 md:left-2 pointer-events-none z-10 transition-transform duration-500 ease-out"
+        className="absolute -top-12 -left-28 sm:-left-20 md:-left-12 pointer-events-none z-10 opacity-30 mix-blend-screen transition-transform duration-700 ease-out"
         style={{
-          transform: `translate(${mousePos.x * -0.5}px, ${mousePos.y * -0.4}px)`,
+          transform: `translate(${mousePos.x * -0.3}px, ${mousePos.y * -0.25}px)`,
         }}
       >
         <div
           className="cloud-animate-left"
           style={{
-            width: 'clamp(340px, 45vw, 680px)',
+            width: 'clamp(260px, 32vw, 460px)',
           }}
         >
           <img
             src="/cloud_1.png"
             alt="Atmospheric cloud"
-            className="w-full h-auto drop-shadow-[0_20px_35px_rgba(0,0,0,0.4)] brightness-105 contrast-105 select-none"
+            className="w-full h-auto drop-shadow-[0_10px_25px_rgba(0,0,0,0.25)] brightness-105 contrast-100 select-none filter blur-[0.5px]"
             draggable="false"
           />
         </div>
       </div>
 
-      {/* Real Cloud 2: Giant Volumetric Fluffy Cloud Bank (Right Side) */}
+      {/* Atmospheric Cloud 2: Upper-Right Sky Perimeter (Well-Mannered, Away from Main Building & Hero) */}
       <div
-        className="absolute top-1/4 sm:top-1/3 -right-20 sm:-right-12 md:right-0 pointer-events-none z-10 transition-transform duration-500 ease-out"
+        className="absolute top-2 -right-28 sm:-right-20 md:-right-10 pointer-events-none z-10 opacity-30 mix-blend-screen transition-transform duration-700 ease-out"
         style={{
-          transform: `translate(${mousePos.x * 0.45}px, ${mousePos.y * 0.5}px)`,
+          transform: `translate(${mousePos.x * 0.3}px, ${mousePos.y * 0.25}px)`,
         }}
       >
         <div
           className="cloud-animate-right"
           style={{
-            width: 'clamp(360px, 50vw, 760px)',
+            width: 'clamp(280px, 34vw, 480px)',
           }}
         >
           <img
             src="/cloud_1.png"
             alt="Atmospheric cloud"
-            className="w-full h-auto drop-shadow-[0_25px_40px_rgba(0,0,0,0.45)] brightness-105 contrast-105 select-none"
+            className="w-full h-auto drop-shadow-[0_12px_25px_rgba(0,0,0,0.25)] brightness-105 contrast-100 select-none filter blur-[0.5px]"
             draggable="false"
           />
         </div>
