@@ -9,6 +9,7 @@ export const MAP_PROVIDERS = {
   GOOGLE: 'google',
   ESRI: 'esri',
   MAPTILER: 'maptiler',
+  MAPLIBRE: 'maplibre',
   CUSTOM: 'custom',
   TOPO: 'topo',
 };
@@ -156,6 +157,32 @@ export function getSatelliteStyle(provider = MAP_PROVIDERS.GOOGLE, apiKey = '') 
           source: 'google-satellite',
           minzoom: 0,
           maxzoom: 20,
+        },
+      ],
+    };
+  }
+
+  if (provider === MAP_PROVIDERS.MAPLIBRE) {
+    return {
+      version: 8,
+      sources: {
+        'maplibre-osm': {
+          type: 'raster',
+          tiles: [
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          ],
+          tileSize: 256,
+          maxzoom: 19,
+          attribution: '&copy; MapLibre &copy; OpenStreetMap contributors',
+        },
+      },
+      layers: [
+        {
+          id: 'satellite-base-layer',
+          type: 'raster',
+          source: 'maplibre-osm',
+          minzoom: 0,
+          maxzoom: 19,
         },
       ],
     };

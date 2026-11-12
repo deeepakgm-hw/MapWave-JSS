@@ -231,6 +231,8 @@ export function TopBar({
                   ? 'Google Ultra-HD'
                   : currentProvider === MAP_PROVIDERS.ESRI
                   ? 'Esri 30cm HD'
+                  : currentProvider === MAP_PROVIDERS.MAPLIBRE
+                  ? 'MapLibre Maps'
                   : 'MapTiler'}
               </span>
               <svg className="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -336,6 +338,28 @@ export function TopBar({
                     <div className="text-[10px] opacity-70">30cm Maxar aerial (Clean)</div>
                   </div>
                   {currentProvider === MAP_PROVIDERS.ESRI && <span>✓</span>}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSwitchProvider(MAP_PROVIDERS.MAPLIBRE);
+                    setShowProviderMenu(false);
+                  }}
+                  className={`text-left p-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-between cursor-pointer ${
+                    currentProvider === MAP_PROVIDERS.MAPLIBRE
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  <div>
+                    <div className="font-semibold flex items-center gap-1.5">
+                      <span>MapLibre Maps</span>
+                      <span className="text-[9px] font-mono uppercase bg-emerald-500/20 text-emerald-700 px-1 rounded font-bold">OSM</span>
+                    </div>
+                    <div className="text-[10px] opacity-70">Clean OpenStreetMap cartography</div>
+                  </div>
+                  {currentProvider === MAP_PROVIDERS.MAPLIBRE && <span>✓</span>}
                 </button>
 
                 <button

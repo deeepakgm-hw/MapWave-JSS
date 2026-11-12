@@ -8,7 +8,7 @@ export interface MapCoordinates {
 }
 
 export interface MapConfig {
-  imageryProvider: 'google' | 'esri' | 'maptiler' | 'custom';
+  imageryProvider: 'google' | 'esri' | 'maptiler' | 'maplibre' | 'custom' | 'topo';
   apiKeyEnvVar: string;
   apiKey: string;
   hasApiKey: boolean;

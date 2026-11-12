@@ -1233,6 +1233,8 @@ export default function MapOutdoor({
           ? 'GOOGLE ULTRA-HD SATELLITE'
           : currentProvider === MAP_PROVIDERS.ESRI
           ? 'ESRI WORLD IMAGERY HD'
+          : currentProvider === MAP_PROVIDERS.MAPLIBRE
+          ? 'MAPLIBRE OPENSTREETMAP'
           : 'MAPTILER SATELLITE'}{' '}
         • 12.9015° N, 77.5057° E • JSSATE BENGALURU
       </div>
