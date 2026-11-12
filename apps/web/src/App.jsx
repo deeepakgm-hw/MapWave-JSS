@@ -1,4 +1,4 @@
-import React, { useReducer, useState, useRef } from 'react';
+import React, { useReducer, useState, useRef, useEffect } from 'react';
 import {
   NAV_STATES,
   INITIAL_NAV_STATE,
@@ -15,6 +15,7 @@ import { RoutePreviewCard, ActiveNavigationHUD } from './features/routing';
 import { QRScannerModal } from './features/qr-checkpoint';
 import { AdminDashboard } from './features/admin';
 import { LandingPage } from './features/landing';
+import { ContextPanel, FloatingMapOverlay } from './components/dashboard';
 import { buildingMetadata, CAMPUS_CENTER } from './data';
 import { getMapConfig, MAP_PROVIDERS } from './config/mapConfig';
 import { useGeofence } from './hooks/useGeofence';
@@ -367,104 +368,33 @@ export default function App() {
     handleSetViewMode(isTopView ? '3d' : 'top');
   };
 
+  // Trigger map resize when switching from landing page to split-screen view
+  useEffect(() => {
+    if (!isLandingOpen && mapRef.current) {
+      const timer = setTimeout(() => {
+        mapRef.current?.resize?.();
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isLandingOpen]);
+
   return (
     <div className="relative flex flex-col h-screen w-screen bg-stone-950 text-slate-100 font-sans overflow-hidden">
       {/* 1. Immersive 3D Interactive Landing Page (thekenyamap.com Style) */}
       {isLandingOpen ? (
         <LandingPage onExplore={handleExplore} />
       ) : (
-        <>
-          {/* Top Bar with MapWave Minimal Branding & Return to Intro */}
-          <TopBar
-            state={state}
-            onBack={(targetLevel) => dispatch({ type: 'BACK', payload: targetLevel })}
-            onOpenSearch={() => setIsSearchOpen(true)}
-            onOpenLanding={() => setIsLandingOpen(true)}
-            bearing={bearing}
-            onResetNorth={() => {
-              if (currentProvider === MAP_PROVIDERS.TOPO) {
-                topo3DRef.current?.resetNorth?.();
-              } else {
-                mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 });
-              }
-            }}
-            isTopView={isTopView}
-            onSetViewMode={handleSetViewMode}
-            currentProvider={currentProvider}
-            onSwitchProvider={setCurrentProvider}
-            isGpsActive={isGpsActive}
-            isGpsLoading={isGpsLoading}
-            onToggleGps={handleToggleGps}
-            onLocateMe={handleLocateMe}
-            currentMode={currentMode}
-            isInsideCampus={isInsideCampus}
-            distanceToCampusKm={distanceToCampusKm}
-            onToggleMode={() =>
-              manualSetMode(
-                currentMode === APP_MODES.CAMPUS_MODE
-                  ? APP_MODES.EXPLORE_MODE
-                  : APP_MODES.CAMPUS_MODE
-              )
-            }
-          />
-
-          {/* Main 3D Satellite Map / Interactive 3D Model Viewport - Full Bleed */}
-          <main className="flex-1 relative w-full h-full bg-stone-950">
-            {currentProvider === MAP_PROVIDERS.TOPO ? (
-              <Interactive3DMap
-                ref={topo3DRef}
-                currentState={currentState}
-                selectedBuilding={selectedBuilding}
-                onSelectBuilding={handleSelectBuilding}
-                onBearingChange={setBearing}
-                isTopView={isTopView}
-                gpsLocation={gpsLocation}
-                onSimulateCampusWalk={handleToggleSimulateCampus}
-                isSimulating={isSimulating}
-              />
-            ) : (
-              <MapOutdoor
-                currentState={currentState}
-                selectedBuilding={selectedBuilding}
-                activeRoute={activeRoute}
-                onSelectBuilding={handleSelectBuilding}
-                onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
-                onBearingChange={setBearing}
-                mapRefOut={mapRef}
-                currentProvider={currentProvider}
-                isTopView={isTopView}
-                gpsLocation={gpsLocation}
-                isGpsActive={isGpsActive}
-                onToggleGps={handleToggleGps}
-                onSimulateCampusWalk={handleToggleSimulateCampus}
-                isSimulating={isSimulating}
-                currentMode={currentMode}
-                isInsideCampus={isInsideCampus}
-                distanceToCampusKm={distanceToCampusKm}
-                onSwitchMode={manualSetMode}
-              />
-            )}
-
-            {/* Floating Controller Cluster (Compass, Zoom In/Out, Locate Me, Accessible Toggle, 2D/3D View) */}
-            <FloatingControls
-              onLocateMe={handleLocateMe}
-              onZoomIn={() => {
-                if (currentProvider === MAP_PROVIDERS.TOPO) {
-                  topo3DRef.current?.zoomIn?.();
-                } else {
-                  mapRef.current?.zoomIn?.();
-                }
-              }}
-              onZoomOut={() => {
-                if (currentProvider === MAP_PROVIDERS.TOPO) {
-                  topo3DRef.current?.zoomOut?.();
-                } else {
-                  mapRef.current?.zoomOut?.();
-                }
-              }}
-              isAccessibleMode={isAccessibleMode}
-              onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
-              geoDenied={false}
+        <div className="relative flex flex-col lg:flex-row h-full w-full overflow-hidden">
+          {/* ========================================================
+              LEFT SIDE: INTERACTIVE CAMPUS MAP (68-70% on Desktop)
+              ======================================================== */}
+          <div className="relative w-full lg:w-[68%] xl:w-[70%] h-full flex flex-col bg-stone-950 overflow-hidden">
+            {/* Top Bar with MapWave Minimal Branding & Controls */}
+            <TopBar
+              state={state}
+              onBack={(targetLevel) => dispatch({ type: 'BACK', payload: targetLevel })}
+              onOpenSearch={() => setIsSearchOpen(true)}
+              onOpenLanding={() => setIsLandingOpen(true)}
               bearing={bearing}
               onResetNorth={() => {
                 if (currentProvider === MAP_PROVIDERS.TOPO) {
@@ -474,209 +404,379 @@ export default function App() {
                 }
               }}
               isTopView={isTopView}
-              onToggleViewMode={handleToggleViewMode}
+              onSetViewMode={handleSetViewMode}
+              currentProvider={currentProvider}
+              onSwitchProvider={setCurrentProvider}
               isGpsActive={isGpsActive}
+              isGpsLoading={isGpsLoading}
+              onToggleGps={handleToggleGps}
+              onLocateMe={handleLocateMe}
+              currentMode={currentMode}
+              isInsideCampus={isInsideCampus}
+              distanceToCampusKm={distanceToCampusKm}
+              onToggleMode={() =>
+                manualSetMode(
+                  currentMode === APP_MODES.CAMPUS_MODE
+                    ? APP_MODES.EXPLORE_MODE
+                    : APP_MODES.CAMPUS_MODE
+                )
+              }
             />
-          </main>
 
-          {/* Sleek Bottom Sheet */}
-          <BottomSheet
-            summary={getBottomSheetSummary()}
-            onClose={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
-          >
-            {/* If in EXPLORE_MODE: Display Outdoor GPS & Campus Distance overview, hide indoor controls */}
-            {currentMode === APP_MODES.EXPLORE_MODE ? (
-              <div className="flex flex-col gap-3 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                    <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                      Explore Mode Active
-                    </h4>
-                  </div>
-                  <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">
-                    Outside Geofence
-                  </span>
-                </div>
+            {/* Main 3D Satellite Map / Interactive 3D Model Viewport */}
+            <main className="flex-1 relative w-full h-full bg-stone-950">
+              {currentProvider === MAP_PROVIDERS.TOPO ? (
+                <Interactive3DMap
+                  ref={topo3DRef}
+                  currentState={currentState}
+                  selectedBuilding={selectedBuilding}
+                  onSelectBuilding={handleSelectBuilding}
+                  onBearingChange={setBearing}
+                  isTopView={isTopView}
+                  gpsLocation={gpsLocation}
+                  onSimulateCampusWalk={handleToggleSimulateCampus}
+                  isSimulating={isSimulating}
+                />
+              ) : (
+                <MapOutdoor
+                  currentState={currentState}
+                  selectedBuilding={selectedBuilding}
+                  activeRoute={activeRoute}
+                  onSelectBuilding={handleSelectBuilding}
+                  onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
+                  onBearingChange={setBearing}
+                  mapRefOut={mapRef}
+                  currentProvider={currentProvider}
+                  isTopView={isTopView}
+                  gpsLocation={gpsLocation}
+                  isGpsActive={isGpsActive}
+                  onToggleGps={handleToggleGps}
+                  onSimulateCampusWalk={handleToggleSimulateCampus}
+                  isSimulating={isSimulating}
+                  currentMode={currentMode}
+                  isInsideCampus={isInsideCampus}
+                  distanceToCampusKm={distanceToCampusKm}
+                  onSwitchMode={manualSetMode}
+                />
+              )}
 
-                <p className="text-xs text-slate-300 font-normal leading-relaxed">
-                  You are currently <strong className="text-amber-300 font-semibold">{distanceToCampusKm.toFixed(1)} km</strong> from JSS Academy of Technical Education. Real-time outdoor GPS tracking is active. Indoor building models and floor navigation are disabled until entering campus.
-                </p>
+              {/* Roam Floating Map Overlay (Pill cluster, waypoint card, circular controls) */}
+              <FloatingMapOverlay
+                selectedBuilding={selectedBuilding}
+                onSelectBuilding={handleSelectBuilding}
+                onClearBuilding={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
+                bearing={bearing}
+                isTopView={isTopView}
+                onResetNorth={() => {
+                  if (currentProvider === MAP_PROVIDERS.TOPO) {
+                    topo3DRef.current?.resetNorth?.();
+                  } else {
+                    mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 });
+                  }
+                }}
+                onToggleViewMode={handleToggleViewMode}
+                onZoomIn={() => {
+                  if (currentProvider === MAP_PROVIDERS.TOPO) {
+                    topo3DRef.current?.zoomIn?.();
+                  } else {
+                    mapRef.current?.zoomIn?.();
+                  }
+                }}
+                onZoomOut={() => {
+                  if (currentProvider === MAP_PROVIDERS.TOPO) {
+                    topo3DRef.current?.zoomOut?.();
+                  } else {
+                    mapRef.current?.zoomOut?.();
+                  }
+                }}
+                onLocateMe={handleLocateMe}
+                isGpsActive={isGpsActive}
+                isGpsLoading={isGpsLoading}
+                currentProvider={currentProvider}
+                onSwitchProvider={setCurrentProvider}
+                currentMode={currentMode}
+                isInsideCampus={isInsideCampus}
+                distanceToCampusKm={distanceToCampusKm}
+                gpsLocation={gpsLocation}
+                pilotBuildings={PILOT_BUILDINGS}
+                onOpenSearch={() => setIsSearchOpen(true)}
+              />
 
-                <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      manualSetMode(APP_MODES.CAMPUS_MODE);
-                      if (mapRef.current) {
-                        mapRef.current.flyTo({
-                          center: CAMPUS_CENTER,
-                          zoom: 17.6,
-                          pitch: 45,
-                          duration: 1500,
-                        });
-                      }
-                    }}
-                    className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
-                  >
-                    <span>🏫 Enter Campus 3D Mode</span>
-                  </button>
+              {/* Floating Controller Cluster (Compass, Zoom In/Out, Locate Me, Accessible Toggle, 2D/3D View) on mobile */}
+              <div className="lg:hidden">
+                <FloatingControls
+                  onLocateMe={handleLocateMe}
+                  onZoomIn={() => {
+                    if (currentProvider === MAP_PROVIDERS.TOPO) {
+                      topo3DRef.current?.zoomIn?.();
+                    } else {
+                      mapRef.current?.zoomIn?.();
+                    }
+                  }}
+                  onZoomOut={() => {
+                    if (currentProvider === MAP_PROVIDERS.TOPO) {
+                      topo3DRef.current?.zoomOut?.();
+                    } else {
+                      mapRef.current?.zoomOut?.();
+                    }
+                  }}
+                  isAccessibleMode={isAccessibleMode}
+                  onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
+                  geoDenied={false}
+                  bearing={bearing}
+                  onResetNorth={() => {
+                    if (currentProvider === MAP_PROVIDERS.TOPO) {
+                      topo3DRef.current?.resetNorth?.();
+                    } else {
+                      mapRef.current?.easeTo?.({ bearing: 0, pitch: isTopView ? 0 : 45 });
+                    }
+                  }}
+                  isTopView={isTopView}
+                  onToggleViewMode={handleToggleViewMode}
+                  isGpsActive={isGpsActive}
+                />
+              </div>
 
-                  <button
-                    type="button"
-                    onClick={handleLocateMe}
-                    className="w-full sm:w-auto px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
-                  >
-                    <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="3" strokeWidth={2} />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3m10-10h-3M5 12H2" />
-                    </svg>
-                    <span>My Location</span>
-                  </button>
+              {/* Sinuous Curved Tab / Organic Roam Divider Handle */}
+              <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-30 pointer-events-none">
+                <div className="w-6 h-20 bg-[#f8f9fa] dark:bg-slate-900 rounded-l-full shadow-lg border-y border-l border-slate-300 dark:border-white/10 flex items-center justify-center">
+                  <div className="w-1 h-8 rounded-full bg-slate-300 dark:bg-white/20" />
                 </div>
               </div>
-            ) : (
-              <>
-                {currentState === NAV_STATES.OVERVIEW && (
+            </main>
+
+            {/* Mobile Bottom Sheet (for touchscreens / small screens < 1024px) */}
+            <div className="lg:hidden">
+              <BottomSheet
+                summary={getBottomSheetSummary()}
+                onClose={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
+              >
+                {/* If in EXPLORE_MODE: Display Outdoor GPS & Campus Distance overview, hide indoor controls */}
+                {currentMode === APP_MODES.EXPLORE_MODE ? (
                   <div className="flex flex-col gap-3 py-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold text-white/90 uppercase tracking-wider">
-                        Campus Zones & Navigation
-                      </h4>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                        <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                          Explore Mode Active
+                        </h4>
+                      </div>
                       <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">
-                        JSSATE Bangalore
+                        Outside Geofence
                       </span>
                     </div>
+
                     <p className="text-xs text-slate-300 font-normal leading-relaxed">
-                      Explore 3D outdoor building zones, view indoor floorplans, or search for faculty offices and laboratories across JSS Academy of Technical Education.
+                      You are currently <strong className="text-amber-300 font-semibold">{distanceToCampusKm.toFixed(1)} km</strong> from JSS Academy of Technical Education. Real-time outdoor GPS tracking is active. Indoor building models and floor navigation are disabled until entering campus.
                     </p>
 
-                    {/* Pilot Building Selection Pills */}
-                    <div className="flex flex-col gap-2 pt-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider">
-                          Pilot 3D Zones
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setShowAllBuildings(!showAllBuildings)}
-                          className="text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
-                        >
-                          {showAllBuildings ? 'Show Pilot Only' : '+ All Facilities'}
-                        </button>
-                      </div>
-
-                      <div className="flex flex-wrap gap-2">
-                        {PILOT_BUILDINGS.map((building) => (
-                          <button
-                            key={building.id}
-                            type="button"
-                            onClick={() => handleSelectBuilding(building)}
-                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
-                          >
-                            {building.name}
-                          </button>
-                        ))}
-                      </div>
-
-                      {showAllBuildings && (
-                        <div className="flex flex-wrap gap-2 pt-1 border-t border-white/10 mt-1">
-                          {OTHER_CAMPUS_FACILITIES.map((facility) => (
-                            <button
-                              key={facility.id}
-                              type="button"
-                              onClick={() => handleSelectBuilding(facility)}
-                              className="px-3 py-1 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full text-[11px] font-medium border border-white/10 transition-colors cursor-pointer"
-                            >
-                              {facility.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex items-center gap-3 pt-3">
+                    <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
                       <button
                         type="button"
-                        onClick={() => setIsSearchOpen(true)}
-                        className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
+                        onClick={() => {
+                          manualSetMode(APP_MODES.CAMPUS_MODE);
+                          if (mapRef.current) {
+                            mapRef.current.flyTo({
+                              center: CAMPUS_CENTER,
+                              zoom: 17.6,
+                              pitch: 45,
+                              duration: 1500,
+                            });
+                          }
+                        }}
+                        className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                        <span>Search Rooms & Labs</span>
+                        <span>🏫 Enter Campus 3D Mode</span>
                       </button>
+
                       <button
                         type="button"
-                        onClick={() => setIsAdminOpen(true)}
-                        className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white/90 rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
+                        onClick={handleLocateMe}
+                        className="w-full sm:w-auto px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3m10-10h-3M5 12H2" />
                         </svg>
-                        <span>Admin</span>
+                        <span>My Location</span>
                       </button>
                     </div>
                   </div>
+                ) : (
+                  <>
+                    {currentState === NAV_STATES.OVERVIEW && (
+                      <div className="flex flex-col gap-3 py-2">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-bold text-white/90 uppercase tracking-wider">
+                            Campus Zones & Navigation
+                          </h4>
+                          <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                            JSSATE Bangalore
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-300 font-normal leading-relaxed">
+                          Explore 3D outdoor building zones, view indoor floorplans, or search for faculty offices and laboratories across JSS Academy of Technical Education.
+                        </p>
+
+                        {/* Pilot Building Selection Pills */}
+                        <div className="flex flex-col gap-2 pt-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider">
+                              Pilot 3D Zones
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => setShowAllBuildings(!showAllBuildings)}
+                              className="text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+                            >
+                              {showAllBuildings ? 'Show Pilot Only' : '+ All Facilities'}
+                            </button>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            {PILOT_BUILDINGS.map((building) => (
+                              <button
+                                key={building.id}
+                                type="button"
+                                onClick={() => handleSelectBuilding(building)}
+                                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
+                              >
+                                {building.name}
+                              </button>
+                            ))}
+                          </div>
+
+                          {showAllBuildings && (
+                            <div className="flex flex-wrap gap-2 pt-1 border-t border-white/10 mt-1">
+                              {OTHER_CAMPUS_FACILITIES.map((facility) => (
+                                <button
+                                  key={facility.id}
+                                  type="button"
+                                  onClick={() => handleSelectBuilding(facility)}
+                                  className="px-3 py-1 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full text-[11px] font-medium border border-white/10 transition-colors cursor-pointer"
+                                >
+                                  {facility.name}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-3 pt-3">
+                          <button
+                            type="button"
+                            onClick={() => setIsSearchOpen(true)}
+                            className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                            <span>Search Rooms & Labs</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsAdminOpen(true)}
+                            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white/90 rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <span>Admin</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {(currentState === NAV_STATES.BUILDING_FLOORS || currentState === NAV_STATES.FLOOR_VIEW) && (
+                      <IndoorMapView
+                        selectedBuilding={selectedBuilding}
+                        selectedFloor={selectedFloor}
+                        onSelectFloor={handleSelectFloor}
+                        onSelectRoom={handleSelectRoom}
+                      />
+                    )}
+                  </>
                 )}
 
-                {(currentState === NAV_STATES.BUILDING_FLOORS || currentState === NAV_STATES.FLOOR_VIEW) && (
-                  <IndoorMapView
-                    selectedBuilding={selectedBuilding}
-                    selectedFloor={selectedFloor}
-                    onSelectFloor={handleSelectFloor}
-                    onSelectRoom={handleSelectRoom}
+                {currentState === NAV_STATES.ROUTE_PREVIEW && (
+                  <RoutePreviewCard
+                    destination={destination || selectedRoom}
+                    isAccessibleMode={isAccessibleMode}
+                    errorMessage={errorMessage}
+                    onStartNavigation={() => dispatch({ type: 'START_NAVIGATION' })}
+                    onBack={() => dispatch({ type: 'BACK' })}
                   />
                 )}
-              </>
-            )}
 
-            {currentState === NAV_STATES.ROUTE_PREVIEW && (
-              <RoutePreviewCard
-                destination={destination || selectedRoom}
-                isAccessibleMode={isAccessibleMode}
-                errorMessage={errorMessage}
-                onStartNavigation={() => dispatch({ type: 'START_NAVIGATION' })}
-                onBack={() => dispatch({ type: 'BACK' })}
-              />
-            )}
+                {currentState === NAV_STATES.ROUTING_ACTIVE && (
+                  <ActiveNavigationHUD
+                    destination={destination || selectedRoom}
+                    lastAnchor={lastAnchor}
+                    onTriggerReanchor={() => dispatch({ type: 'TRIGGER_REANCHOR' })}
+                    onFinish={() => dispatch({ type: 'DESTINATION_REACHED' })}
+                  />
+                )}
 
-            {currentState === NAV_STATES.ROUTING_ACTIVE && (
-              <ActiveNavigationHUD
-                destination={destination || selectedRoom}
-                lastAnchor={lastAnchor}
-                onTriggerReanchor={() => dispatch({ type: 'TRIGGER_REANCHOR' })}
-                onFinish={() => dispatch({ type: 'DESTINATION_REACHED' })}
-              />
-            )}
+                {currentState === NAV_STATES.ARRIVED && (
+                  <div className="flex flex-col gap-3 py-3 text-center items-center">
+                    <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-400/30 flex items-center justify-center">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                        You Have Arrived
+                      </h3>
+                      <p className="text-xs text-slate-300 font-medium mt-1">
+                        Destination <span className="text-amber-300 font-semibold">{destination?.name || destination?.room_code || 'Room'}</span> reached.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => dispatch({ type: 'DISMISS' })}
+                      className="min-h-[44px] w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs tracking-wider uppercase rounded-full border border-white/20 shadow-lg transition-colors cursor-pointer mt-1"
+                    >
+                      Done & Return to Campus Overview
+                    </button>
+                  </div>
+                )}
+              </BottomSheet>
+            </div>
+          </div>
 
-            {currentState === NAV_STATES.ARRIVED && (
-              <div className="flex flex-col gap-3 py-3 text-center items-center">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-400/30 flex items-center justify-center">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                    You Have Arrived
-                  </h3>
-                  <p className="text-xs text-slate-300 font-medium mt-1">
-                    Destination <span className="text-amber-300 font-semibold">{destination?.name || destination?.room_code || 'Room'}</span> reached.
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => dispatch({ type: 'DISMISS' })}
-                  className="min-h-[44px] w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs tracking-wider uppercase rounded-full border border-white/20 shadow-lg transition-colors cursor-pointer mt-1"
-                >
-                  Done & Return to Campus Overview
-                </button>
-              </div>
-            )}
-          </BottomSheet>
-        </>
+          {/* ========================================================
+              RIGHT SIDE: DYNAMIC CONTEXTUAL INFORMATION PANEL (30-32% on Desktop)
+              ======================================================== */}
+          <div className="hidden lg:flex lg:w-[32%] xl:w-[30%] h-full relative z-20 flex-col overflow-hidden">
+            <ContextPanel
+              selectedBuilding={selectedBuilding}
+              selectedFloor={selectedFloor}
+              selectedRoom={selectedRoom}
+              destination={destination}
+              activeRoute={activeRoute}
+              currentState={currentState}
+              currentMode={currentMode}
+              isInsideCampus={isInsideCampus}
+              distanceToCampusKm={distanceToCampusKm}
+              gpsLocation={gpsLocation}
+              isGpsActive={isGpsActive}
+              isAccessibleMode={isAccessibleMode}
+              onSelectBuilding={handleSelectBuilding}
+              onSelectFloor={handleSelectFloor}
+              onSelectRoom={handleSelectRoom}
+              onStartNavigation={() => dispatch({ type: 'START_NAVIGATION' })}
+              onCancelRoute={() => dispatch({ type: 'DISMISS' })}
+              onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
+              onResetToCampus={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
+              onOpenSearch={() => setIsSearchOpen(true)}
+              onLocateMe={handleLocateMe}
+              pilotBuildings={PILOT_BUILDINGS}
+              otherFacilities={OTHER_CAMPUS_FACILITIES}
+            />
+          </div>
+        </div>
       )}
 
       {/* Global Search Modal */}

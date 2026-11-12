@@ -112,7 +112,7 @@ describe('App End-to-End Workflow Integration', () => {
 
     // State machine should transition to BUILDING_FLOORS
     expect(screen.getByText(/SELECT FLOOR/i)).toBeInTheDocument();
-    expect(screen.getByText(/Floor 1/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Floor 1/i)[0]).toBeInTheDocument();
   });
 
   it('supports automatic and manual geofence switching between CAMPUS_MODE and EXPLORE_MODE', () => {
