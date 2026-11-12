@@ -62,64 +62,55 @@ export function ContextPanel({
 
   return (
     <aside className="relative flex flex-col h-full w-full bg-[#eceeed] text-[#181a1d] shadow-2xl overflow-hidden select-none">
-      {/* 1. TOP HEADER: ROAM PURE WHITE SEARCH CAPSULE + NOTIFICATION + AVATAR */}
-      <div className="p-4 sm:p-5 pb-3 flex items-center gap-2.5 shrink-0">
-        {/* Search Input Capsule */}
-        <button
-          type="button"
-          onClick={onOpenSearch}
-          aria-label="Search campus buildings, rooms, and departments"
-          className="flex-1 flex items-center justify-between px-4 py-2.5 rounded-full bg-white hover:bg-white/95 text-[#6b7280] hover:text-[#111827] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/[0.04] transition-all cursor-pointer group"
-        >
-          <div className="flex items-center gap-2.5">
-            <svg
-              className="w-4 h-4 text-[#8c929d] group-hover:text-amber-500 transition-colors"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <span className="text-xs font-normal text-[#8c929d]">
-              Search stations or places
+      {/* 1. TOP HEADER: CONTEXTUAL TITLE / STATS + NOTIFICATIONS + PROFILE */}
+      <div className="p-4 sm:p-5 pb-3 flex items-center justify-between gap-2.5 shrink-0">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-8 h-8 rounded-xl bg-white text-[#181a1d] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/[0.04] flex items-center justify-center shrink-0">
+            <span className="text-sm">🏢</span>
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold text-[#181a1d] uppercase tracking-wide truncate">
+              {selectedBuilding ? selectedBuilding.name.split('(')[0] : 'Campus Context'}
+            </span>
+            <span className="text-[10px] text-[#8c929d] truncate">
+              {selectedBuilding ? `Floor ${activeLevel} • ${rooms.length} Rooms Mapped` : 'JSSATE Information Panel'}
             </span>
           </div>
-          <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#f3f4f6] text-[#9ca3af]">
-            /
-          </kbd>
-        </button>
+        </div>
 
-        {/* Notification Bell with Badge */}
-        <button
-          type="button"
-          onClick={onOpenSearch}
-          title="Campus Notifications"
-          className="w-10 h-10 rounded-full bg-white hover:bg-white/90 text-[#4b5563] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/[0.04] flex items-center justify-center transition-all cursor-pointer relative"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Notification Bell with Badge */}
+          <button
+            type="button"
+            onClick={onOpenSearch}
+            title="Campus Notifications"
+            className="w-9 h-9 rounded-full bg-white hover:bg-white/90 text-[#4b5563] shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-black/[0.04] flex items-center justify-center transition-all cursor-pointer relative"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+              />
+            </svg>
+            <span className="absolute top-1 right-1 w-3 h-3 rounded-full bg-black text-white text-[7px] font-bold flex items-center justify-center">
+              5
+            </span>
+          </button>
+
+          {/* User Profile Avatar */}
+          <div
+            onClick={onLocateMe}
+            title="Student Profile & GPS Status"
+            className="w-9 h-9 rounded-full bg-stone-300 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-2 border-white cursor-pointer hover:scale-105 transition-transform shrink-0"
+          >
+            <img
+              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
+              alt="Profile"
+              className="w-full h-full object-cover"
             />
-          </svg>
-          <span className="absolute top-1.5 right-1.5 w-3.5 h-3.5 rounded-full bg-black text-white text-[8px] font-bold flex items-center justify-center">
-            5
-          </span>
-        </button>
-
-        {/* User Profile Avatar */}
-        <div
-          onClick={onLocateMe}
-          title="Student Profile & GPS Status"
-          className="w-10 h-10 rounded-full bg-stone-300 overflow-hidden shadow-[0_2px_8px_rgba(0,0,0,0.04)] border-2 border-white cursor-pointer hover:scale-105 transition-transform shrink-0"
-        >
-          <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"
-            alt="Profile"
-            className="w-full h-full object-cover"
-          />
+          </div>
         </div>
       </div>
 
