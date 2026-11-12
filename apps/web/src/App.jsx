@@ -379,12 +379,12 @@ export default function App() {
   }, [isLandingOpen]);
 
   return (
-    <div className="relative flex flex-col h-screen w-screen bg-[#7e8590] text-slate-100 font-sans overflow-hidden lg:p-3 xl:p-5">
+    <div className="relative flex flex-col h-screen w-screen bg-stone-950 text-slate-100 font-sans overflow-hidden">
       {/* 1. Immersive 3D Interactive Landing Page (thekenyamap.com Style) */}
       {isLandingOpen ? (
         <LandingPage onExplore={handleExplore} />
       ) : (
-        <div className="relative flex flex-col lg:flex-row h-full w-full overflow-hidden lg:rounded-[36px] lg:shadow-[0_25px_80px_rgba(0,0,0,0.5)] lg:border lg:border-white/10 bg-[#1a1d21]">
+        <div className="relative flex flex-col lg:flex-row h-full w-full overflow-hidden bg-[#1a1d21]">
           {/* ========================================================
               LEFT SIDE: INTERACTIVE CAMPUS MAP (68-70% on Desktop)
               ======================================================== */}
