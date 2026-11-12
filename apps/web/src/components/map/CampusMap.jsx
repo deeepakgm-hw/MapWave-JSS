@@ -118,19 +118,33 @@ export function CampusMap({
           source: 'campus-boundary',
           paint: {
             'fill-color': '#0284c7',
-            'fill-opacity': 0.04,
+            'fill-opacity': 0.08,
           },
         });
 
+        // Soft glow casing layer around authoritative boundary
+        map.addLayer({
+          id: 'campus-boundary-glow',
+          type: 'line',
+          source: 'campus-boundary',
+          paint: {
+            'line-color': '#0284c7',
+            'line-width': 6,
+            'line-opacity': 0.4,
+            'line-blur': 3,
+          },
+        });
+
+        // Crisp authoritative boundary perimeter line
         map.addLayer({
           id: 'campus-boundary-line',
           type: 'line',
           source: 'campus-boundary',
           paint: {
             'line-color': '#38bdf8',
-            'line-width': 2.2,
-            'line-dasharray': [3, 2],
-            'line-opacity': 0.85,
+            'line-width': 2.8,
+            'line-dasharray': [4, 2],
+            'line-opacity': 0.95,
           },
         });
       }

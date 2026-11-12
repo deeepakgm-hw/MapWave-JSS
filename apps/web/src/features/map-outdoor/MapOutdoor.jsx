@@ -32,6 +32,10 @@ export default function MapOutdoor({
   onToggleGps,
   onSimulateCampusWalk,
   isSimulating = false,
+  currentMode = 'CAMPUS_MODE',
+  isInsideCampus = true,
+  distanceToCampusKm = 0,
+  onSwitchMode,
 }) {
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
@@ -43,6 +47,12 @@ export default function MapOutdoor({
   const [geoDenied, setGeoDenied] = useState(false);
   const [hoveredBuilding, setHoveredBuilding] = useState(null);
   const hasAutoCentered = useRef(false);
+
+  const currentModeRef = useRef(currentMode);
+  currentModeRef.current = currentMode;
+
+  const onSwitchModeRef = useRef(onSwitchMode);
+  onSwitchModeRef.current = onSwitchMode;
 
   // Sync external gpsLocation prop
   useEffect(() => {
@@ -135,19 +145,33 @@ export default function MapOutdoor({
         source: 'campus-boundary',
         paint: {
           'fill-color': '#0284c7',
-          'fill-opacity': 0.04,
+          'fill-opacity': 0.08,
         },
       });
 
+      // Soft glow casing layer around authoritative boundary
+      map.addLayer({
+        id: 'campus-boundary-glow',
+        type: 'line',
+        source: 'campus-boundary',
+        paint: {
+          'line-color': '#0284c7',
+          'line-width': 6,
+          'line-opacity': 0.4,
+          'line-blur': 3,
+        },
+      });
+
+      // Crisp authoritative boundary perimeter line
       map.addLayer({
         id: 'campus-boundary-line',
         type: 'line',
         source: 'campus-boundary',
         paint: {
           'line-color': '#38bdf8',
-          'line-width': 2.2,
-          'line-dasharray': [3, 2],
-          'line-opacity': 0.85,
+          'line-width': 2.8,
+          'line-dasharray': [4, 2],
+          'line-opacity': 0.95,
         },
       });
     }

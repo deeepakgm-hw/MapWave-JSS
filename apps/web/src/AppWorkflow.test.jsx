@@ -114,4 +114,37 @@ describe('App End-to-End Workflow Integration', () => {
     expect(screen.getByText(/SELECT FLOOR/i)).toBeInTheDocument();
     expect(screen.getByText(/Floor 1/i)).toBeInTheDocument();
   });
+
+  it('supports automatic and manual geofence switching between CAMPUS_MODE and EXPLORE_MODE', () => {
+    render(<App />);
+
+    // Transition from landing page
+    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
+    fireEvent.click(exploreBtn);
+
+    // Initial state: Campus Mode is active with 3D Pilot Zones and Search Rooms
+    expect(screen.getByText(/Campus Mode/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Block A/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Search Rooms/i })).toBeInTheDocument();
+
+    // Toggle mode to EXPLORE_MODE (as would happen when student moves outside boundary)
+    const modeBadge = screen.getByRole('button', { name: /Campus Mode/i });
+    fireEvent.click(modeBadge);
+
+    // Now in EXPLORE_MODE: indoor controls are hidden, outdoor overview is active
+    expect(screen.getAllByText(/Explore Mode/i).length).toBeGreaterThan(0);
+    expect(screen.getByText(/Explore Mode Active/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Block A/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Search Rooms/i })).not.toBeInTheDocument();
+
+    // Prominent "Enter Campus 3D Mode" button is available
+    const enterCampusBtn = screen.getByRole('button', { name: /Enter Campus 3D Mode/i });
+    expect(enterCampusBtn).toBeInTheDocument();
+
+    // Clicking Enter Campus 3D Mode switches back to CAMPUS_MODE
+    fireEvent.click(enterCampusBtn);
+    expect(screen.getAllByText(/Campus Mode/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: /Block A/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Search Rooms/i })).toBeInTheDocument();
+  });
 });

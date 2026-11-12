@@ -1,0 +1,43 @@
+{
+  "type": "FeatureCollection",
+  "name": "JSSATE_Bangalore_Campus_Boundary",
+  "crs": {
+    "type": "name",
+    "properties": {
+      "name": "urn:ogc:def:crs:OGC:1.3:CRS84"
+    }
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "campus-boundary-jssate",
+      "properties": {
+        "name": "JSS Academy of Technical Education, Bengaluru",
+        "institution": "JSS Mahavidyapeetha",
+        "source": "Google Earth KML (Mapwave.kml)",
+        "placemarkId": "06A23508434303533B15",
+        "verified": true,
+        "crs": "WGS84",
+        "address": "Dr. Vishnuvardhan Road, Uttarahalli-Kengeri Main Road, Bengaluru, Karnataka 560060"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.5041684217737, 12.9034260340053],
+            [77.50364932845176, 12.90074769939012],
+            [77.50487588861553, 12.90051897799614],
+            [77.50487582710672, 12.90078489524921],
+            [77.50451961431421, 12.90095329213871],
+            [77.5047423845521, 12.90159671915446],
+            [77.50579873242144, 12.90124338277633],
+            [77.50727068870482, 12.90365584185851],
+            [77.50585672384517, 12.90442692375669],
+            [77.50541269760643, 12.9030348137034],
+            [77.5041684217737, 12.9034260340053]
+          ]
+        ]
+      }
+    }
+  ]
+}

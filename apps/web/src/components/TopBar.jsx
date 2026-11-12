@@ -16,6 +16,10 @@ export function TopBar({
   isGpsLoading = false,
   onToggleGps,
   onLocateMe,
+  currentMode = 'CAMPUS_MODE',
+  isInsideCampus = true,
+  distanceToCampusKm = 0,
+  onToggleMode,
 }) {
   const { selectedBuilding, selectedFloor, gpsLocation } = state;
   const [showProviderMenu, setShowProviderMenu] = useState(false);
@@ -92,6 +96,36 @@ export function TopBar({
 
       {/* Top-Right: View Mode, GPS, Satellite Provider & Intro Cluster */}
       <div className="flex items-center gap-2 pointer-events-auto">
+        {/* Automatic Geofence Status Badge (CAMPUS_MODE vs EXPLORE_MODE) */}
+        <button
+          type="button"
+          onClick={onToggleMode}
+          title={`Geofencing: ${currentMode === 'CAMPUS_MODE' ? 'Campus Mode (3D models & indoor navigation active)' : 'Explore Mode (Outdoor GPS active)'}. Click to switch.`}
+          className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-2xl backdrop-blur-md border shadow-xl transition-all duration-200 cursor-pointer min-h-[44px] ${
+            currentMode === 'CAMPUS_MODE'
+              ? 'bg-blue-950/80 border-blue-500/50 text-blue-200 hover:bg-blue-900/90'
+              : 'bg-amber-950/80 border-amber-500/60 text-amber-200 hover:bg-amber-900/90'
+          }`}
+        >
+          <div className="relative flex items-center justify-center">
+            <span
+              className={`w-2.5 h-2.5 rounded-full ${
+                currentMode === 'CAMPUS_MODE' ? 'bg-blue-400' : 'bg-amber-400 animate-pulse'
+              }`}
+            />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-xs font-bold leading-tight flex items-center gap-1.5">
+              <span>{currentMode === 'CAMPUS_MODE' ? 'Campus Mode' : 'Explore Mode'}</span>
+            </span>
+            <span className="text-[9px] text-white/50 leading-tight">
+              {currentMode === 'CAMPUS_MODE'
+                ? 'Inside Boundary'
+                : `${distanceToCampusKm.toFixed(1)} km to Campus`}
+            </span>
+          </div>
+        </button>
+
         {/* Real-time GPS Toggle / Locate Me Capsule */}
         <button
           type="button"

@@ -17,6 +17,8 @@ import { AdminDashboard } from './features/admin';
 import { LandingPage } from './features/landing';
 import { buildingMetadata, CAMPUS_CENTER } from './data';
 import { getMapConfig, MAP_PROVIDERS } from './config/mapConfig';
+import { useGeofence } from './hooks/useGeofence';
+import { APP_MODES } from './services/geofenceService';
 
 export const PILOT_BUILDINGS = [
   {
@@ -105,6 +107,26 @@ export default function App() {
   const mapRef = useRef(null);
   const topo3DRef = useRef(null);
 
+  // Authoritative Geofencing (Turf.js PIP + Browser Geolocation + 3-reading Hysteresis)
+  const {
+    mode: currentMode,
+    isInsideCampus,
+    userLocation: geofenceLoc,
+    distanceToCampusKm,
+    gpsStatus,
+    accuracyValid,
+    consecutiveCount,
+    startWatching,
+    stopWatching,
+    processGpsFix,
+    manualSetMode,
+  } = useGeofence({
+    initialMode: APP_MODES.CAMPUS_MODE,
+    onModeSwitch: (newMode, coords) => {
+      console.log(`[Geofence] Mode switched to ${newMode} at:`, coords);
+    },
+  });
+
   const {
     currentState,
     selectedBuilding,
@@ -119,6 +141,10 @@ export default function App() {
   } = state;
 
   const getBottomSheetSummary = () => {
+    if (currentMode === APP_MODES.EXPLORE_MODE) {
+      return `EXPLORE MODE • OUTSIDE CAMPUS (${distanceToCampusKm.toFixed(1)} KM)`;
+    }
+
     switch (currentState) {
       case NAV_STATES.OVERVIEW:
         return 'CAMPUS OVERVIEW • SELECT A BUILDING OR SEARCH';
@@ -172,12 +198,16 @@ export default function App() {
   };
 
   const CAMPUS_SIMULATION_WAYPOINTS = [
-    { name: 'Main Campus Gate', latitude: 12.90012, longitude: 77.50650, accuracy: 5.0 },
-    { name: 'Between Admin & Block C', latitude: 12.90147, longitude: 77.50544, accuracy: 4.0 },
-    { name: 'Block C (CS & AI)', latitude: 12.90150, longitude: 77.50570, accuracy: 3.5 },
-    { name: 'Central Quadrangle', latitude: 12.90200, longitude: 77.50510, accuracy: 4.5 },
-    { name: 'Library Block B', latitude: 12.90260, longitude: 77.50480, accuracy: 3.0 },
-    { name: 'Admin Block A', latitude: 12.90220, longitude: 77.50680, accuracy: 3.5 },
+    { name: 'Central Quadrangle (Inside Boundary)', latitude: 12.90247, longitude: 77.50546, accuracy: 4.0 },
+    { name: 'Block A (CSE & Robotics)', latitude: 12.90150, longitude: 77.50570, accuracy: 3.5 },
+    { name: 'Block B (ECE & Library)', latitude: 12.90260, longitude: 77.50495, accuracy: 3.0 },
+    { name: 'Outside Campus - Uttarahalli Road (Step 1)', latitude: 12.89800, longitude: 77.50100, accuracy: 5.0 },
+    { name: 'Outside Campus - Uttarahalli Road (Step 2)', latitude: 12.89800, longitude: 77.50100, accuracy: 5.0 },
+    { name: 'Outside Campus - Uttarahalli Road (Step 3 -> EXPLORE_MODE)', latitude: 12.89800, longitude: 77.50100, accuracy: 5.0 },
+    { name: 'Re-entering Main Campus Gate', latitude: 12.90080, longitude: 77.50420, accuracy: 4.5 },
+    { name: 'Central Quadrangle (Inside - Step 1)', latitude: 12.90247, longitude: 77.50546, accuracy: 4.0 },
+    { name: 'Central Quadrangle (Inside - Step 2)', latitude: 12.90247, longitude: 77.50546, accuracy: 4.0 },
+    { name: 'Central Quadrangle (Inside - Step 3 -> CAMPUS_MODE)', latitude: 12.90247, longitude: 77.50546, accuracy: 4.0 },
   ];
 
   const handleToggleSimulateCampus = () => {
@@ -192,6 +222,7 @@ export default function App() {
     simulationIndexRef.current = 0;
     const firstWp = CAMPUS_SIMULATION_WAYPOINTS[0];
     dispatch({ type: 'UPDATE_GPS_LOCATION', payload: firstWp });
+    processGpsFix(firstWp);
 
     if (currentProvider === MAP_PROVIDERS.TOPO) {
       topo3DRef.current?.recenter?.();
@@ -209,6 +240,7 @@ export default function App() {
       simulationIndexRef.current = (simulationIndexRef.current + 1) % CAMPUS_SIMULATION_WAYPOINTS.length;
       const wp = CAMPUS_SIMULATION_WAYPOINTS[simulationIndexRef.current];
       dispatch({ type: 'UPDATE_GPS_LOCATION', payload: wp });
+      processGpsFix(wp);
       if (currentProvider === MAP_PROVIDERS.TOPO) {
         topo3DRef.current?.recenter?.();
       } else if (mapRef.current) {
@@ -228,6 +260,9 @@ export default function App() {
       setIsSimulating(false);
     }
 
+    // Start background geofencing watcher
+    startWatching();
+
     // If coordinates are already cached, immediately fly to them
     if (gpsLocation) {
       if (currentProvider === MAP_PROVIDERS.TOPO) {
@@ -244,8 +279,9 @@ export default function App() {
 
     if (!navigator.geolocation) {
       console.warn('Geolocation not supported by this browser');
-      const fallbackLoc = { latitude: 12.90147, longitude: 77.50544, accuracy: 10 };
+      const fallbackLoc = { latitude: 12.90247, longitude: 77.50546, accuracy: 10 };
       dispatch({ type: 'UPDATE_GPS_LOCATION', payload: fallbackLoc });
+      processGpsFix(fallbackLoc);
       return;
     }
 
@@ -259,6 +295,7 @@ export default function App() {
           accuracy: pos.coords.accuracy,
         };
         dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc });
+        processGpsFix(loc);
 
         if (currentProvider === MAP_PROVIDERS.TOPO) {
           setTimeout(() => topo3DRef.current?.recenter?.(), 100);
@@ -277,8 +314,9 @@ export default function App() {
         // Fallback: If device or browser blocks or times out geolocation (common on desktop/wifi),
         // ensure the blue dot is immediately placed on campus so the user can see and test!
         if (!gpsLocation) {
-          const campusFallback = { latitude: 12.90147, longitude: 77.50544, accuracy: 12 };
+          const campusFallback = { latitude: 12.90247, longitude: 77.50546, accuracy: 12 };
           dispatch({ type: 'UPDATE_GPS_LOCATION', payload: campusFallback });
+          processGpsFix(campusFallback);
           if (mapRef.current) {
             mapRef.current.flyTo({
               center: [campusFallback.longitude, campusFallback.latitude],
@@ -355,6 +393,16 @@ export default function App() {
             isGpsLoading={isGpsLoading}
             onToggleGps={handleToggleGps}
             onLocateMe={handleLocateMe}
+            currentMode={currentMode}
+            isInsideCampus={isInsideCampus}
+            distanceToCampusKm={distanceToCampusKm}
+            onToggleMode={() =>
+              manualSetMode(
+                currentMode === APP_MODES.CAMPUS_MODE
+                  ? APP_MODES.EXPLORE_MODE
+                  : APP_MODES.CAMPUS_MODE
+              )
+            }
           />
 
           {/* Main 3D Satellite Map / Interactive 3D Model Viewport - Full Bleed */}
@@ -387,6 +435,10 @@ export default function App() {
                 onToggleGps={handleToggleGps}
                 onSimulateCampusWalk={handleToggleSimulateCampus}
                 isSimulating={isSimulating}
+                currentMode={currentMode}
+                isInsideCampus={isInsideCampus}
+                distanceToCampusKm={distanceToCampusKm}
+                onSwitchMode={manualSetMode}
               />
             )}
 
@@ -429,97 +481,152 @@ export default function App() {
             summary={getBottomSheetSummary()}
             onClose={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
           >
-            {currentState === NAV_STATES.OVERVIEW && (
+            {/* If in EXPLORE_MODE: Display Outdoor GPS & Campus Distance overview, hide indoor controls */}
+            {currentMode === APP_MODES.EXPLORE_MODE ? (
               <div className="flex flex-col gap-3 py-2">
                 <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-bold text-white/90 uppercase tracking-wider">
-                    Campus Zones & Navigation
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+                    <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+                      Explore Mode Active
+                    </h4>
+                  </div>
                   <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">
-                    JSSATE Bangalore
+                    Outside Geofence
                   </span>
                 </div>
+
                 <p className="text-xs text-slate-300 font-normal leading-relaxed">
-                  Explore 3D outdoor building zones, view indoor floorplans, or search for faculty offices and laboratories across JSS Academy of Technical Education.
+                  You are currently <strong className="text-amber-300 font-semibold">{distanceToCampusKm.toFixed(1)} km</strong> from JSS Academy of Technical Education. Real-time outdoor GPS tracking is active. Indoor building models and floor navigation are disabled until entering campus.
                 </p>
 
-                {/* Pilot Building Selection Pills */}
-                <div className="flex flex-col gap-2 pt-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider">
-                      Pilot 3D Zones
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setShowAllBuildings(!showAllBuildings)}
-                      className="text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
-                    >
-                      {showAllBuildings ? 'Show Pilot Only' : '+ All Facilities'}
-                    </button>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {PILOT_BUILDINGS.map((building) => (
-                      <button
-                        key={building.id}
-                        type="button"
-                        onClick={() => handleSelectBuilding(building)}
-                        className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
-                      >
-                        {building.name}
-                      </button>
-                    ))}
-                  </div>
-
-                  {showAllBuildings && (
-                    <div className="flex flex-wrap gap-2 pt-1 border-t border-white/10 mt-1">
-                      {OTHER_CAMPUS_FACILITIES.map((facility) => (
-                        <button
-                          key={facility.id}
-                          type="button"
-                          onClick={() => handleSelectBuilding(facility)}
-                          className="px-3 py-1 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full text-[11px] font-medium border border-white/10 transition-colors cursor-pointer"
-                        >
-                          {facility.name}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-3 pt-3">
+                <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
                   <button
                     type="button"
-                    onClick={() => setIsSearchOpen(true)}
-                    className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
+                    onClick={() => {
+                      manualSetMode(APP_MODES.CAMPUS_MODE);
+                      if (mapRef.current) {
+                        mapRef.current.flyTo({
+                          center: CAMPUS_CENTER,
+                          zoom: 17.6,
+                          pitch: 45,
+                          duration: 1500,
+                        });
+                      }
+                    }}
+                    className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <span>Search Rooms & Labs</span>
+                    <span>🏫 Enter Campus 3D Mode</span>
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => setIsAdminOpen(true)}
-                    className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white/90 rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
+                    onClick={handleLocateMe}
+                    className="w-full sm:w-auto px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2v3m0 14v3m10-10h-3M5 12H2" />
                     </svg>
-                    <span>Admin</span>
+                    <span>My Location</span>
                   </button>
                 </div>
               </div>
-            )}
+            ) : (
+              <>
+                {currentState === NAV_STATES.OVERVIEW && (
+                  <div className="flex flex-col gap-3 py-2">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-bold text-white/90 uppercase tracking-wider">
+                        Campus Zones & Navigation
+                      </h4>
+                      <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">
+                        JSSATE Bangalore
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-300 font-normal leading-relaxed">
+                      Explore 3D outdoor building zones, view indoor floorplans, or search for faculty offices and laboratories across JSS Academy of Technical Education.
+                    </p>
 
-            {(currentState === NAV_STATES.BUILDING_FLOORS || currentState === NAV_STATES.FLOOR_VIEW) && (
-              <IndoorMapView
-                selectedBuilding={selectedBuilding}
-                selectedFloor={selectedFloor}
-                onSelectFloor={handleSelectFloor}
-                onSelectRoom={handleSelectRoom}
-              />
+                    {/* Pilot Building Selection Pills */}
+                    <div className="flex flex-col gap-2 pt-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider">
+                          Pilot 3D Zones
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setShowAllBuildings(!showAllBuildings)}
+                          className="text-[10px] font-medium text-blue-400 hover:text-blue-300 transition-colors cursor-pointer"
+                        >
+                          {showAllBuildings ? 'Show Pilot Only' : '+ All Facilities'}
+                        </button>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {PILOT_BUILDINGS.map((building) => (
+                          <button
+                            key={building.id}
+                            type="button"
+                            onClick={() => handleSelectBuilding(building)}
+                            className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
+                          >
+                            {building.name}
+                          </button>
+                        ))}
+                      </div>
+
+                      {showAllBuildings && (
+                        <div className="flex flex-wrap gap-2 pt-1 border-t border-white/10 mt-1">
+                          {OTHER_CAMPUS_FACILITIES.map((facility) => (
+                            <button
+                              key={facility.id}
+                              type="button"
+                              onClick={() => handleSelectBuilding(facility)}
+                              className="px-3 py-1 bg-white/5 hover:bg-white/15 text-slate-300 rounded-full text-[11px] font-medium border border-white/10 transition-colors cursor-pointer"
+                            >
+                              {facility.name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsSearchOpen(true)}
+                        className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <span>Search Rooms & Labs</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsAdminOpen(true)}
+                        className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white/90 rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Admin</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {(currentState === NAV_STATES.BUILDING_FLOORS || currentState === NAV_STATES.FLOOR_VIEW) && (
+                  <IndoorMapView
+                    selectedBuilding={selectedBuilding}
+                    selectedFloor={selectedFloor}
+                    onSelectFloor={handleSelectFloor}
+                    onSelectRoom={handleSelectRoom}
+                  />
+                )}
+              </>
             )}
 
             {currentState === NAV_STATES.ROUTE_PREVIEW && (
