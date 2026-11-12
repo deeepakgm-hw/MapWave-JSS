@@ -21,6 +21,7 @@ import {
   isFloorMapped,
   calculatePolygonCentroid,
 } from '../../data/campus-map/floorRegistry';
+import { LabelLayer } from '../../components/map/LabelLayer';
 
 export default function MapOutdoor({
   currentState,
@@ -49,6 +50,7 @@ export default function MapOutdoor({
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const indoorMarkersRef = useRef([]);
+  const labelLayerRef = useRef(null);
   const gpsMarkerRef = useRef(null);
   const watchIdRef = useRef(null);
   const [userLocation, setUserLocation] = useState(gpsLocation || null);
@@ -156,8 +158,8 @@ export default function MapOutdoor({
         type: 'fill',
         source: 'campus-boundary',
         paint: {
-          'fill-color': '#0284c7',
-          'fill-opacity': 0.08,
+          'fill-color': '#06b6d4',
+          'fill-opacity': 0.05,
         },
       });
 
@@ -167,21 +169,21 @@ export default function MapOutdoor({
         type: 'line',
         source: 'campus-boundary',
         paint: {
-          'line-color': '#0284c7',
-          'line-width': 8,
-          'line-opacity': 0.6,
-          'line-blur': 3,
+          'line-color': '#06b6d4',
+          'line-width': 6,
+          'line-opacity': 0.45,
+          'line-blur': 2.5,
         },
       });
 
-      // Crisp authoritative boundary perimeter line
+      // Crisp authoritative boundary perimeter line (Cyan, 2px)
       map.addLayer({
         id: 'campus-boundary-line',
         type: 'line',
         source: 'campus-boundary',
         paint: {
-          'line-color': '#38bdf8',
-          'line-width': 3.5,
+          'line-color': '#06b6d4',
+          'line-width': 2.0,
           'line-opacity': 1.0,
         },
       });
@@ -364,27 +366,29 @@ export default function MapOutdoor({
         },
       });
 
-      // Layer 6: Route Casing
+      // Layer 6: Route Casing / Drop Shadow
       map.addLayer({
         id: 'indoor-route-casing',
         type: 'line',
         source: 'indoor-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': '#ffffff',
+          'line-color': 'rgba(0, 0, 0, 0.45)',
           'line-width': 9,
+          'line-blur': 3,
         },
       });
 
-      // Layer 7: Route Core Line
+      // Layer 7: Route Core Line (Amber dashed line)
       map.addLayer({
         id: 'indoor-route-line',
         type: 'line',
         source: 'indoor-route',
         layout: { 'line-cap': 'round', 'line-join': 'round' },
         paint: {
-          'line-color': '#1a73e8',
-          'line-width': 5.5,
+          'line-color': '#f59e0b',
+          'line-width': 5.0,
+          'line-dasharray': [2, 1],
         },
       });
 
@@ -452,23 +456,26 @@ export default function MapOutdoor({
         map.getSource('indoor-paths')?.setData?.(floorData.datasets.paths);
         map.getSource('indoor-doors')?.setData?.(floorData.datasets.doors);
 
-        // Add room labels at centroids
+        // Prepare declutter-managed room labels with priority tiers
+        const labelItems = [];
         floorData.datasets.rooms.features.forEach((feat) => {
           if (!feat.properties?.name) return;
           const coords = feat.geometry?.coordinates?.[0];
           if (!coords) return;
           const center = calculatePolygonCentroid(coords);
+          const type = (feat.properties.type || '').toLowerCase();
+          const priority = type.includes('lab') ? 2 : type.includes('corridor') ? 0 : 1;
 
-          const el = document.createElement('div');
-          el.className = 'indoor-room-label';
-          el.textContent = feat.properties.name;
-
-          const marker = new maplibregl.Marker({ element: el })
-            .setLngLat(center)
-            .addTo(map);
-
-          indoorMarkersRef.current.push(marker);
+          labelItems.push({
+            text: feat.properties.name,
+            coordinates: center,
+            priority,
+          });
         });
+
+        if (labelLayerRef.current) {
+          labelLayerRef.current.setLabels(labelItems);
+        }
 
         // Set selected room highlight
         if (selectedRoom?.geometry) {
@@ -488,6 +495,7 @@ export default function MapOutdoor({
         }
       }
     } else {
+      labelLayerRef.current?.setLabels([]);
       map.getSource('indoor-rooms')?.setData?.({ type: 'FeatureCollection', features: [] });
       map.getSource('indoor-paths')?.setData?.({ type: 'FeatureCollection', features: [] });
       map.getSource('indoor-doors')?.setData?.({ type: 'FeatureCollection', features: [] });
@@ -532,6 +540,7 @@ export default function MapOutdoor({
     if (mapRefOut) {
       mapRefOut.current = map;
     }
+    labelLayerRef.current = new LabelLayer(map);
 
     // Camera rotation & bearing tracking
     map.on('rotate', () => {
@@ -692,6 +701,7 @@ export default function MapOutdoor({
     });
 
     return () => {
+      labelLayerRef.current?.destroy();
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       indoorMarkersRef.current.forEach((m) => m.remove());

@@ -1,9 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
 @import url('https://use.typekit.net/ogg5vgp.css');
 @import url('https://fonts.googleapis.com/css2?family=Lilita+One&family=Titan+One&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=Dela+Gothic+One&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --font-ui: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Spacing & Inset Tokens */
+  --space-unit: 4px;
+  --grid-step: 8px;
+  --edge-inset: 16px;
+
+  /* Radius Tokens */
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-panel: 24px;
+  --radius-pill: 9999px;
+
+  /* Brand and Accents */
+  --accent-blue: #3B82F6;
+  --accent-blue-hover: #2563EB;
+  --accent-route: #F59E0B;
+  --accent-boundary: #06B6D4;
+  --semantic-success: #10B981;
+  --semantic-warn: #F59E0B;
+  --semantic-error: #EF4444;
+
+  /* Glass Recipe (Dark - Default) */
+  --glass-bg: rgba(14, 17, 26, 0.55);
+  --glass-filter: blur(24px) saturate(160%);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  --glass-text: #FFFFFF;
+  --glass-text-secondary: rgba(255, 255, 255, 0.70);
+  --glass-text-muted: rgba(255, 255, 255, 0.45);
+  --glass-child-bg: rgba(255, 255, 255, 0.08);
+  --glass-child-hover: rgba(255, 255, 255, 0.14);
+  --glass-child-border: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme='light'] {
+  /* Glass Recipe (Light) */
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-filter: blur(24px) saturate(160%);
+  --glass-border: rgba(255, 255, 255, 0.70);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.90);
+  --glass-shadow: 0 12px 40px rgba(15, 23, 42, 0.14);
+  --glass-text: #0F172A;
+  --glass-text-secondary: rgba(15, 23, 42, 0.72);
+  --glass-text-muted: rgba(15, 23, 42, 0.48);
+  --glass-child-bg: rgba(0, 0, 0, 0.05);
+  --glass-child-hover: rgba(0, 0, 0, 0.09);
+  --glass-child-border: rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 1280px) {
+  :root {
+    --edge-inset: 24px;
+  }
+}
+
+/* Fallback for environments lacking backdrop-filter or with reduced transparency */
+@supports not (backdrop-filter: blur(1px)) {
+  :root {
+    --glass-bg: #0e111a;
+    --glass-filter: none;
+  }
+  [data-theme='light'] {
+    --glass-bg: #ffffff;
+    --glass-filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: #0e111a;
+    --glass-filter: none;
+  }
+  [data-theme='light'] {
+    --glass-bg: #f8fafc;
+    --glass-filter: none;
+  }
+}
+
+/* Motion Tokens with prefers-reduced-motion protection */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 @layer utilities {
   /* Hide scrollbar for Chrome, Safari and Opera */
@@ -139,16 +232,94 @@ html, body, #root {
   background-color: rgba(15, 23, 42, 0.8);
 }
 
-/* Indoor Floor Mapping Room Centroid Labels */
+/* Indoor Floor Mapping Room Centroid Labels with Declutter Pill Style */
 .indoor-room-label {
-  font-size: 10px;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  background: rgba(14, 17, 26, 0.78);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  padding: 2px 6px;
+  border-radius: 9999px;
   text-align: center;
-  line-height: 1.15;
-  width: 95px;
-  text-shadow: 0 0 3px #ffffff, 0 0 3px #ffffff, 0 0 3px #ffffff, 0 0 5px #ffffff;
+  white-space: nowrap;
   pointer-events: none;
   user-select: none;
+  transition: opacity 0.2s ease;
 }
+
+[data-theme='light'] .indoor-room-label {
+  color: #0f172a;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+}
+
+/* Linear/Apple Maps Glass Surface Styles */
+.glass-surface {
+  background-color: var(--glass-bg);
+  backdrop-filter: var(--glass-filter);
+  -webkit-backdrop-filter: var(--glass-filter);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+  color: var(--glass-text);
+  font-family: var(--font-ui);
+}
+
+/* Glass Child Items - Strictly Solid Fills to prevent nested backdrop blur GPU thrash */
+.glass-child {
+  background-color: var(--glass-child-bg);
+  border: 1px solid var(--glass-child-border);
+  color: var(--glass-text);
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.glass-child:hover {
+  background-color: var(--glass-child-hover);
+}
+
+/* Subtle Map Vignette / Scrim for Satellite Legibility */
+.map-scrim-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(180deg, rgba(10, 13, 20, 0.6) 0%, rgba(10, 13, 20, 0.2) 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.map-scrim-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 180px;
+  background: linear-gradient(0deg, rgba(10, 13, 20, 0.6) 0%, rgba(10, 13, 20, 0.2) 60%, transparent 100%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* 8px Grid Audit Overlay (activated via debug toggle) */
+.grid-audit-overlay {
+  background-size: 8px 8px;
+  background-image: 
+    linear-gradient(to right, rgba(59, 130, 246, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(59, 130, 246, 0.12) 1px, transparent 1px);
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+}
+
+/* Focus Rings conforming to WCAG AA: 2px accent with 2px offset */
+*:focus-visible {
+  outline: 2px solid var(--accent-blue) !important;
+  outline-offset: 2px !important;
+}
+
 
