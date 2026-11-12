@@ -202,22 +202,8 @@ export default function MapOutdoor({
         source: 'campus-facilities',
         filter: ['==', '$type', 'Polygon'],
         paint: {
-          'fill-color': [
-            'match',
-            ['get', 'category'],
-            'Sports', '#166534',
-            'Landscape', '#15803d',
-            'Parking', '#334155',
-            '#475569'
-          ],
-          'fill-opacity': [
-            'match',
-            ['get', 'category'],
-            'Sports', 0.45,
-            'Landscape', 0.4,
-            'Parking', 0.55,
-            0.35
-          ],
+          'fill-color': '#166534',
+          'fill-opacity': 0.0,
         },
       });
 
@@ -227,16 +213,9 @@ export default function MapOutdoor({
         source: 'campus-facilities',
         filter: ['==', '$type', 'Polygon'],
         paint: {
-          'line-color': [
-            'match',
-            ['get', 'category'],
-            'Sports', '#22c55e',
-            'Landscape', '#4ade80',
-            'Parking', '#64748b',
-            '#94a3b8'
-          ],
-          'line-width': 1.2,
-          'line-opacity': 0.7,
+          'line-color': '#94a3b8',
+          'line-width': 1.0,
+          'line-opacity': 0.0,
         },
       });
     }
@@ -298,36 +277,14 @@ export default function MapOutdoor({
         data: buildingsData,
       });
 
-      // Layer 1: Existing Buildings (Clean 3D Extrusion using height_m)
+      // Layer 1: Invisible Interactive Footprint Layer (captures hover/click without blue 3D boxes)
       map.addLayer({
         id: 'existing-buildings-extrusion',
-        type: 'fill-extrusion',
+        type: 'fill',
         source: 'campus-buildings',
-        filter: ['==', ['get', 'status'], 'existing'],
         paint: {
-          'fill-extrusion-color': [
-            'case',
-            ['==', ['get', 'verification'], 'verified'],
-            '#2563eb',
-            '#0284c7'
-          ],
-          'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.85,
-        },
-      });
-
-      // Layer 1b: Hover Highlight State (Animated Luminous Sky-Blue Elevated Extrusion)
-      map.addLayer({
-        id: 'hovered-building-extrusion',
-        type: 'fill-extrusion',
-        source: 'campus-buildings',
-        filter: ['==', ['get', 'id'], ''],
-        paint: {
-          'fill-extrusion-color': '#38bdf8',
-          'fill-extrusion-height': ['+', ['coalesce', ['get', 'height_m'], 15.0], 3.0],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.95,
+          'fill-color': '#000000',
+          'fill-opacity': 0.001,
         },
       });
 
@@ -339,37 +296,21 @@ export default function MapOutdoor({
         filter: ['==', ['get', 'id'], ''],
         paint: {
           'line-color': '#38bdf8',
-          'line-width': 4.5,
-          'line-blur': 2.5,
+          'line-width': 3.5,
           'line-opacity': 0.95,
         },
       });
 
-      // Layer 2: Highlighted Selected Building (Amber Glow)
+      // Layer 2: Highlighted Selected Building (Amber Perimeter Outline)
       map.addLayer({
         id: 'selected-building-highlight',
-        type: 'fill-extrusion',
+        type: 'line',
         source: 'campus-buildings',
         filter: ['==', ['get', 'id'], ''],
         paint: {
-          'fill-extrusion-color': '#f59e0b',
-          'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 1.0,
-        },
-      });
-
-      // Layer 3: Proposed Buildings
-      map.addLayer({
-        id: 'proposed-buildings-extrusion',
-        type: 'fill-extrusion',
-        source: 'campus-buildings',
-        filter: ['==', ['get', 'status'], 'proposed'],
-        paint: {
-          'fill-extrusion-color': '#64748b',
-          'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
-          'fill-extrusion-base': 0,
-          'fill-extrusion-opacity': 0.45,
+          'line-color': '#f59e0b',
+          'line-width': 4.0,
+          'line-opacity': 1.0,
         },
       });
     }

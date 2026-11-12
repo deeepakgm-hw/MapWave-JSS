@@ -269,35 +269,14 @@ export function CampusMap({
           data: buildingsData,
         });
 
-        // 3D Extruded Building Volumes
+        // Interactive footprint hit area (transparent to preserve satellite imagery)
         map.addLayer({
           id: 'campus-buildings-extrusion',
-          type: 'fill-extrusion',
+          type: 'fill',
           source: 'campus-buildings',
           paint: {
-            'fill-extrusion-color': [
-              'match',
-              ['get', 'verified'],
-              true, '#2563eb',
-              '#0284c7'
-            ],
-            'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
-            'fill-extrusion-base': ['coalesce', ['get', 'base_height_m'], 0],
-            'fill-extrusion-opacity': 0.82,
-          },
-        });
-
-        // Hover Brightening Layer (Elevated animated extrusion)
-        map.addLayer({
-          id: 'campus-buildings-hover',
-          type: 'fill-extrusion',
-          source: 'campus-buildings',
-          filter: ['==', ['get', 'id'], ''],
-          paint: {
-            'fill-extrusion-color': '#38bdf8',
-            'fill-extrusion-height': ['+', ['coalesce', ['get', 'height_m'], 15.0], 3.0],
-            'fill-extrusion-base': ['coalesce', ['get', 'base_height_m'], 0],
-            'fill-extrusion-opacity': 0.95,
+            'fill-color': '#000000',
+            'fill-opacity': 0.001,
           },
         });
 
@@ -309,23 +288,21 @@ export function CampusMap({
           filter: ['==', ['get', 'id'], ''],
           paint: {
             'line-color': '#38bdf8',
-            'line-width': 4.5,
-            'line-blur': 2.5,
+            'line-width': 3.5,
             'line-opacity': 0.95,
           },
         });
 
-        // Selection Highlight Layer (Golden Amber)
+        // Selection Highlight Layer (Golden Amber Outline)
         map.addLayer({
           id: 'campus-buildings-selected',
-          type: 'fill-extrusion',
+          type: 'line',
           source: 'campus-buildings',
           filter: ['==', ['get', 'id'], ''],
           paint: {
-            'fill-extrusion-color': '#f59e0b',
-            'fill-extrusion-height': ['coalesce', ['get', 'height_m'], 15.0],
-            'fill-extrusion-base': ['coalesce', ['get', 'base_height_m'], 0],
-            'fill-extrusion-opacity': 1.0,
+            'line-color': '#f59e0b',
+            'line-width': 4.0,
+            'line-opacity': 1.0,
           },
         });
       }
