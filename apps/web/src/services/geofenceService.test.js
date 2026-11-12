@@ -32,6 +32,10 @@ describe('geofenceService - Authoritative KML Geofencing', () => {
       expect(isPointInCampus([77.5057, 12.9015])).toBe(true);
       // Block B (ECE, Library)
       expect(isPointInCampus([77.50495, 12.9027])).toBe(true);
+      // Civil Block Complex
+      expect(isPointInCampus([77.5068, 12.9022])).toBe(true);
+      // Boys Hostel Complex (South Campus)
+      expect(isPointInCampus([77.5047, 12.8992])).toBe(true);
       // Cafeteria
       expect(isPointInCampus([77.5054, 12.9022])).toBe(true);
     });

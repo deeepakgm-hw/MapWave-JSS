@@ -14,9 +14,9 @@ export {
   buildingMetadata,
 };
 
-// Official coordinates and framing bounds for JSSATE Bangalore from authoritative KML
-export const CAMPUS_CENTER = [77.50546, 12.90247];
+// Official coordinates and framing bounds for JSSATE Bangalore (Authoritative 21.4-acre Compound Wall)
+export const CAMPUS_CENTER = [77.50544, 12.90145];
 export const CAMPUS_BOUNDS = [
-  [77.503649, 12.900519], // Southwest coordinates
-  [77.507271, 12.904427], // Northeast coordinates
+  [77.50348, 12.89845], // Southwest coordinates (Boys Hostel & Sports Ground perimeter)
+  [77.5074, 12.904455], // Northeast coordinates (Dr. Vishnuvardhan Rd & STEP perimeter)
 ];

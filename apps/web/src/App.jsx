@@ -122,6 +122,9 @@ export default function App() {
     manualSetMode,
   } = useGeofence({
     initialMode: APP_MODES.CAMPUS_MODE,
+    onLocationUpdate: (loc) => {
+      dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc });
+    },
     onModeSwitch: (newMode, coords) => {
       console.log(`[Geofence] Mode switched to ${newMode} at:`, coords);
     },
@@ -279,7 +282,7 @@ export default function App() {
 
     if (!navigator.geolocation) {
       console.warn('Geolocation not supported by this browser');
-      const fallbackLoc = { latitude: 12.90247, longitude: 77.50546, accuracy: 10 };
+      const fallbackLoc = { latitude: CAMPUS_CENTER[1], longitude: CAMPUS_CENTER[0], accuracy: 8 };
       dispatch({ type: 'UPDATE_GPS_LOCATION', payload: fallbackLoc });
       processGpsFix(fallbackLoc);
       return;
@@ -314,7 +317,7 @@ export default function App() {
         // Fallback: If device or browser blocks or times out geolocation (common on desktop/wifi),
         // ensure the blue dot is immediately placed on campus so the user can see and test!
         if (!gpsLocation) {
-          const campusFallback = { latitude: 12.90247, longitude: 77.50546, accuracy: 12 };
+          const campusFallback = { latitude: CAMPUS_CENTER[1], longitude: CAMPUS_CENTER[0], accuracy: 10 };
           dispatch({ type: 'UPDATE_GPS_LOCATION', payload: campusFallback });
           processGpsFix(campusFallback);
           if (mapRef.current) {
@@ -327,7 +330,7 @@ export default function App() {
           }
         }
       },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
     );
   };
 

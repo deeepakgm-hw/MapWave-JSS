@@ -18,6 +18,7 @@ export function useGeofence({
   requiredConsecutive = GEOFENCE_CONFIG.REQUIRED_CONSECUTIVE_READINGS,
   maxAccuracyThreshold = GEOFENCE_CONFIG.MAX_ACCURACY_THRESHOLD_METERS,
   onModeSwitch,
+  onLocationUpdate,
 } = {}) {
   const [mode, setMode] = useState(initialMode);
   const [isInsideCampus, setIsInsideCampus] = useState(initialMode === APP_MODES.CAMPUS_MODE);
@@ -31,6 +32,8 @@ export function useGeofence({
 
   const managerRef = useRef(null);
   const watchIdRef = useRef(null);
+  const onLocationUpdateRef = useRef(onLocationUpdate);
+  onLocationUpdateRef.current = onLocationUpdate;
 
   if (!managerRef.current) {
     managerRef.current = new GeofenceManager({
@@ -58,6 +61,10 @@ export function useGeofence({
         GEOFENCE_CONFIG.CAMPUS_CENTER_COORDS
       );
       setDistanceToCampusKm(dist);
+
+      if (onLocationUpdateRef.current) {
+        onLocationUpdateRef.current(coords, result);
+      }
 
       if (!isManualOverride && result.switched) {
         setMode(result.mode);
@@ -108,8 +115,8 @@ export function useGeofence({
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 5000,
+        timeout: 15000,
+        maximumAge: 0,
       }
     );
   }, [processGpsFix]);

@@ -156,8 +156,8 @@ export default function MapOutdoor({
         source: 'campus-boundary',
         paint: {
           'line-color': '#0284c7',
-          'line-width': 6,
-          'line-opacity': 0.4,
+          'line-width': 8,
+          'line-opacity': 0.6,
           'line-blur': 3,
         },
       });
@@ -169,11 +169,24 @@ export default function MapOutdoor({
         source: 'campus-boundary',
         paint: {
           'line-color': '#38bdf8',
-          'line-width': 2.8,
-          'line-dasharray': [4, 2],
-          'line-opacity': 0.95,
+          'line-width': 3.5,
+          'line-opacity': 1.0,
         },
       });
+
+      // Inner boundary highlight line
+      map.addLayer({
+        id: 'campus-boundary-inner',
+        type: 'line',
+        source: 'campus-boundary',
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 1.2,
+          'line-opacity': 0.85,
+        },
+      });
+    } else {
+      map.getSource('campus-boundary').setData(campusBoundary);
     }
 
     // 2. Campus Facilities & Open Spaces (Sports Ground, Courts, Parking, Gardens)
@@ -663,13 +676,15 @@ export default function MapOutdoor({
         onUpdateLocationRef.current?.(loc);
       },
       (error) => {
-        console.warn('Geolocation error / permission denied:', error.message);
-        setGeoDenied(true);
+        console.warn('Geolocation error / permission check:', error.message);
+        if (error.code === 1) {
+          setGeoDenied(true);
+        }
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 5000,
+        timeout: 15000,
+        maximumAge: 0,
       }
     );
 
@@ -681,18 +696,22 @@ export default function MapOutdoor({
   }, [onUpdateLocation]);
 
   // Auto-center camera on user location when GPS is activated or updated
+  const prevGpsActiveRef = useRef(isGpsActive);
   useEffect(() => {
-    if (userLocation && mapRef.current && isGpsActive && !hasAutoCentered.current) {
+    const justActivated = isGpsActive && !prevGpsActiveRef.current;
+    prevGpsActiveRef.current = isGpsActive;
+
+    if (userLocation && mapRef.current && isGpsActive && (!hasAutoCentered.current || justActivated)) {
       hasAutoCentered.current = true;
       mapRef.current.flyTo({
         center: [userLocation.longitude, userLocation.latitude],
-        zoom: 18.2,
+        zoom: distanceToCampus > 0.6 ? 16.5 : 18.2,
         pitch: isTopView ? 0 : 45,
         bearing: mapRef.current.getBearing() || 0,
         duration: 1200,
       });
     }
-  }, [userLocation, isGpsActive, isTopView]);
+  }, [userLocation, isGpsActive, isTopView, distanceToCampus]);
 
   // 4. Update GPS Blue Dot Marker (HTML DOM Marker + GeoJSON accuracy circle)
   useEffect(() => {
@@ -705,17 +724,17 @@ export default function MapOutdoor({
     if (!gpsMarkerRef.current) {
       const el = document.createElement('div');
       el.className = 'mapwave-gps-blue-dot';
-      el.style.width = '36px';
-      el.style.height = '36px';
+      el.style.width = '40px';
+      el.style.height = '40px';
       el.style.display = 'flex';
       el.style.alignItems = 'center';
       el.style.justifyContent = 'center';
       el.style.pointerEvents = 'none';
       el.innerHTML = `
-        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;">
-          <div style="position: absolute; width: 32px; height: 32px; border-radius: 9999px; background: rgba(59, 130, 246, 0.4); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
-          <div style="position: absolute; width: 22px; height: 22px; border-radius: 9999px; background: rgba(96, 165, 250, 0.5);"></div>
-          <div style="position: relative; width: 14px; height: 14px; border-radius: 9999px; background: #2563eb; border: 2.5px solid #ffffff; box-shadow: 0 0 14px rgba(37,99,235,1), 0 2px 6px rgba(0,0,0,0.6);"></div>
+        <div style="position: relative; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;">
+          <div style="position: absolute; width: 36px; height: 36px; border-radius: 9999px; background: rgba(59, 130, 246, 0.4); animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="position: absolute; width: 24px; height: 24px; border-radius: 9999px; background: rgba(96, 165, 250, 0.55);"></div>
+          <div style="position: relative; width: 14px; height: 14px; border-radius: 9999px; background: #2563eb; border: 2.5px solid #ffffff; box-shadow: 0 0 16px rgba(37,99,235,1), 0 2px 6px rgba(0,0,0,0.6);"></div>
         </div>
       `;
       gpsMarkerRef.current = new maplibregl.Marker({

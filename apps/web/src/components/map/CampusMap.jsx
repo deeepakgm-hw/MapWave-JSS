@@ -129,8 +129,8 @@ export function CampusMap({
           source: 'campus-boundary',
           paint: {
             'line-color': '#0284c7',
-            'line-width': 6,
-            'line-opacity': 0.4,
+            'line-width': 8,
+            'line-opacity': 0.6,
             'line-blur': 3,
           },
         });
@@ -142,11 +142,24 @@ export function CampusMap({
           source: 'campus-boundary',
           paint: {
             'line-color': '#38bdf8',
-            'line-width': 2.8,
-            'line-dasharray': [4, 2],
-            'line-opacity': 0.95,
+            'line-width': 3.5,
+            'line-opacity': 1.0,
           },
         });
+
+        // Inner boundary highlight line
+        map.addLayer({
+          id: 'campus-boundary-inner',
+          type: 'line',
+          source: 'campus-boundary',
+          paint: {
+            'line-color': '#ffffff',
+            'line-width': 1.2,
+            'line-opacity': 0.85,
+          },
+        });
+      } else if (map.getSource('campus-boundary') && boundaryData) {
+        map.getSource('campus-boundary').setData(boundaryData);
       }
 
       // 2. Facilities & Grounds
