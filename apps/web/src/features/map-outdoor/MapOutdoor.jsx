@@ -16,10 +16,18 @@ import {
   getSatelliteStyle,
   MAP_PROVIDERS,
 } from '../../config/mapConfig';
+import {
+  getFloorData,
+  isFloorMapped,
+  calculatePolygonCentroid,
+} from '../../data/campus-map/floorRegistry';
 
 export default function MapOutdoor({
   currentState,
   selectedBuilding,
+  selectedFloor,
+  selectedRoom,
+  onSelectRoom,
   activeRoute,
   onSelectBuilding,
   onUpdateLocation,
@@ -40,6 +48,7 @@ export default function MapOutdoor({
   const mapContainer = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
+  const indoorMarkersRef = useRef([]);
   const gpsMarkerRef = useRef(null);
   const watchIdRef = useRef(null);
   const [userLocation, setUserLocation] = useState(gpsLocation || null);
@@ -47,6 +56,9 @@ export default function MapOutdoor({
   const [geoDenied, setGeoDenied] = useState(false);
   const [hoveredBuilding, setHoveredBuilding] = useState(null);
   const hasAutoCentered = useRef(false);
+
+  const onSelectRoomRef = useRef(onSelectRoom);
+  onSelectRoomRef.current = onSelectRoom;
 
   const currentModeRef = useRef(currentMode);
   currentModeRef.current = currentMode;
@@ -241,6 +253,249 @@ export default function MapOutdoor({
     markersRef.current = [];
   }, []);
 
+  // Synchronizes QGIS-generated indoor floor mapping layers (rooms, doors, paths, selected room, route)
+  const syncIndoorLayers = useCallback((map) => {
+    if (!map || !map.isStyleLoaded()) return;
+
+    const buildingCode = selectedBuilding?.code || '';
+    const isBlockA = buildingCode === 'BLOCK_A' || selectedBuilding?.name?.includes('Block A');
+    const floorLevel = selectedFloor?.level_number || 2;
+    const isMapped = isBlockA && isFloorMapped(buildingCode, floorLevel);
+
+    // 1. Ensure all indoor sources exist
+    if (!map.getSource('indoor-rooms')) {
+      map.addSource('indoor-rooms', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addSource('indoor-paths', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addSource('indoor-doors', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addSource('indoor-selected-room', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      map.addSource('indoor-route', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] },
+      });
+
+      // Layer 1: Rooms fill styled by room type
+      map.addLayer({
+        id: 'indoor-rooms-fill',
+        type: 'fill',
+        source: 'indoor-rooms',
+        paint: {
+          'fill-opacity': 0.88,
+          'fill-color': [
+            'match',
+            ['downcase', ['to-string', ['coalesce', ['get', 'type'], '']]],
+            'lab', '#9bd8b8',
+            'classroom', '#a3bfff',
+            'toilet', '#d4d4d4',
+            'ladies toilet', '#d4d4d4',
+            'gents toilet', '#d4d4d4',
+            'corridor', '#eef1f6',
+            'staircase', '#f6c98a',
+            'stairs', '#f6c98a',
+            'lift', '#f6c98a',
+            'library', '#c4b5fd',
+            'office', '#fed7aa',
+            'faculty room', '#fed7aa',
+            'sem hall', '#fed7aa',
+            'server room', '#cbd5e1',
+            '#bccaf2',
+          ],
+        },
+      });
+
+      // Layer 2: Rooms architectural outline
+      map.addLayer({
+        id: 'indoor-rooms-line',
+        type: 'line',
+        source: 'indoor-rooms',
+        paint: {
+          'line-color': '#14213d',
+          'line-width': 1.2,
+        },
+      });
+
+      // Layer 3: Selected room amber glow fill
+      map.addLayer({
+        id: 'indoor-rooms-selected-fill',
+        type: 'fill',
+        source: 'indoor-selected-room',
+        paint: {
+          'fill-color': '#f59e0b',
+          'fill-opacity': 0.45,
+        },
+      });
+
+      // Layer 4: Selected room glow border
+      map.addLayer({
+        id: 'indoor-rooms-selected',
+        type: 'line',
+        source: 'indoor-selected-room',
+        paint: {
+          'line-color': '#f59e0b',
+          'line-width': 3.5,
+        },
+      });
+
+      // Layer 5: Walkable corridors
+      map.addLayer({
+        id: 'indoor-paths-line',
+        type: 'line',
+        source: 'indoor-paths',
+        paint: {
+          'line-color': '#475569',
+          'line-width': 2.0,
+          'line-dasharray': [2, 2],
+          'line-opacity': 0.75,
+        },
+      });
+
+      // Layer 6: Route Casing
+      map.addLayer({
+        id: 'indoor-route-casing',
+        type: 'line',
+        source: 'indoor-route',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color': '#ffffff',
+          'line-width': 9,
+        },
+      });
+
+      // Layer 7: Route Core Line
+      map.addLayer({
+        id: 'indoor-route-line',
+        type: 'line',
+        source: 'indoor-route',
+        layout: { 'line-cap': 'round', 'line-join': 'round' },
+        paint: {
+          'line-color': '#1a73e8',
+          'line-width': 5.5,
+        },
+      });
+
+      // Layer 8: Door checkpoint markers
+      map.addLayer({
+        id: 'indoor-doors-circle',
+        type: 'circle',
+        source: 'indoor-doors',
+        paint: {
+          'circle-radius': 5,
+          'circle-color': '#ffffff',
+          'circle-stroke-color': '#14213d',
+          'circle-stroke-width': 2,
+        },
+      });
+
+      // Click on room polygon
+      map.on('click', 'indoor-rooms-fill', (e) => {
+        if (!e.features || !e.features.length) return;
+        const feat = e.features[0];
+        const props = feat.properties || {};
+        const ring = feat.geometry?.coordinates?.[0] || [];
+        const center = calculatePolygonCentroid(ring);
+        const roomCodeMatch = (props.name || '').match(/A\s*[-]?\s*(\d{3})/i);
+        const roomCode = roomCodeMatch ? `A-${roomCodeMatch[1]}` : 'ROOM';
+
+        const roomObj = {
+          id: `room-${props.name}`,
+          room_code: roomCode,
+          name: props.name,
+          floor: props.floor || 2,
+          room_type: props.type || 'room',
+          category: props.type || 'General',
+          coordinates: center,
+          geometry: feat.geometry,
+          properties: props,
+        };
+
+        onSelectRoomRef.current?.(roomObj);
+      });
+
+      map.on('mouseenter', 'indoor-rooms-fill', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'indoor-rooms-fill', () => {
+        map.getCanvas().style.cursor = '';
+      });
+      map.on('mouseenter', 'indoor-doors-circle', () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'indoor-doors-circle', () => {
+        map.getCanvas().style.cursor = '';
+      });
+    }
+
+    // Clear previous room label markers
+    indoorMarkersRef.current.forEach((m) => m.remove());
+    indoorMarkersRef.current = [];
+
+    // 2. Synchronize datasets or clear when outside mapped floor
+    if (isMapped) {
+      const floorData = getFloorData(buildingCode, floorLevel);
+      if (floorData?.datasets) {
+        map.getSource('indoor-rooms')?.setData?.(floorData.datasets.rooms);
+        map.getSource('indoor-paths')?.setData?.(floorData.datasets.paths);
+        map.getSource('indoor-doors')?.setData?.(floorData.datasets.doors);
+
+        // Add room labels at centroids
+        floorData.datasets.rooms.features.forEach((feat) => {
+          if (!feat.properties?.name) return;
+          const coords = feat.geometry?.coordinates?.[0];
+          if (!coords) return;
+          const center = calculatePolygonCentroid(coords);
+
+          const el = document.createElement('div');
+          el.className = 'indoor-room-label';
+          el.textContent = feat.properties.name;
+
+          const marker = new maplibregl.Marker({ element: el })
+            .setLngLat(center)
+            .addTo(map);
+
+          indoorMarkersRef.current.push(marker);
+        });
+
+        // Set selected room highlight
+        if (selectedRoom?.geometry) {
+          map.getSource('indoor-selected-room')?.setData?.({
+            type: 'FeatureCollection',
+            features: [{ type: 'Feature', geometry: selectedRoom.geometry, properties: selectedRoom.properties || {} }],
+          });
+        } else {
+          map.getSource('indoor-selected-room')?.setData?.({ type: 'FeatureCollection', features: [] });
+        }
+
+        // Set active route
+        if (activeRoute?.geojson) {
+          map.getSource('indoor-route')?.setData?.(activeRoute.geojson);
+        } else {
+          map.getSource('indoor-route')?.setData?.({ type: 'FeatureCollection', features: [] });
+        }
+      }
+    } else {
+      map.getSource('indoor-rooms')?.setData?.({ type: 'FeatureCollection', features: [] });
+      map.getSource('indoor-paths')?.setData?.({ type: 'FeatureCollection', features: [] });
+      map.getSource('indoor-doors')?.setData?.({ type: 'FeatureCollection', features: [] });
+      map.getSource('indoor-selected-room')?.setData?.({ type: 'FeatureCollection', features: [] });
+      map.getSource('indoor-route')?.setData?.({ type: 'FeatureCollection', features: [] });
+    }
+  }, [selectedBuilding, selectedFloor, selectedRoom, activeRoute]);
+
   // Switch imagery provider at runtime
   const handleSwitchProvider = (newProvider) => {
     setCurrentProvider(newProvider);
@@ -250,6 +505,7 @@ export default function MapOutdoor({
       mapRef.current.setStyle(newStyle);
       mapRef.current.once('styledata', () => {
         addCampusLayers(mapRef.current);
+        syncIndoorLayers(mapRef.current);
       });
     }
   };
@@ -438,6 +694,8 @@ export default function MapOutdoor({
     return () => {
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
+      indoorMarkersRef.current.forEach((m) => m.remove());
+      indoorMarkersRef.current = [];
       if (gpsMarkerRef.current) {
         gpsMarkerRef.current.remove();
         gpsMarkerRef.current = null;
@@ -485,21 +743,35 @@ export default function MapOutdoor({
       mapRef.current.setStyle(newStyle);
       mapRef.current.once('styledata', () => {
         addCampusLayers(mapRef.current);
+        syncIndoorLayers(mapRef.current);
       });
     }
-  }, [providerProp, currentProvider, addCampusLayers, mapConfig.apiKey]);
+  }, [providerProp, currentProvider, addCampusLayers, syncIndoorLayers, mapConfig.apiKey]);
+
+  // Synchronize QGIS indoor layers whenever building, floor, room or route changes
+  useEffect(() => {
+    if (mapRef.current) {
+      syncIndoorLayers(mapRef.current);
+    }
+  }, [syncIndoorLayers]);
 
   // 2. Camera Swoop & Highlight reacting to State Machine
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
-    if (currentState === NAV_STATES.BUILDING_FLOORS && selectedBuilding?.center) {
+    if (
+      (currentState === NAV_STATES.BUILDING_FLOORS || currentState === NAV_STATES.FLOOR_VIEW) &&
+      selectedBuilding
+    ) {
+      const isBlockA = selectedBuilding.code === 'BLOCK_A' || selectedBuilding.name?.includes('Block A');
+      const targetCenter = isBlockA ? [77.50456, 12.90282] : (selectedBuilding.center || CAMPUS_CENTER);
+
       map.flyTo({
-        center: selectedBuilding.center,
-        zoom: 18.5,
-        pitch: 60,
-        bearing: -20,
+        center: selectedRoom?.coordinates || targetCenter,
+        zoom: selectedRoom?.coordinates ? 20.2 : isBlockA ? 19.3 : 18.5,
+        pitch: isTopView ? 0 : isBlockA ? 25 : 60,
+        bearing: isBlockA ? -20 : -20,
         speed: 1.2,
       });
 
@@ -520,7 +792,7 @@ export default function MapOutdoor({
       }
     }
     prevBuildingRef.current = selectedBuilding;
-  }, [currentState, selectedBuilding, isTopView]);
+  }, [currentState, selectedBuilding, selectedRoom, isTopView]);
 
   // 3. Geolocation Tracking
   useEffect(() => {

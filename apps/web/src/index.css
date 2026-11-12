@@ -138,3 +138,17 @@ html, body, #root {
   border-color: #ffffff;
   background-color: rgba(15, 23, 42, 0.8);
 }
+
+/* Indoor Floor Mapping Room Centroid Labels */
+.indoor-room-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  line-height: 1.15;
+  width: 95px;
+  text-shadow: 0 0 3px #ffffff, 0 0 3px #ffffff, 0 0 3px #ffffff, 0 0 5px #ffffff;
+  pointer-events: none;
+  user-select: none;
+}
+

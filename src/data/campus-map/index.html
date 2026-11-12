@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Navigator</title>
+<link href="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.css" rel="stylesheet">
+<script src="https://unpkg.com/maplibre-gl@4/dist/maplibre-gl.js"></script>
+<style>
+:root{--ink:#14213d;--route:#1a73e8;--paper:#fff;--line:#d5dbe6}
+html,body,#map{height:100%;margin:0;font-family:"Segoe UI",system-ui,sans-serif;color:var(--ink)}
+#panel{position:absolute;top:10px;left:10px;z-index:2;background:var(--paper);padding:12px;border-radius:12px;box-shadow:0 2px 12px rgba(20,33,61,.3);width:250px;max-width:calc(100% - 44px)}
+#panel h1{font-size:16px;margin:0 0 4px}
+#panel label{font-size:12px;color:#55607a;display:block;margin-top:8px}
+#panel input{width:100%;box-sizing:border-box;padding:8px;font-size:15px;border:1px solid var(--line);border-radius:6px}
+.row{display:flex;gap:6px;margin-top:8px}
+button{flex:1;padding:9px;font-size:14px;border:0;border-radius:6px;background:#e9edf5;color:var(--ink);cursor:pointer}
+button.p{background:var(--route);color:#fff}
+button:focus-visible,input:focus-visible{outline:2px solid var(--route);outline-offset:1px}
+#status{font-size:12px;color:#55607a;margin-top:8px}
+#banner{position:absolute;left:50%;transform:translateX(-50%);bottom:22px;z-index:2;background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;min-width:230px;max-width:calc(100% - 32px);display:none}
+#banner b{font-size:19px;display:block}
+#banner span{font-size:13px;opacity:.8}
+.rl{font-size:11px;font-weight:600;color:var(--ink);text-align:center;line-height:1.15;width:90px;text-shadow:0 0 3px #fff,0 0 3px #fff,0 0 3px #fff;pointer-events:none}
+.hide .rl{display:none}
+.me{width:18px;height:18px;border-radius:50%;background:var(--route);border:3px solid #fff;box-shadow:0 0 0 3px rgba(26,115,232,.3),0 2px 6px rgba(0,0,0,.4);position:relative;cursor:grab}
+.me:after{content:"";position:absolute;left:50%;top:-16px;margin-left:-7px;border:7px solid transparent;border-bottom:12px solid var(--route);border-top:0}
+.me.nh:after{display:none}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div id="panel">
+  <h1>Campus Navigator</h1>
+  <label>You are near</label>
+  <input id="from" list="doorlist" placeholder="e.g. A221">
+  <label>Go to</label>
+  <input id="to" list="doorlist" placeholder="e.g. A223">
+  <datalist id="doorlist"></datalist>
+  <div class="row"><button class="p" id="go">Show route</button></div>
+  <div class="row"><button id="gps">Use my location</button><button id="sim">Simulate walk</button></div>
+  <div id="status">Loading map...</div>
+</div>
+<div id="banner"></div>
+
+<script>
+const $ = id => document.getElementById(id), R = x => x * Math.PI / 180;
+const map = new maplibregl.Map({
+  container: 'map',
+  style: { version: 8,
+    sources: { osm: { type: 'raster', tileSize: 256, maxzoom: 19, tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'] } },
+    layers: [{ id: 'osm', type: 'raster', source: 'osm' }] },
+  center: [77.59, 12.97], zoom: 17
+});
+const fromEl = $('from'), toEl = $('to'), say = t => $('status').textContent = t;
+
+const dist = (a, b) => {
+  const dl = R(b[1] - a[1]), dn = R(b[0] - a[0]);
+  const s = Math.sin(dl / 2) ** 2 + Math.cos(R(a[1])) * Math.cos(R(b[1])) * Math.sin(dn / 2) ** 2;
+  return 12742000 * Math.asin(Math.sqrt(s));
+};
+const brg = (a, b) => {
+  const dn = R(b[0] - a[0]), y = Math.sin(dn) * Math.cos(R(b[1]));
+  const x = Math.cos(R(a[1])) * Math.sin(R(b[1])) - Math.sin(R(a[1])) * Math.cos(R(b[1])) * Math.cos(dn);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+};
+const len = cs => cs.reduce((s, c, i) => i ? s + dist(cs[i - 1], c) : 0, 0);
+
+// ---------- graph ----------
+const nodes = {}, edges = []; let nc = 0;
+function node(c) {
+  for (const i in nodes) if (dist(nodes[i].c, c) < .3) return i;
+  const i = 'n' + nc++; nodes[i] = { c: [c[0], c[1]], e: [] }; return i;
+}
+function addLine(cs) {
+  for (let i = 0; i < cs.length - 1; i++) {
+    const a = node(cs[i]), b = node(cs[i + 1]); if (a === b) continue;
+    const w = dist(nodes[a].c, nodes[b].c);
+    nodes[a].e.push({ to: b, w }); nodes[b].e.push({ to: a, w }); edges.push({ a, b });
+  }
+}
+function nearest(c) {
+  let best = null, bd = 1e9;
+  for (const i in nodes) { const d = dist(nodes[i].c, c); if (d < bd) { bd = d; best = i; } }
+  return best;
+}
+function astar(s, t) {
+  const h = i => dist(nodes[i].c, nodes[t].c), open = new Set([s]), prev = {}, g = { [s]: 0 }, f = { [s]: h(s) };
+  while (open.size) {
+    let c = null, b = 1e9;
+    for (const k of open) if (f[k] < b) { b = f[k]; c = k; }
+    if (c === t) { const p = [c]; while (prev[c]) { c = prev[c]; p.unshift(c); } return { path: p, cost: g[t] }; }
+    open.delete(c);
+    for (const e of nodes[c].e) {
+      const v = g[c] + e.w;
+      if (v < (g[e.to] ?? 1e9)) { prev[e.to] = c; g[e.to] = v; f[e.to] = v + h(e.to); open.add(e.to); }
+    }
+  }
+  return null;
+}
+// nearest point on any corridor line (so a wobbly position sticks to the path)
+function snap(p) {
+  const loc = c => [(c[0] - p[0]) * Math.cos(R(p[1])) * 111320, (c[1] - p[1]) * 110574];
+  let best = null;
+  for (const e of edges) {
+    const A = loc(nodes[e.a].c), B = loc(nodes[e.b].c), dx = B[0] - A[0], dy = B[1] - A[1], l2 = dx * dx + dy * dy;
+    const t = Math.max(0, Math.min(1, l2 ? -(A[0] * dx + A[1] * dy) / l2 : 0));
+    const d = Math.hypot(A[0] + t * dx, A[1] + t * dy);
+    if (!best || d < best.d) best = { e, t, d };
+  }
+  if (!best) return null;
+  const ca = nodes[best.e.a].c, cb = nodes[best.e.b].c;
+  const q = [ca[0] + best.t * (cb[0] - ca[0]), ca[1] + best.t * (cb[1] - ca[1])];
+  return { q, a: best.e.a, b: best.e.b, da: dist(q, ca), db: dist(q, cb), d: best.d };
+}
+function routeFrom(sn, goal) {
+  const A = astar(sn.a, goal), B = astar(sn.b, goal);
+  const ca = A ? sn.da + A.cost : 1e9, cb = B ? sn.db + B.cost : 1e9;
+  if (ca >= 1e9 && cb >= 1e9) return null;
+  return [sn.q, ...(ca <= cb ? A : B).path.map(i => nodes[i].c)];
+}
+function nextTurn(cs) {
+  const k = [cs[0]];
+  for (let i = 1; i < cs.length; i++) if (dist(k[k.length - 1], cs[i]) >= .6) k.push(cs[i]);
+  let d = 0;
+  for (let i = 1; i < k.length - 1; i++) {
+    d += dist(k[i - 1], k[i]);
+    const dl = ((brg(k[i], k[i + 1]) - brg(k[i - 1], k[i]) + 540) % 360) - 180;
+    if (Math.abs(dl) > 35) return { d, left: dl < 0, sharp: Math.abs(dl) > 110 };
+  }
+  return null;
+}
+
+// ---------- state ----------
+const doorN = {}, doorC = {};
+let me = null, last = null, dest = null, route = [], watch = null, sim = null;
+const meEl = document.createElement('div'); meEl.className = 'me nh';
+const meM = new maplibregl.Marker({ element: meEl, draggable: true, rotationAlignment: 'map' });
+const destM = new maplibregl.Marker({ color: '#c62828' });
+
+function place(raw) {                       // every position update comes through here
+  const sn = snap(raw); if (!sn) return;
+  if (sn.d > 40) { say('You seem to be outside the mapped floor.'); return; }
+  if (last && dist(last, sn.q) > .4) { meM.setRotation(brg(last, sn.q)); meEl.classList.remove('nh'); }
+  last = sn.q; me = sn; meM.setLngLat(sn.q).addTo(map); draw();
+}
+function draw() {                           // recompute the route from where you are now
+  if (!me || !dest) return;
+  const cs = routeFrom(me, doorN[dest]);
+  if (!cs) { say('No route found. Check for a gap in the paths layer.'); return; }
+  cs.push(doorC[dest]); route = cs;
+  map.getSource('route').setData({ type: 'Feature', geometry: { type: 'LineString', coordinates: cs } });
+  const L = len(cs), t = nextTurn(cs), ban = $('banner'); ban.style.display = 'block';
+  if (L < 3) { ban.innerHTML = '<b>You have arrived</b><span>' + dest + '</span>'; stopSim(); return; }
+  ban.innerHTML = '<b>' + (t ? 'In ' + Math.round(t.d) + ' m turn ' + (t.sharp ? 'sharp ' : '') + (t.left ? 'left' : 'right')
+    : 'Go straight ' + Math.round(L) + ' m') + '</b><span>' + Math.round(L) + ' m to ' + dest + ', about ' +
+    Math.max(1, Math.round(L / 1.3 / 60)) + ' min</span>';
+}
+function find(t) {
+  t = t.trim().toLowerCase(); if (!t) return null;
+  const n = Object.keys(doorN), e = n.find(x => x.toLowerCase() === t); if (e) return e;
+  const p = n.filter(x => x.toLowerCase().includes(t)); return p.length === 1 ? p[0] : null;
+}
+function go() {
+  const d = find(toEl.value); if (!d) { say('Pick a destination from the list.'); return; }
+  dest = d;
+  if (watch == null) {
+    const s = find(fromEl.value); if (!s) { say('Pick where you are from the list, or use your location.'); return; }
+    last = null; meEl.classList.add('nh'); place(doorC[s]);
+  }
+  destM.setLngLat(doorC[d]).addTo(map); draw(); say('Drag the blue dot to move yourself.');
+  const b = new maplibregl.LngLatBounds(); route.forEach(c => b.extend(c)); map.fitBounds(b, { padding: 90, maxZoom: 21 });
+}
+function along(cs, m) {
+  for (let i = 1; i < cs.length; i++) {
+    const d = dist(cs[i - 1], cs[i]);
+    if (m <= d) return [cs[i - 1][0] + (cs[i][0] - cs[i - 1][0]) * m / d, cs[i - 1][1] + (cs[i][1] - cs[i - 1][1]) * m / d];
+    m -= d;
+  }
+  return cs[cs.length - 1];
+}
+function stopSim() { clearInterval(sim); sim = null; $('sim').textContent = 'Simulate walk'; }
+function stopGps() { if (watch != null) navigator.geolocation.clearWatch(watch); watch = null; $('gps').textContent = 'Use my location'; }
+
+$('go').onclick = go;
+[fromEl, toEl].forEach(el => el.addEventListener('keydown', e => { if (e.key === 'Enter') go(); }));
+$('sim').onclick = () => {
+  if (sim) return stopSim();
+  stopGps(); if (!me || !dest) go(); if (!route.length) return;
+  $('sim').textContent = 'Stop'; sim = setInterval(() => place(along(route, .4)), 100);
+};
+$('gps').onclick = () => {
+  if (watch != null) return stopGps();
+  if (!navigator.geolocation) { say('Location is not available on this device.'); return; }
+  stopSim(); $('gps').textContent = 'Stop location'; fromEl.value = 'My location'; let sm = null;
+  watch = navigator.geolocation.watchPosition(p => {
+    const c = [p.coords.longitude, p.coords.latitude];
+    sm = sm ? [sm[0] + .4 * (c[0] - sm[0]), sm[1] + .4 * (c[1] - sm[1])] : c;
+    say('Location accuracy about ' + Math.round(p.coords.accuracy) + ' m'); place(sm);
+  }, e => say('Location error: ' + e.message), { enableHighAccuracy: true, maximumAge: 1000 });
+};
+meM.on('dragstart', () => { stopSim(); stopGps(); });
+meM.on('drag', () => { const p = meM.getLngLat(), sn = snap([p.lng, p.lat]); if (sn) { me = sn; draw(); } });
+meM.on('dragend', () => { const p = meM.getLngLat(); place([p.lng, p.lat]); });
+window.setFrom = n => fromEl.value = n;
+window.setTo = n => toEl.value = n;
+
+// ---------- load data ----------
+function centroid(r) {
+  const o = r[0]; let a = 0, cx = 0, cy = 0;
+  for (let i = 0; i < r.length - 1; i++) {
+    const x0 = r[i][0] - o[0], y0 = r[i][1] - o[1], x1 = r[i + 1][0] - o[0], y1 = r[i + 1][1] - o[1], f = x0 * y1 - x1 * y0;
+    a += f; cx += (x0 + x1) * f; cy += (y0 + y1) * f;
+  }
+  return a ? [o[0] + cx / (3 * a), o[1] + cy / (3 * a)] : o;
+}
+map.on('load', async () => {
+  const [rooms, doors, paths] = await Promise.all(['rooms.geojson', 'doors.geojson', 'paths.geojson'].map(u => fetch(u).then(r => r.json())));
+  paths.features.forEach(f => {
+    if (f.geometry.type === 'LineString') addLine(f.geometry.coordinates);
+    if (f.geometry.type === 'MultiLineString') f.geometry.coordinates.forEach(addLine);
+  });
+  doors.features.forEach(f => {
+    const n = f.properties.name; if (!n || f.geometry.type !== 'Point') return;
+    doorN[n] = nearest(f.geometry.coordinates); doorC[n] = f.geometry.coordinates;
+  });
+  Object.keys(doorN).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })).forEach(n => {
+    const o = document.createElement('option'); o.value = n; $('doorlist').appendChild(o);
+  });
+
+  ['rooms', 'paths', 'doors'].forEach((id, i) => map.addSource(id, { type: 'geojson', data: [rooms, paths, doors][i] }));
+  map.addSource('route', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({ id: 'rooms-fill', type: 'fill', source: 'rooms', paint: { 'fill-opacity': .75, 'fill-color': ['match',
+    ['downcase', ['to-string', ['coalesce', ['get', 'type'], '']]], 'lab', '#9bd8b8', 'classroom', '#a3bfff',
+    'toilet', '#d4d4d4', 'corridor', '#eef1f6', ['staircase', 'lift'], '#f6c98a', '#bccaf2'] } });
+  map.addLayer({ id: 'rooms-line', type: 'line', source: 'rooms', paint: { 'line-color': '#14213d', 'line-width': 1.2 } });
+  map.addLayer({ id: 'paths-line', type: 'line', source: 'paths', paint: { 'line-color': '#8a93a8', 'line-width': 1, 'line-dasharray': [2, 2], 'line-opacity': .5 } });
+  const lay = { 'line-cap': 'round', 'line-join': 'round' };
+  map.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: lay, paint: { 'line-color': '#fff', 'line-width': 10 } });
+  map.addLayer({ id: 'route-line', type: 'line', source: 'route', layout: lay, paint: { 'line-color': '#1a73e8', 'line-width': 6 } });
+  map.addLayer({ id: 'route-flow', type: 'line', source: 'route', layout: lay, paint: { 'line-color': '#fff', 'line-width': 2.5, 'line-opacity': .85, 'line-dasharray': [0, 4, 3] } });
+  map.addLayer({ id: 'doors-circle', type: 'circle', source: 'doors', paint: { 'circle-radius': 5, 'circle-color': '#fff', 'circle-stroke-color': '#14213d', 'circle-stroke-width': 2 } });
+
+  // room name labels at the centre of each room
+  rooms.features.forEach(f => {
+    const g = f.geometry; if (!f.properties.name) return;
+    const el = document.createElement('div'); el.className = 'rl'; el.textContent = f.properties.name;
+    new maplibregl.Marker({ element: el }).setLngLat(centroid(g.type === 'Polygon' ? g.coordinates[0] : g.coordinates[0][0])).addTo(map);
+  });
+  const tg = () => map.getContainer().classList.toggle('hide', map.getZoom() < 19);
+  map.on('zoom', tg); tg();
+
+  // moving dashes along the route
+  const ds = [[0, 4, 3], [.5, 4, 2.5], [1, 4, 2], [1.5, 4, 1.5], [2, 4, 1], [2.5, 4, .5], [3, 4, 0], [0, .5, 3, 3.5], [0, 1, 3, 3], [0, 1.5, 3, 2.5], [0, 2, 3, 2], [0, 2.5, 3, 1.5], [0, 3, 3, 1], [0, 3.5, 3, .5]];
+  let si = 0;
+  (function an(t) { const n = Math.floor(t / 60) % ds.length; if (n !== si) { map.setPaintProperty('route-flow', 'line-dasharray', ds[n]); si = n; } requestAnimationFrame(an); })(0);
+
+  const b = new maplibregl.LngLatBounds();
+  const walk = c => typeof c[0] === 'number' ? b.extend(c) : c.forEach(walk);
+  (rooms.features.length ? rooms : doors).features.forEach(f => walk(f.geometry.coordinates));
+  map.fitBounds(b, { padding: 60, maxZoom: 21 });
+
+  map.on('click', 'doors-circle', e => {
+    const n = e.features[0].properties.name;
+    new maplibregl.Popup().setLngLat(e.lngLat).setHTML('<b>' + n + '</b><br><button onclick="setFrom(\'' + n + '\')">Start here</button> <button onclick="setTo(\'' + n + '\')">Go here</button>').addTo(map);
+  });
+  map.on('mouseenter', 'doors-circle', () => map.getCanvas().style.cursor = 'pointer');
+  map.on('mouseleave', 'doors-circle', () => map.getCanvas().style.cursor = '');
+
+  say('Ready. Pick where you are and where to go.');
+  const q = new URLSearchParams(location.search);          // e.g. ?at=A221&to=A223 (for QR codes at doors)
+  if (q.get('at')) fromEl.value = q.get('at');
+  if (q.get('to')) toEl.value = q.get('to');
+  if (fromEl.value && toEl.value) go();
+});
+</script>
+</body>
+</html>

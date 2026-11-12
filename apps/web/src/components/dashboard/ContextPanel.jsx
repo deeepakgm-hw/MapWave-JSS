@@ -1,5 +1,11 @@
 import React, { useState } from 'react';
 import { Building3DPreview } from './Building3DPreview';
+import {
+  getBuildingFloorConfig,
+  getFloorData,
+  isFloorMapped,
+  getFloorRooms,
+} from '../../data/campus-map/floorRegistry';
 
 export function ContextPanel({
   selectedBuilding,
@@ -17,6 +23,8 @@ export function ContextPanel({
   onSelectBuilding,
   onSelectFloor,
   onSelectRoom,
+  onNavigateToRoom,
+  onClearRoom,
   onStartNavigation,
   onCancelRoute,
   onToggleAccessible,
@@ -26,10 +34,31 @@ export function ContextPanel({
   pilotBuildings = [],
   otherFacilities = [],
 }) {
-  const [selectedFloorId, setSelectedFloorId] = useState(selectedFloor?.id || 'floor-1');
+  const buildingCode = selectedBuilding?.code || 'BLOCK_A';
+  const floorConfig = getBuildingFloorConfig(buildingCode);
+  const activeLevel = selectedFloor?.level_number || floorConfig?.defaultFloor || 2;
+  const isMapped = isFloorMapped(buildingCode, activeLevel);
+  const rooms = isMapped ? getFloorRooms(buildingCode, activeLevel) : [];
 
-  // Active display building or fallback to first pilot building for preview
-  const displayBuilding = selectedBuilding || pilotBuildings[0];
+  const [roomFilter, setRoomFilter] = useState('ALL');
+
+  const filteredRooms = rooms.filter((r) => {
+    if (roomFilter === 'ALL') return true;
+    if (roomFilter === 'LAB') return (r.room_type || '').toLowerCase().includes('lab');
+    if (roomFilter === 'CLASS') return (r.room_type || '').toLowerCase().includes('class');
+    if (roomFilter === 'FACULTY')
+      return (
+        (r.room_type || '').toLowerCase().includes('faculty') ||
+        (r.room_type || '').toLowerCase().includes('office')
+      );
+    return true;
+  });
+
+  const floors = floorConfig?.floors || [
+    { id: 'floor-1', level_number: 1, name: 'First Floor', status: 'unmapped' },
+    { id: 'floor-2', level_number: 2, name: 'Second Floor', status: 'available' },
+    { id: 'floor-3', level_number: 3, name: 'Third Floor', status: 'unmapped' },
+  ];
 
   return (
     <aside className="relative flex flex-col h-full w-full bg-[#eceeed] text-[#181a1d] shadow-2xl overflow-hidden select-none">
@@ -130,16 +159,22 @@ export function ContextPanel({
             {/* Pure White Roam Travel Metrics Card */}
             <div className="p-5 rounded-[28px] bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] border border-black/[0.04] flex flex-col gap-3">
               <div className="flex items-center justify-between text-xs text-[#8c929d]">
-                <span className="font-semibold text-[#181a1d]">Route Preview</span>
-                <span>Est. Arrival • In ~3 mins</span>
+                <span className="font-semibold text-[#181a1d]">Walkable Corridor Route</span>
+                <span>
+                  Est. Arrival • ~{activeRoute?.estimatedMinutes || 1} min
+                </span>
               </div>
 
               {/* Horizontal Timeline Bar */}
               <div className="relative py-2 flex items-center justify-between">
                 <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 h-[2px] bg-[#e5e7eb]" />
                 <div className="relative z-10 flex flex-col items-start">
-                  <span className="text-xs font-bold text-[#181a1d]">Current Spot</span>
-                  <span className="text-[10px] text-[#8c929d]">Main Walkway</span>
+                  <span className="text-xs font-bold text-[#181a1d]">
+                    {gpsLocation ? 'Current Spot' : 'Staircase 1'}
+                  </span>
+                  <span className="text-[10px] text-[#8c929d]">
+                    {gpsLocation ? 'GPS Anchor' : 'Floor 2 Entry'}
+                  </span>
                 </div>
 
                 <div className="relative z-10 w-8 h-8 rounded-full bg-[#f59e0b] text-white flex items-center justify-center shadow-md">
@@ -149,54 +184,54 @@ export function ContextPanel({
                 </div>
 
                 <div className="relative z-10 flex flex-col items-end">
-                  <span className="text-xs font-bold text-[#181a1d]">{destination.name || destination.room_code}</span>
-                  <span className="text-[10px] text-[#8c929d]">Floor {destination.level_number || 1}</span>
+                  <span className="text-xs font-bold text-[#181a1d]">
+                    {destination.room_code || destination.name}
+                  </span>
+                  <span className="text-[10px] text-[#8c929d]">
+                    Floor {destination.floor || activeLevel}
+                  </span>
                 </div>
               </div>
 
               <div className="flex items-center justify-between pt-2 border-t border-[#f3f4f6] text-xs">
                 <div>
-                  <span className="text-[10px] font-mono uppercase text-[#8c929d]">Distance</span>
-                  <div className="text-sm font-bold text-[#181a1d]">185 meters</div>
+                  <span className="text-[10px] font-mono uppercase text-[#8c929d]">Corridor Distance</span>
+                  <div className="text-sm font-bold text-[#181a1d]">
+                    {activeRoute?.total_distance_m || 50.4} meters
+                  </div>
                 </div>
-                <div className="h-6 w-[1px] bg-[#e5e7eb]" />
                 <div>
-                  <span className="text-[10px] font-mono uppercase text-[#8c929d]">Travel Mode</span>
-                  <div className="text-sm font-bold text-[#181a1d]">Walking • Paved</div>
+                  <span className="text-[10px] font-mono uppercase text-[#8c929d]">Pace</span>
+                  <div className="text-sm font-bold text-[#181a1d]">1.2 m/s</div>
                 </div>
-                <div className="h-6 w-[1px] bg-[#e5e7eb]" />
                 <div>
-                  <span className="text-[10px] font-mono uppercase text-[#8c929d]">Elevator</span>
-                  <div className="text-sm font-bold text-[#181a1d]">Step-Free</div>
+                  <span className="text-[10px] font-mono uppercase text-[#8c929d]">Door Checkpoint</span>
+                  <div className="text-sm font-bold text-[#181a1d]">
+                    {activeRoute?.destinationDoor?.name || destination.door_name || 'Verified Door'}
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Wheelchair Accessibility Switch */}
-            <div className="flex items-center justify-between p-4 rounded-[22px] bg-white shadow-sm border border-black/[0.04]">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-full bg-[#fef3c7] text-[#b45309] flex items-center justify-center text-sm">
-                  ♿
-                </div>
+            {/* Accessibility Notice */}
+            <div className="p-4 rounded-[20px] bg-white/70 border border-black/[0.04] flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="text-lg">♿</span>
                 <div>
-                  <div className="text-xs font-bold text-[#181a1d]">Step-Free Accessible Route</div>
-                  <div className="text-[11px] text-[#8c929d]">Use ramps & central elevator only</div>
+                  <div className="text-xs font-bold text-[#181a1d]">Corridor Pathway</div>
+                  <div className="text-[10px] text-[#6b7280]">Walkable corridor without barrier steps</div>
                 </div>
               </div>
               <button
                 type="button"
-                role="switch"
-                aria-checked={isAccessibleMode}
                 onClick={onToggleAccessible}
-                className={`w-10 h-6 rounded-full transition-colors relative flex items-center px-0.5 cursor-pointer ${
-                  isAccessibleMode ? 'bg-[#f59e0b]' : 'bg-[#d1d5db]'
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  isAccessibleMode
+                    ? 'bg-[#181a1d] text-white'
+                    : 'bg-[#f3f4f6] text-[#4b5563] hover:bg-[#e5e7eb]'
                 }`}
               >
-                <span
-                  className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
-                    isAccessibleMode ? 'translate-x-4' : 'translate-x-0'
-                  }`}
-                />
+                {isAccessibleMode ? 'Accessible Active' : 'Standard'}
               </button>
             </div>
 
@@ -219,9 +254,114 @@ export function ContextPanel({
               </button>
             </div>
           </div>
+        ) : selectedRoom && currentState !== 'ROUTE_PREVIEW' && currentState !== 'ROUTING_ACTIVE' ? (
+          /* ========================================================
+              STATE C: ROOM SELECTED (INDOOR ROOM INSPECTION)
+              ======================================================== */
+          <div className="flex flex-col gap-4 animate-in fade-in duration-200">
+            {/* Header: Room Name & Code Badge */}
+            <div className="flex items-start justify-between pt-1">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight text-[#181a1d]">
+                  {selectedRoom.name}
+                </h2>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#fef3c7] text-[#b45309] border border-amber-200/50">
+                    Room #{selectedRoom.room_code || 'ROOM'}
+                  </span>
+                  <span className="text-xs text-[#6b7280]">
+                    Floor {selectedRoom.floor || 2} • Academic Block A
+                  </span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={onClearRoom}
+                className="w-8 h-8 rounded-full bg-white text-[#4b5563] hover:text-[#111827] shadow-sm flex items-center justify-center transition-colors cursor-pointer"
+                title="Close Room View"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Pure White Card with Verified Room Attributes */}
+            <div className="p-5 rounded-[28px] bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] border border-black/[0.04] flex flex-col gap-3">
+              <div className="flex items-center justify-between text-xs text-[#8c929d]">
+                <span className="font-semibold text-[#181a1d]">Room Specifications</span>
+                <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 font-medium text-[10px] border border-emerald-200">
+                  QGIS Verified Geometry
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="p-3 rounded-2xl bg-[#f8f9fa] border border-[#e5e7eb]/60">
+                  <div className="text-[10px] font-mono uppercase text-[#8c929d]">Category</div>
+                  <div className="text-xs font-bold text-[#181a1d] capitalize mt-0.5">
+                    {selectedRoom.room_type || selectedRoom.category || 'General'}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-[#f8f9fa] border border-[#e5e7eb]/60">
+                  <div className="text-[10px] font-mono uppercase text-[#8c929d]">Floor Level</div>
+                  <div className="text-xs font-bold text-[#181a1d] mt-0.5">
+                    Floor {selectedRoom.floor || 2}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-[#f8f9fa] border border-[#e5e7eb]/60 col-span-2">
+                  <div className="text-[10px] font-mono uppercase text-[#8c929d]">Associated Department</div>
+                  <div className="text-xs font-semibold text-[#181a1d] mt-0.5">
+                    {selectedRoom.name?.includes('ISE')
+                      ? 'Information Science & Engineering (ISE)'
+                      : selectedRoom.name?.includes('CSE')
+                      ? 'Computer Science & Engineering (CSE)'
+                      : selectedRoom.name?.includes('CAD')
+                      ? 'Mechanical & CAD Engineering'
+                      : 'Academic Complex Department'}
+                  </div>
+                </div>
+
+                {selectedRoom.door && (
+                  <div className="p-3 rounded-2xl bg-[#f8f9fa] border border-[#e5e7eb]/60 col-span-2">
+                    <div className="text-[10px] font-mono uppercase text-[#8c929d]">Entrance Checkpoint</div>
+                    <div className="text-xs font-semibold text-[#181a1d] mt-0.5 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span>{selectedRoom.door.name}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onNavigateToRoom) {
+                    onNavigateToRoom(selectedRoom);
+                  } else {
+                    onSelectRoom(selectedRoom);
+                  }
+                }}
+                className="flex-1 py-3 px-5 rounded-full bg-[#181a1d] hover:bg-black text-white font-semibold text-xs tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer min-h-[44px]"
+              >
+                <span>Navigate to this Room</span>
+                <span>→</span>
+              </button>
+              <button
+                type="button"
+                onClick={onClearRoom}
+                className="py-3 px-4 rounded-full bg-white hover:bg-white/90 text-[#4b5563] font-semibold text-xs tracking-wider uppercase transition-colors cursor-pointer min-h-[44px] shadow-sm"
+              >
+                Floor Plan
+              </button>
+            </div>
+          </div>
         ) : (
           /* ========================================================
-              STATE A / B / C: ROAM MAIN DASHBOARD (BUILDING OR CAMPUS OVERVIEW)
+              STATE A / B: ROAM MAIN DASHBOARD (BUILDING OR CAMPUS OVERVIEW)
               ======================================================== */
           <div className="flex flex-col gap-4 animate-in fade-in duration-200">
             {/* Top Title & Roam Amber Badge Header */}
@@ -271,59 +411,129 @@ export function ContextPanel({
               )}
             </div>
 
-            {/* Pure White Card: Roam "Last ride" Style Component */}
+            {/* Pure White Card: Available Floors & Verified QGIS Rooms */}
             <div className="p-5 rounded-[28px] bg-white shadow-[0_4px_16px_rgba(0,0,0,0.04)] border border-black/[0.04] flex flex-col gap-3">
               <div className="flex items-center justify-between text-xs text-[#8c929d]">
                 <span className="font-semibold text-[#181a1d]">
                   {selectedBuilding ? 'Available Floors' : 'Campus Overview'}
                 </span>
-                <span>{selectedBuilding ? 'Indoor Active' : '27 Mar • 12:15'}</span>
+                <span>
+                  {selectedBuilding
+                    ? isMapped
+                      ? `${rooms.length} Mapped Rooms`
+                      : 'Survey in Progress'
+                    : 'Bangalore'}
+                </span>
               </div>
 
               {selectedBuilding ? (
                 /* Floor Selector Chips inside the White Card */
-                <div className="flex flex-col gap-2 pt-1">
+                <div className="flex flex-col gap-3 pt-1">
                   <div className="flex items-center gap-2">
-                    {[1, 2, 3].slice(0, selectedBuilding.floor_count || 3).map((lvl) => {
-                      const floorId = `floor-${lvl}`;
-                      const isSelected = (selectedFloor?.level_number || 1) === lvl;
+                    {floors.map((fl) => {
+                      const lvl = fl.level_number;
+                      const isSelected = activeLevel === lvl;
+                      const mapped = fl.status === 'available';
+
                       return (
                         <button
-                          key={lvl}
+                          key={fl.id}
                           type="button"
                           onClick={() => {
-                            setSelectedFloorId(floorId);
-                            onSelectFloor({ id: floorId, level_number: lvl });
+                            onSelectFloor({ id: fl.id, level_number: lvl, status: fl.status });
                           }}
-                          className={`flex-1 py-2.5 rounded-2xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                          className={`flex-1 py-2.5 px-2 rounded-2xl text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
                             isSelected
                               ? 'bg-[#181a1d] text-white shadow-md'
-                              : 'bg-[#f3f4f6] text-[#4b5563] hover:bg-[#e5e7eb]'
+                              : mapped
+                              ? 'bg-[#f3f4f6] text-[#181a1d] hover:bg-[#e5e7eb]'
+                              : 'bg-[#f9fafb] text-[#9ca3af] hover:bg-[#f3f4f6]'
                           }`}
                         >
-                          <span>Floor</span>
-                          <span>{lvl}</span>
+                          <div className="flex items-center gap-1">
+                            <span>Floor</span>
+                            <span>{lvl}</span>
+                          </div>
+                          <span className={`text-[9px] font-normal uppercase ${isSelected ? 'text-amber-300' : mapped ? 'text-emerald-600' : 'text-slate-400'}`}>
+                            {mapped ? 'Mapped' : 'Phase 2'}
+                          </span>
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* Departments / Facilities quick row */}
-                  {selectedBuilding.departments && selectedBuilding.departments.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 pt-1.5">
-                      {selectedBuilding.departments.map((dept, i) => (
-                        <span
-                          key={i}
-                          className="px-2.5 py-1 rounded-xl bg-[#f8f9fa] border border-[#e5e7eb] text-[#374151] text-[11px] font-medium"
-                        >
-                          {dept}
-                        </span>
-                      ))}
+                  {/* If active floor is verified, show room list & category chips */}
+                  {isMapped ? (
+                    <div className="flex flex-col gap-2 pt-1 border-t border-[#f3f4f6]">
+                      {/* Category Filter Chips */}
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-1">
+                        {[
+                          { id: 'ALL', label: `All (${rooms.length})` },
+                          { id: 'LAB', label: 'Labs' },
+                          { id: 'CLASS', label: 'Classrooms' },
+                          { id: 'FACULTY', label: 'Faculty' },
+                        ].map((chip) => (
+                          <button
+                            key={chip.id}
+                            type="button"
+                            onClick={() => setRoomFilter(chip.id)}
+                            className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition-all cursor-pointer ${
+                              roomFilter === chip.id
+                                ? 'bg-[#181a1d] text-white shadow-sm'
+                                : 'bg-[#f3f4f6] text-[#4b5563] hover:bg-[#e5e7eb]'
+                            }`}
+                          >
+                            {chip.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Scrollable list of verified rooms */}
+                      <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto no-scrollbar pt-1">
+                        {filteredRooms.map((room) => (
+                          <div
+                            key={room.id}
+                            onClick={() => onSelectRoom(room)}
+                            className="p-2.5 rounded-2xl bg-[#f8f9fa] hover:bg-[#f1f3f5] border border-[#e5e7eb]/70 transition-all cursor-pointer flex items-center justify-between group"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="px-2 py-0.5 rounded-lg bg-white border border-[#e5e7eb] text-[10px] font-mono font-bold text-[#181a1d]">
+                                {room.room_code}
+                              </span>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-semibold text-[#181a1d] group-hover:text-blue-600 transition-colors">
+                                  {room.name}
+                                </span>
+                                <span className="text-[10px] text-[#6b7280] capitalize">
+                                  {room.room_type}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-xs text-[#8c929d] group-hover:text-[#181a1d] transition-colors">
+                              →
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-2xl bg-[#f8f9fa] border border-[#e5e7eb] flex flex-col items-center text-center gap-1.5 my-1">
+                      <span className="text-xs font-bold text-[#181a1d]">Floor {activeLevel} CAD Survey In Progress</span>
+                      <p className="text-[11px] text-[#6b7280] leading-tight">
+                        Floor {activeLevel} datasets will be available in Phase 2. Second Floor is currently fully mapped.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => onSelectFloor({ id: 'floor-2', level_number: 2, status: 'available' })}
+                        className="mt-1 px-3 py-1.5 rounded-xl bg-[#181a1d] text-white text-[11px] font-bold cursor-pointer"
+                      >
+                        View Verified Floor 2
+                      </button>
                     </div>
                   )}
                 </div>
               ) : (
-                /* Roam Exact Timeline in White Card: Marina ➔ Alameda */
+                /* Roam Exact Timeline in White Card: Main Gate ➔ Central Quad */
                 <div className="relative py-2 flex items-center justify-between">
                   <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-[2px] bg-[#e5e7eb]" />
                   <div className="relative z-10 flex flex-col items-start">
@@ -376,7 +586,6 @@ export function ContextPanel({
                 onClick={() => onSelectBuilding(pilotBuildings[0])}
                 className="p-4 rounded-[24px] bg-[#1c1f24] text-white shadow-sm hover:bg-[#252a30] transition-all cursor-pointer flex flex-col gap-2.5 border border-black/10 group"
               >
-                {/* Time & Duration Row */}
                 <div className="flex items-center justify-between text-xs text-[#9ca3af]">
                   <span className="text-white font-medium">25 Mar</span>
                   <span className="font-mono text-[11px]">11:59</span>
@@ -384,7 +593,6 @@ export function ContextPanel({
                   <span className="font-mono text-[11px]">12:15</span>
                 </div>
 
-                {/* Timeline Track with Amber Node */}
                 <div className="relative py-1 flex items-center justify-between">
                   <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 h-[1px] bg-white/20" />
                   <div className="relative z-10 w-2 h-2 rounded-full bg-[#f59e0b]" />
@@ -394,19 +602,17 @@ export function ContextPanel({
                   <div className="relative z-10 w-2 h-2 rounded-full bg-[#f59e0b]" />
                 </div>
 
-                {/* Start & End Labels */}
                 <div className="flex items-center justify-between text-xs font-medium text-white/90">
                   <span>Old Town</span>
                   <span className="text-white">King Street</span>
                 </div>
               </div>
 
-              {/* Roam Journey Card 2 (Dark Charcoal #1c1f24 with Amber Node) */}
+              {/* Roam Journey Card 2 */}
               <div
                 onClick={() => onSelectBuilding(pilotBuildings[1] || pilotBuildings[0])}
                 className="p-4 rounded-[24px] bg-[#1c1f24] text-white shadow-sm hover:bg-[#252a30] transition-all cursor-pointer flex flex-col gap-2.5 border border-black/10 group"
               >
-                {/* Time & Duration Row */}
                 <div className="flex items-center justify-between text-xs text-[#9ca3af]">
                   <span className="text-white font-medium">22 Mar</span>
                   <span className="font-mono text-[11px]">15:10</span>
@@ -414,7 +620,6 @@ export function ContextPanel({
                   <span className="font-mono text-[11px]">15:20</span>
                 </div>
 
-                {/* Timeline Track with Amber Node */}
                 <div className="relative py-1 flex items-center justify-between">
                   <div className="absolute inset-x-6 top-1/2 -translate-y-1/2 h-[1px] bg-white/20" />
                   <div className="relative z-10 w-2 h-2 rounded-full bg-[#f59e0b]" />
@@ -424,7 +629,6 @@ export function ContextPanel({
                   <div className="relative z-10 w-2 h-2 rounded-full bg-[#f59e0b]" />
                 </div>
 
-                {/* Start & End Labels */}
                 <div className="flex items-center justify-between text-xs font-medium text-white/90">
                   <span>Marina</span>
                   <span className="text-white">Alameda</span>

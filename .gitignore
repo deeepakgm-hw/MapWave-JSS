@@ -48,4 +48,5 @@ coverage/
 tmp/
 temp/
 topoexport_extracted/
+campus-map-v1-zip/
 *.zip

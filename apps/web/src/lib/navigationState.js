@@ -26,15 +26,21 @@ export const INITIAL_NAV_STATE = {
 
 export function navigationReducer(state, action) {
   switch (action.type) {
-    case 'SELECT_BUILDING':
+    case 'SELECT_BUILDING': {
+      const isBlockA = action.payload?.code === 'BLOCK_A' || action.payload?.name?.includes('Block A');
+      const defaultFloor = isBlockA
+        ? { id: 'floor-2', level_number: 2, name: 'Second Floor', status: 'available' }
+        : null;
+
       return {
         ...state,
         currentState: NAV_STATES.BUILDING_FLOORS,
         selectedBuilding: action.payload,
-        selectedFloor: null,
+        selectedFloor: defaultFloor,
         selectedRoom: null,
         errorMessage: null,
       };
+    }
 
     case 'SELECT_FLOOR':
       return {
@@ -43,6 +49,20 @@ export function navigationReducer(state, action) {
         selectedFloor: action.payload,
         selectedRoom: null,
         errorMessage: null,
+      };
+
+    case 'SELECT_ROOM':
+      return {
+        ...state,
+        currentState: NAV_STATES.FLOOR_VIEW,
+        selectedRoom: action.payload,
+        errorMessage: null,
+      };
+
+    case 'CLEAR_SELECTED_ROOM':
+      return {
+        ...state,
+        selectedRoom: null,
       };
 
     case 'SELECT_ROOM_DESTINATION':

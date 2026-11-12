@@ -20,6 +20,7 @@ import { buildingMetadata, CAMPUS_CENTER } from './data';
 import { getMapConfig, MAP_PROVIDERS } from './config/mapConfig';
 import { useGeofence } from './hooks/useGeofence';
 import { APP_MODES } from './services/geofenceService';
+import { findIndoorRoute } from './services/indoorNavigationGraph';
 
 export const PILOT_BUILDINGS = [
   {
@@ -171,14 +172,15 @@ export default function App() {
 
   const handleSelectBuilding = (building) => {
     const meta = buildingMetadata[building.id] || buildingMetadata[building.code] || {};
+    const isBlockA = building.code === 'BLOCK_A' || building.name?.includes('Block A');
     const enriched = {
       ...meta,
       ...building,
       departments: building.departments || meta.departments || [],
       facilities: building.facilities || meta.facilities || [],
-      verification: building.verification || meta.verification || 'estimated',
-      indoor_mapping_status: building.indoor_mapping_status || meta.indoor_mapping_status || 'planned',
-      center: building.center || meta.center,
+      verification: building.verification || meta.verification || 'verified',
+      indoor_mapping_status: building.indoor_mapping_status || meta.indoor_mapping_status || 'available',
+      center: isBlockA ? [77.50456, 12.90282] : (building.center || meta.center),
     };
     dispatch({ type: 'SELECT_BUILDING', payload: enriched });
   };
@@ -188,16 +190,33 @@ export default function App() {
   };
 
   const handleSelectRoom = (room) => {
+    dispatch({ type: 'SELECT_ROOM', payload: room });
+  };
+
+  const handleStartRoomRoute = (room) => {
+    const isBlockA = selectedBuilding?.code === 'BLOCK_A' || selectedBuilding?.name?.includes('Block A');
+    let route = null;
+    if (isBlockA && (selectedFloor?.level_number === 2 || !selectedFloor)) {
+      const startPos = gpsLocation ? [gpsLocation.longitude, gpsLocation.latitude] : null;
+      route = findIndoorRoute('BLOCK_A', 2, startPos, room);
+    }
+
     dispatch({
       type: 'SELECT_ROOM_DESTINATION',
-      payload: { room, destination: room },
+      payload: { room, destination: room, route },
     });
   };
 
   const handleSearchResultSelect = ({ room, building, floor }) => {
+    const isBlockA = building?.code === 'BLOCK_A' || building?.name?.includes('Block A');
+    let route = null;
+    if (isBlockA && (floor?.level_number === 2 || !floor)) {
+      const startPos = gpsLocation ? [gpsLocation.longitude, gpsLocation.latitude] : null;
+      route = findIndoorRoute('BLOCK_A', 2, startPos, room);
+    }
     dispatch({
       type: 'SEARCH_ROOM',
-      payload: { room, building, floor },
+      payload: { room, building, floor, route },
     });
   };
 
@@ -441,6 +460,9 @@ export default function App() {
                 <MapOutdoor
                   currentState={currentState}
                   selectedBuilding={selectedBuilding}
+                  selectedFloor={selectedFloor}
+                  selectedRoom={selectedRoom}
+                  onSelectRoom={handleSelectRoom}
                   activeRoute={activeRoute}
                   onSelectBuilding={handleSelectBuilding}
                   onUpdateLocation={(loc) => dispatch({ type: 'UPDATE_GPS_LOCATION', payload: loc })}
@@ -766,6 +788,8 @@ export default function App() {
               onSelectBuilding={handleSelectBuilding}
               onSelectFloor={handleSelectFloor}
               onSelectRoom={handleSelectRoom}
+              onNavigateToRoom={handleStartRoomRoute}
+              onClearRoom={() => dispatch({ type: 'CLEAR_SELECTED_ROOM' })}
               onStartNavigation={() => dispatch({ type: 'START_NAVIGATION' })}
               onCancelRoute={() => dispatch({ type: 'DISMISS' })}
               onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
