@@ -4,7 +4,7 @@ import {
   INITIAL_NAV_STATE,
   navigationReducer,
 } from './lib/navigationState';
-import { TopBar } from './components/TopBar';
+import { TopBar } from './components/navigation/TopBar';
 import { RoomSearchModal } from './components/RoomSearchModal';
 import { BottomSheet } from './components/BottomSheet';
 import { FloatingControls } from './components/FloatingControls';
@@ -125,6 +125,18 @@ export default function App() {
   });
   const [isPanelOpen, setIsPanelOpen] = useState(true);
   const [isGridAudit, setIsGridAudit] = useState(false);
+  const [sheetHeight, setSheetHeight] = useState(96);
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== 'undefined' ? window.innerWidth < 1024 : false));
+
+  useEffect(() => {
+    function handleResize() {
+      if (typeof window !== 'undefined') {
+        setIsMobile(window.innerWidth < 1024);
+      }
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -498,8 +510,23 @@ export default function App() {
             )}
           </main>
 
-          {/* Top-Left Command Stack (420px column, 12px gap, 16px inset) */}
-          <div className="fixed top-4 left-4 xl:top-6 xl:left-6 z-30 pointer-events-none">
+          {/* Mobile-First Top Navigation Bar (<1024px) */}
+          <div className="lg:hidden">
+            <TopBar
+              selectedBuilding={selectedBuilding}
+              selectedFloor={selectedFloor}
+              currentMode={currentMode}
+              isInsideCampus={isInsideCampus}
+              distanceToCampusKm={distanceToCampusKm}
+              onSwitchMode={manualSetMode}
+              theme={theme}
+              onToggleTheme={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
+              onOpenSearch={() => setIsSearchOpen(true)}
+            />
+          </div>
+
+          {/* Top-Left Command Stack (420px column, 12px gap, 16px inset) - Desktop Only */}
+          <div className="hidden lg:block fixed top-4 left-4 xl:top-6 xl:left-6 z-30 pointer-events-none">
             <CommandStack
               selectedBuilding={selectedBuilding}
               onClearBuilding={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
@@ -566,7 +593,7 @@ export default function App() {
             />
           </div>
 
-          {/* Bottom-Right Floating Map Controls Dock (Pill, animated offset) */}
+          {/* Bottom-Right Floating Map Controls Dock (Pill, animated offset riding above BottomSheet) */}
           <MapControls
             bearing={bearing}
             onResetNorth={() => {
@@ -594,182 +621,47 @@ export default function App() {
             isGpsActive={isGpsActive}
             isGpsLoading={isGpsLoading}
             isPanelOpen={isPanelOpen}
+            bottomOffset={isMobile ? sheetHeight + 12 : null}
           />
 
-          {/* Bottom-Left Floor Switcher & Telemetry Strip */}
+          {/* Bottom-Left Floor Switcher & Telemetry Strip (Riding above BottomSheet on mobile) */}
           <FloorSwitcher
             currentFloor={selectedFloor?.level_number || 2}
             onSelectFloor={(fl) => handleSelectFloor({ level_number: fl, name: `Floor ${fl}` })}
             coordinates={gpsLocation ? [gpsLocation.longitude, gpsLocation.latitude] : CAMPUS_CENTER}
             zoom={18}
+            bottomOffset={isMobile ? sheetHeight + 12 : null}
           />
 
-          {/* Mobile Bottom Sheet (<1024w) */}
+          {/* Persistent Mobile Bottom Sheet (<1024w) */}
           <div className="lg:hidden">
             <BottomSheet
-              summary={getBottomSheetSummary()}
-              onClose={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
-            >
-              {currentMode === APP_MODES.EXPLORE_MODE ? (
-                <div className="flex flex-col gap-3 py-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
-                      <h4 className="text-xs font-bold text-amber-300 uppercase tracking-wider">
-                        Explore Mode Active
-                      </h4>
-                    </div>
-                    <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">
-                      Outside Geofence
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-white/70 font-normal leading-relaxed">
-                    You are currently <strong className="text-amber-300 font-semibold">{distanceToCampusKm.toFixed(1)} km</strong> from JSS Academy of Technical Education. Real-time outdoor GPS tracking is active. Indoor building models and floor navigation are disabled until entering campus.
-                  </p>
-
-                  <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-1">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        manualSetMode(APP_MODES.CAMPUS_MODE);
-                        if (mapRef.current) {
-                          mapRef.current.flyTo({
-                            center: CAMPUS_CENTER,
-                            zoom: 17.6,
-                            pitch: 45,
-                            duration: 1500,
-                          });
-                        }
-                      }}
-                      className="w-full sm:flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
-                    >
-                      <span>🏫 Enter Campus 3D Mode</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleLocateMe}
-                      className="w-full sm:w-auto px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-semibold tracking-wider uppercase border border-white/20 flex items-center justify-center gap-1.5 min-h-[44px] transition-colors cursor-pointer"
-                    >
-                      <span>My Location</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {currentState === NAV_STATES.OVERVIEW && (
-                    <div className="flex flex-col gap-3 py-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-xs font-bold text-white/90 uppercase tracking-wider">
-                          Campus Overview
-                        </h4>
-                        <span className="text-[10px] font-mono text-white/50 uppercase tracking-widest">
-                          JSSATE Bangalore
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col gap-2 pt-1">
-                        <span className="text-[10px] font-mono text-white/50 uppercase tracking-wider">
-                          Pilot 3D Buildings
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {PILOT_BUILDINGS.map((building) => (
-                            <button
-                              key={building.id}
-                              type="button"
-                              onClick={() => handleSelectBuilding(building)}
-                              className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-full text-xs font-medium border border-white/15 transition-colors cursor-pointer"
-                            >
-                              {building.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-3 pt-2">
-                        <button
-                          type="button"
-                          onClick={() => setIsSearchOpen(true)}
-                          className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full text-xs font-semibold tracking-wider uppercase flex items-center justify-center gap-2 shadow-lg transition-colors min-h-[44px] cursor-pointer"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                          </svg>
-                          <span>Search Rooms</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={isAccessibleMode}
-                          onClick={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
-                          className={`px-3 py-2.5 rounded-full text-xs font-medium border flex items-center gap-1.5 min-h-[44px] cursor-pointer ${
-                            isAccessibleMode ? 'bg-blue-600 text-white border-blue-400' : 'bg-white/10 text-white border-white/20'
-                          }`}
-                        >
-                          <span>♿</span>
-                          <span>Accessible</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {(currentState === NAV_STATES.BUILDING_FLOORS || currentState === NAV_STATES.FLOOR_VIEW) && (
-                    <IndoorMapView
-                      selectedBuilding={selectedBuilding}
-                      selectedFloor={selectedFloor}
-                      onSelectFloor={handleSelectFloor}
-                      onSelectRoom={handleSelectRoom}
-                    />
-                  )}
-
-                  {currentState === NAV_STATES.ROUTE_PREVIEW && (
-                    <RoutePreviewCard
-                      destination={destination || selectedRoom}
-                      isAccessibleMode={isAccessibleMode}
-                      errorMessage={errorMessage}
-                      onStartNavigation={() => dispatch({ type: 'START_NAVIGATION' })}
-                      onBack={() => dispatch({ type: 'BACK' })}
-                    />
-                  )}
-
-                  {currentState === NAV_STATES.ROUTING_ACTIVE && (
-                    <ActiveNavigationHUD
-                      destination={destination || selectedRoom}
-                      lastAnchor={lastAnchor}
-                      onTriggerReanchor={() => dispatch({ type: 'TRIGGER_REANCHOR' })}
-                      onFinish={() => dispatch({ type: 'DESTINATION_REACHED' })}
-                    />
-                  )}
-
-                  {currentState === NAV_STATES.ARRIVED && (
-                    <div className="flex flex-col gap-3 py-3 text-center items-center">
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-400/30 flex items-center justify-center">
-                        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
-                          You Have Arrived
-                        </h3>
-                        <p className="text-xs text-white/70 font-medium mt-1">
-                          Destination reached.
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => dispatch({ type: 'DISMISS' })}
-                        className="min-h-[44px] w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs tracking-wider uppercase rounded-full border border-white/20 shadow-lg transition-colors cursor-pointer mt-1"
-                      >
-                        Done & Return to Campus Overview
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </BottomSheet>
+              selectedBuilding={selectedBuilding}
+              selectedFloor={selectedFloor}
+              selectedRoom={selectedRoom}
+              destination={destination}
+              activeRoute={activeRoute}
+              currentState={currentState}
+              currentMode={currentMode}
+              distanceToCampusKm={distanceToCampusKm}
+              gpsLocation={gpsLocation}
+              isAccessibleMode={isAccessibleMode}
+              onSelectBuilding={handleSelectBuilding}
+              onSelectFloor={handleSelectFloor}
+              onSelectRoom={handleSelectRoom}
+              onNavigateToRoom={handleStartRoomRoute}
+              onClearRoom={() => dispatch({ type: 'CLEAR_SELECTED_ROOM' })}
+              onStartNavigation={() => dispatch({ type: 'START_NAVIGATION' })}
+              onCancelRoute={() => dispatch({ type: 'DISMISS' })}
+              onToggleAccessible={() => dispatch({ type: 'TOGGLE_ACCESSIBLE' })}
+              onResetToCampus={() => dispatch({ type: 'BACK', payload: 'OVERVIEW' })}
+              onLocateMe={handleLocateMe}
+              pilotBuildings={PILOT_BUILDINGS}
+              otherFacilities={OTHER_CAMPUS_FACILITIES}
+              onHeightChange={(h) => setSheetHeight(h)}
+              onOpenSearch={() => setIsSearchOpen(true)}
+              onSearchSelect={handleSearchResultSelect}
+            />
           </div>
         </div>
       )}

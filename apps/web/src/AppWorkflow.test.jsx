@@ -123,17 +123,17 @@ describe('App End-to-End Workflow Integration', () => {
     fireEvent.click(exploreBtn);
 
     // Initial state: Campus Mode is active with 3D Pilot Zones and Search Rooms
-    expect(screen.getByText(/Campus Mode/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Campus Mode/i)[0]).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Block A/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Search Rooms/i })).toBeInTheDocument();
 
     // Toggle mode to EXPLORE_MODE (as would happen when student moves outside boundary)
-    const modeBadge = screen.getByRole('button', { name: /Campus Mode/i });
+    const modeBadge = screen.getAllByRole('button', { name: /Campus Mode/i })[0];
     fireEvent.click(modeBadge);
 
     // Now in EXPLORE_MODE: indoor controls are hidden, outdoor overview is active
     expect(screen.getAllByText(/Explore Mode/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Explore Mode Active/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Explore Mode Active/i)[0]).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Block A/i })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Search Rooms/i })).not.toBeInTheDocument();
 

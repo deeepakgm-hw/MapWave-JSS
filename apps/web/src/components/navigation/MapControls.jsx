@@ -15,15 +15,23 @@ export function MapControls({
   isGpsActive = false,
   isGpsLoading = false,
   isPanelOpen = true,
+  bottomOffset = null,
+  style = {},
   className = '',
 }) {
   return (
     <div
-      className={`fixed bottom-4 z-20 pointer-events-auto select-none transition-all duration-240 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+      className={`fixed z-20 pointer-events-auto select-none transition-all duration-240 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+        bottomOffset != null ? '' : 'bottom-4'
+      } ${
         isPanelOpen
           ? 'right-4 lg:right-[432px] xl:right-[440px]'
           : 'right-4 xl:right-6'
       } ${className}`}
+      style={{
+        ...(bottomOffset != null ? { bottom: typeof bottomOffset === 'number' ? `${bottomOffset}px` : bottomOffset } : {}),
+        ...style,
+      }}
       role="toolbar"
       aria-label="Map Navigation Controls"
     >

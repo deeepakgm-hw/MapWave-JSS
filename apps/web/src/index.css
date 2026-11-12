@@ -10,10 +10,23 @@
   --font-ui: 'Geist', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* Spacing & Inset Tokens */
+  /* Safe Area Tokens (Single source of truth) */
+  --safe-t: env(safe-area-inset-top, 0px);
+  --safe-b: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+
+  /* Z-Layer Tokens */
+  --z-map: 0;
+  --z-scrim: 10;
+  --z-controls: 20;
+  --z-sheet: 30;
+  --z-modal: 40;
+
+  /* Spacing: 4px base, 8px grid; screen-edge inset 12px mobile, 16px desktop */
   --space-unit: 4px;
   --grid-step: 8px;
-  --edge-inset: 16px;
+  --edge-inset: 12px;
 
   /* Radius Tokens */
   --radius-control: 12px;
@@ -30,33 +43,39 @@
   --semantic-warn: #F59E0B;
   --semantic-error: #EF4444;
 
-  /* Glass Recipe (Dark - Default) */
-  --glass-bg: rgba(14, 17, 26, 0.55);
-  --glass-filter: blur(24px) saturate(160%);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  /* Mobile-Safe Glass Recipe (Dark - Default) */
+  --glass-bg: rgba(16, 19, 28, 0.62);
+  --glass-filter: blur(20px) saturate(150%);
+  --glass-border: rgba(255, 255, 255, 0.14);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.20);
+  --glass-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
   --glass-text: #FFFFFF;
-  --glass-text-secondary: rgba(255, 255, 255, 0.70);
-  --glass-text-muted: rgba(255, 255, 255, 0.45);
+  --glass-text-secondary: rgba(255, 255, 255, 0.72);
+  --glass-text-muted: rgba(255, 255, 255, 0.48);
   --glass-child-bg: rgba(255, 255, 255, 0.08);
   --glass-child-hover: rgba(255, 255, 255, 0.14);
   --glass-child-border: rgba(255, 255, 255, 0.12);
 }
 
 [data-theme='light'] {
-  /* Glass Recipe (Light) */
-  --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-filter: blur(24px) saturate(160%);
-  --glass-border: rgba(255, 255, 255, 0.70);
+  /* Mobile-Safe Glass Recipe (Light) */
+  --glass-bg: rgba(255, 255, 255, 0.70);
+  --glass-filter: blur(20px) saturate(150%);
+  --glass-border: rgba(255, 255, 255, 0.75);
   --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.90);
-  --glass-shadow: 0 12px 40px rgba(15, 23, 42, 0.14);
+  --glass-shadow: 0 12px 36px rgba(15, 23, 42, 0.14);
   --glass-text: #0F172A;
   --glass-text-secondary: rgba(15, 23, 42, 0.72);
   --glass-text-muted: rgba(15, 23, 42, 0.48);
   --glass-child-bg: rgba(0, 0, 0, 0.05);
   --glass-child-hover: rgba(0, 0, 0, 0.09);
   --glass-child-border: rgba(0, 0, 0, 0.08);
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --edge-inset: 16px;
+  }
 }
 
 @media (min-width: 1280px) {
@@ -68,7 +87,7 @@
 /* Fallback for environments lacking backdrop-filter or with reduced transparency */
 @supports not (backdrop-filter: blur(1px)) {
   :root {
-    --glass-bg: #0e111a;
+    --glass-bg: #10131c;
     --glass-filter: none;
   }
   [data-theme='light'] {
@@ -79,7 +98,7 @@
 
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-bg: #0e111a;
+    --glass-bg: #10131c;
     --glass-filter: none;
   }
   [data-theme='light'] {
@@ -99,25 +118,52 @@
 }
 
 @layer utilities {
-  /* Hide scrollbar for Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  /* Hide scrollbar for IE, Edge and Firefox */
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
 
 html, body, #root {
+  height: 100dvh;
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: #0c0a09;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  font-family: var(--font-ui);
+  background-color: #0e111a;
+}
+
+/* Inputs at 16px minimum to prevent iOS focus-zoom */
+@media (max-width: 768px) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Prevent double-tap zoom on page buttons while keeping it on canvas */
+button, a, [role="button"] {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Active tap feedback: scale .97 */
+.tap-feedback {
+  transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.15s ease;
+}
+.tap-feedback:active {
+  transform: scale(0.97);
+}
+
+/* Map canvas gesture constraint */
+.maplibregl-canvas {
+  touch-action: pan-x pan-y pinch-zoom !important;
 }
 
 /* Reference Website: Kenya Kortet Display Typography */

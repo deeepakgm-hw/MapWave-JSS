@@ -13,6 +13,8 @@ export function FloorSwitcher({
   onSelectFloor,
   coordinates = [77.5057, 12.9015], // [lng, lat]
   zoom = 18,
+  bottomOffset = null,
+  style = {},
   className = '',
 }) {
   const activeIndex = floors.indexOf(currentFloor);
@@ -24,7 +26,13 @@ export function FloorSwitcher({
 
   return (
     <div
-      className={`fixed bottom-4 left-4 xl:bottom-6 xl:left-6 z-20 pointer-events-auto flex flex-col items-start gap-2 select-none font-sans ${className}`}
+      className={`fixed left-4 xl:left-6 z-20 pointer-events-auto flex flex-col items-start gap-2 select-none font-sans transition-all duration-240 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+        bottomOffset != null ? '' : 'bottom-4 xl:bottom-6'
+      } ${className}`}
+      style={{
+        ...(bottomOffset != null ? { bottom: typeof bottomOffset === 'number' ? `${bottomOffset}px` : bottomOffset } : {}),
+        ...style,
+      }}
       role="region"
       aria-label="Floor Switcher and Map Telemetry"
     >

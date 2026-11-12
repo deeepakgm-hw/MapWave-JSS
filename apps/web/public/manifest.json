@@ -1,0 +1,18 @@
+{
+  "name": "MapWave — JSSATE Campus Navigator",
+  "short_name": "MapWave",
+  "description": "Apple-Maps grade indoor/outdoor campus navigation portal for JSS Academy of Technical Education, Bengaluru.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0e111a",
+  "theme_color": "#0e111a",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
