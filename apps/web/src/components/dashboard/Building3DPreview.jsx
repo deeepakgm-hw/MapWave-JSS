@@ -24,7 +24,7 @@ export function Building3DPreview({ building, height = 220 }) {
     const sceneHeight = height;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a);
+    scene.background = new THREE.Color(0xeceeed);
 
     const camera = new THREE.PerspectiveCamera(40, width / sceneHeight, 0.1, 1000);
     camera.position.set(28, 22, 28);

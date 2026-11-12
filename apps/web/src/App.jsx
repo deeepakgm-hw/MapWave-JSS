@@ -379,17 +379,17 @@ export default function App() {
   }, [isLandingOpen]);
 
   return (
-    <div className="relative flex flex-col h-screen w-screen bg-stone-950 text-slate-100 font-sans overflow-hidden">
+    <div className="relative flex flex-col h-screen w-screen bg-[#7e8590] text-slate-100 font-sans overflow-hidden lg:p-3 xl:p-5">
       {/* 1. Immersive 3D Interactive Landing Page (thekenyamap.com Style) */}
       {isLandingOpen ? (
         <LandingPage onExplore={handleExplore} />
       ) : (
-        <div className="relative flex flex-col lg:flex-row h-full w-full overflow-hidden">
+        <div className="relative flex flex-col lg:flex-row h-full w-full overflow-hidden lg:rounded-[36px] lg:shadow-[0_25px_80px_rgba(0,0,0,0.5)] lg:border lg:border-white/10 bg-[#1a1d21]">
           {/* ========================================================
               LEFT SIDE: INTERACTIVE CAMPUS MAP (68-70% on Desktop)
               ======================================================== */}
           <div className="relative w-full lg:w-[68%] xl:w-[70%] h-full flex flex-col bg-stone-950 overflow-hidden">
-            {/* Top Bar with MapWave Minimal Branding & Controls */}
+            {/* Minimal Header Controls */}
             <TopBar
               state={state}
               onBack={(targetLevel) => dispatch({ type: 'BACK', payload: targetLevel })}
@@ -538,9 +538,9 @@ export default function App() {
               </div>
 
               {/* Sinuous Curved Tab / Organic Roam Divider Handle */}
-              <div className="hidden lg:flex absolute -right-3 top-1/2 -translate-y-1/2 z-30 pointer-events-none">
-                <div className="w-6 h-20 bg-[#f8f9fa] dark:bg-slate-900 rounded-l-full shadow-lg border-y border-l border-slate-300 dark:border-white/10 flex items-center justify-center">
-                  <div className="w-1 h-8 rounded-full bg-slate-300 dark:bg-white/20" />
+              <div className="hidden lg:flex absolute -right-4 top-1/2 -translate-y-1/2 z-30 pointer-events-none">
+                <div className="w-8 h-28 bg-[#eceeed] rounded-l-full shadow-lg border-y border-l border-black/5 flex items-center justify-center">
+                  <div className="w-1 h-9 rounded-full bg-[#8c929d]/40" />
                 </div>
               </div>
             </main>

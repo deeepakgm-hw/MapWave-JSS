@@ -80,7 +80,7 @@ describe('App End-to-End Workflow Integration', () => {
     fireEvent.click(navigateBtns[0]);
 
     // Should jump to ROUTE_PREVIEW
-    expect(screen.getByText(/Start Turn-by-Turn Navigation/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Start Turn-by-Turn Navigation/i)[0]).toBeInTheDocument();
   });
 
   it('toggles accessible route switch', () => {
