@@ -1,5 +1,4 @@
 import * as maplibregl from 'maplibre-gl';
-import workerSource from 'maplibre-gl/dist/maplibre-gl-worker.mjs?raw';
 
 let isWorkerConfigured = false;
 
@@ -9,26 +8,15 @@ export function initMapLibreWorker() {
 
   try {
     if ('setWorkerUrl' in maplibregl && typeof maplibregl.setWorkerUrl === 'function') {
-      if (typeof window.Blob !== 'undefined' && typeof window.URL?.createObjectURL === 'function' && workerSource) {
-        const blob = new Blob([workerSource], { type: 'application/javascript' });
-        const blobUrl = URL.createObjectURL(blob);
-        maplibregl.setWorkerUrl(blobUrl);
-        isWorkerConfigured = true;
-        return;
-      }
-      maplibregl.setWorkerUrl('/assets/maplibre-gl-worker.mjs');
+      // Use the static same-origin worker script bundled in public/assets/
+      // This eliminates the blob: revokeObjectURL bug and works reliably in all production environments.
+      const origin = window.location.origin || '';
+      const workerUrl = `${origin}/assets/maplibre-gl-worker.js`;
+      maplibregl.setWorkerUrl(workerUrl);
       isWorkerConfigured = true;
     }
   } catch (err) {
-    console.warn('[MapLibre] Fallback to static worker URL:', err);
-    try {
-      if ('setWorkerUrl' in maplibregl && typeof maplibregl.setWorkerUrl === 'function') {
-        maplibregl.setWorkerUrl('/assets/maplibre-gl-worker.mjs');
-        isWorkerConfigured = true;
-      }
-    } catch {
-      // Ignore in mock environment
-    }
+    console.warn('[MapLibre] Failed to configure worker URL:', err);
   }
 }
 

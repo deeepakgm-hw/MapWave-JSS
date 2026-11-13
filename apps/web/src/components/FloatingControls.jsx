@@ -20,7 +20,7 @@ export function FloatingControls({
       <Compass bearing={bearing} onResetNorth={onResetNorth} />
 
       {/* Accessible Route Toggle Pill in White Glassmorphism */}
-      <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/85 text-slate-800 backdrop-blur-2xl border border-white/80 shadow-[0_8px_25px_rgba(0,0,0,0.1)] min-h-[44px]">
+      <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 text-slate-800 backdrop-blur-2xl border border-white/85 shadow-[0_8px_25px_rgba(0,0,0,0.08)] min-h-[42px]">
         <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <circle cx="12" cy="4.5" r="2.5" strokeWidth={2} />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 7v7l4 3m-4-3l-4 3m4-7H7" />
@@ -32,7 +32,7 @@ export function FloatingControls({
           onClick={onToggleAccessible}
           title="Toggle wheelchair accessible elevators and ramps"
           className={`w-9 h-5 rounded-full transition-colors relative flex items-center px-0.5 border border-slate-300 focus-visible:outline-none cursor-pointer ${
-            isAccessibleMode ? 'bg-blue-600' : 'bg-slate-200'
+            isAccessibleMode ? 'bg-blue-600 border-blue-600' : 'bg-slate-200'
           }`}
         >
           <span
@@ -44,7 +44,7 @@ export function FloatingControls({
       </div>
 
       {/* Floating Zoom & GPS Action Cluster in White Glassmorphism */}
-      <div className="flex flex-col rounded-2xl bg-white/85 text-slate-700 backdrop-blur-2xl border border-white/80 shadow-[0_8px_25px_rgba(0,0,0,0.1)] overflow-hidden divide-y divide-slate-100">
+      <div className="flex flex-col rounded-2xl bg-white/90 text-slate-700 backdrop-blur-2xl border border-white/85 shadow-[0_10px_30px_rgba(0,0,0,0.08)] overflow-hidden divide-y divide-slate-100">
         {/* 2D Top View / 3D Cross View Toggle Button */}
         {onToggleViewMode && (
           <button

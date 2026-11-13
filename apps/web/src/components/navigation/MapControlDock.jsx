@@ -12,7 +12,7 @@ export function MapControlDock({
   return (
     <aside
       aria-label="Map Navigation Dock"
-      className="pointer-events-auto flex flex-col gap-1.5 p-1.5 rounded-2xl bg-slate-950/80 backdrop-blur-2xl border border-white/10 shadow-[0_12px_32px_rgba(0,0,0,0.4)] text-slate-300"
+      className="pointer-events-auto flex flex-col gap-1.5 p-1.5 rounded-2xl bg-white/90 backdrop-blur-2xl border border-white/85 shadow-[0_12px_32px_rgba(0,0,0,0.1)] text-slate-700"
     >
       {/* 1. Compass / Reset North */}
       <button
@@ -20,7 +20,7 @@ export function MapControlDock({
         onClick={onResetNorth}
         title="Reset Map Orientation to North (0°)"
         aria-label="Reset North"
-        className="w-9 h-9 rounded-xl hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+        className="w-9 h-9 rounded-xl hover:bg-slate-100 active:bg-slate-200 text-slate-700 flex items-center justify-center transition-all cursor-pointer"
       >
         <svg
           className="w-4 h-4 transition-transform duration-300"
@@ -39,10 +39,10 @@ export function MapControlDock({
         onClick={onZoomIn}
         title="Zoom In"
         aria-label="Zoom in"
-        className="w-9 h-9 rounded-xl hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+        className="w-9 h-9 rounded-xl hover:bg-slate-100 active:bg-slate-200 text-slate-700 hover:text-slate-900 flex items-center justify-center transition-all cursor-pointer"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v12m6-6H6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M12 6v12m6-6H6" />
         </svg>
       </button>
 
@@ -52,14 +52,14 @@ export function MapControlDock({
         onClick={onZoomOut}
         title="Zoom Out"
         aria-label="Zoom out"
-        className="w-9 h-9 rounded-xl hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+        className="w-9 h-9 rounded-xl hover:bg-slate-100 active:bg-slate-200 text-slate-700 hover:text-slate-900 flex items-center justify-center transition-all cursor-pointer"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 12H6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M18 12H6" />
         </svg>
       </button>
 
-      <div className="w-full h-px bg-white/10 my-0.5" />
+      <div className="w-full h-px bg-slate-200/80 my-0.5" />
 
       {/* 4. Locate Me */}
       <button
@@ -69,12 +69,12 @@ export function MapControlDock({
         aria-label="Locate me"
         className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
           isGpsActive
-            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/40'
-            : 'hover:bg-white/10 active:bg-white/20 text-slate-300 hover:text-white'
+            ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30'
+            : 'hover:bg-slate-100 active:bg-slate-200 text-slate-700 hover:text-slate-900'
         }`}
       >
         {isGpsLoading ? (
-          <svg className="w-4 h-4 animate-spin text-white" fill="none" viewBox="0 0 24 24">
+          <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
@@ -88,3 +88,5 @@ export function MapControlDock({
     </aside>
   );
 }
+
+export default MapControlDock;

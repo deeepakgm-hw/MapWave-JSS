@@ -22,39 +22,34 @@ export function MapStyleSelector({ currentProvider = MAP_PROVIDERS.GOOGLE, onSwi
   const getStyleLabel = () => {
     switch (currentProvider) {
       case MAP_PROVIDERS.GOOGLE:
-        return 'Google Satellite';
+        return 'Google Ultra-HD';
       case MAP_PROVIDERS.ESRI:
-        return 'Esri 30cm HD';
+        return 'Esri World Imagery';
       case MAP_PROVIDERS.MAPLIBRE:
-        return 'MapLibre Streets';
+        return 'MapLibre Maps';
       case MAP_PROVIDERS.MAPTILER:
         return 'MapTiler Satellite';
       case MAP_PROVIDERS.TOPO:
-        return '3D Interactive';
+        return 'Campus 3D Models';
       default:
-        return 'Satellite';
+        return 'Google Ultra-HD';
     }
   };
 
   return (
     <div className="relative shrink-0" ref={containerRef}>
+      {/* Reference White Glassmorphic Pill Button matching Image 2 */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Map style selector"
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.18] text-white border border-white/10 text-xs font-semibold tracking-wide transition-all cursor-pointer min-h-[34px]"
+        className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white active:bg-white text-slate-900 border border-white/85 shadow-[0_8px_25px_rgba(0,0,0,0.08)] text-xs font-semibold tracking-wide transition-all cursor-pointer min-h-[36px]"
       >
-        <svg className="w-3.5 h-3.5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-          />
-        </svg>
-        <span className="truncate max-w-[120px]">{getStyleLabel()}</span>
+        {/* Emerald vertical pill indicator */}
+        <span className="w-1.5 h-3.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)] shrink-0" />
+        <span className="truncate max-w-[120px] font-semibold text-slate-900">{getStyleLabel()}</span>
         <svg
-          className={`w-3 h-3 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -64,9 +59,9 @@ export function MapStyleSelector({ currentProvider = MAP_PROVIDERS.GOOGLE, onSwi
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1.5 w-60 p-2 rounded-2xl bg-slate-900/95 backdrop-blur-2xl border border-white/15 shadow-2xl z-50 flex flex-col gap-1 text-slate-200 animate-in fade-in zoom-in-95 duration-150">
-          <div className="px-2 py-1 text-[10px] font-mono uppercase text-slate-400 tracking-wider font-semibold">
-            Satellite & Aerial
+        <div className="absolute top-full left-0 mt-2 w-64 p-2 rounded-2xl bg-white/95 backdrop-blur-2xl border border-white/90 shadow-2xl z-50 flex flex-col gap-1 text-slate-800 animate-in fade-in zoom-in-95 duration-150">
+          <div className="px-2.5 py-1 text-[10px] font-mono uppercase text-slate-400 tracking-wider font-semibold">
+            Satellite & Cartography
           </div>
 
           <button
@@ -77,13 +72,15 @@ export function MapStyleSelector({ currentProvider = MAP_PROVIDERS.GOOGLE, onSwi
             }}
             className={`p-2 rounded-xl text-left text-xs transition-colors flex items-center justify-between cursor-pointer ${
               currentProvider === MAP_PROVIDERS.GOOGLE
-                ? 'bg-blue-600 text-white font-semibold'
-                : 'hover:bg-white/10 text-slate-300'
+                ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                : 'hover:bg-slate-100 text-slate-800'
             }`}
           >
             <div>
-              <div className="font-semibold text-white">Google Ultra-HD</div>
-              <div className="text-[10px] text-slate-400">Sub-meter aerial satellite</div>
+              <div className="font-semibold">Google Ultra-HD</div>
+              <div className={`text-[10px] ${currentProvider === MAP_PROVIDERS.GOOGLE ? 'text-white/80' : 'text-slate-400'}`}>
+                Sub-meter aerial satellite
+              </div>
             </div>
             {currentProvider === MAP_PROVIDERS.GOOGLE && <span>✓</span>}
           </button>
@@ -96,22 +93,18 @@ export function MapStyleSelector({ currentProvider = MAP_PROVIDERS.GOOGLE, onSwi
             }}
             className={`p-2 rounded-xl text-left text-xs transition-colors flex items-center justify-between cursor-pointer ${
               currentProvider === MAP_PROVIDERS.ESRI
-                ? 'bg-blue-600 text-white font-semibold'
-                : 'hover:bg-white/10 text-slate-300'
+                ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                : 'hover:bg-slate-100 text-slate-800'
             }`}
           >
             <div>
-              <div className="font-semibold text-white">Esri World Imagery</div>
-              <div className="text-[10px] text-slate-400">30cm Maxar high-res aerial</div>
+              <div className="font-semibold">Esri World Imagery</div>
+              <div className={`text-[10px] ${currentProvider === MAP_PROVIDERS.ESRI ? 'text-white/80' : 'text-slate-400'}`}>
+                30cm Maxar HD clarity
+              </div>
             </div>
             {currentProvider === MAP_PROVIDERS.ESRI && <span>✓</span>}
           </button>
-
-          <div className="my-1 border-t border-white/10" />
-
-          <div className="px-2 py-1 text-[10px] font-mono uppercase text-slate-400 tracking-wider font-semibold">
-            Vector & Cartography
-          </div>
 
           <button
             type="button"
@@ -121,18 +114,43 @@ export function MapStyleSelector({ currentProvider = MAP_PROVIDERS.GOOGLE, onSwi
             }}
             className={`p-2 rounded-xl text-left text-xs transition-colors flex items-center justify-between cursor-pointer ${
               currentProvider === MAP_PROVIDERS.MAPLIBRE
-                ? 'bg-blue-600 text-white font-semibold'
-                : 'hover:bg-white/10 text-slate-300'
+                ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                : 'hover:bg-slate-100 text-slate-800'
             }`}
           >
             <div>
-              <div className="font-semibold text-white flex items-center gap-1.5">
+              <div className="font-semibold flex items-center gap-1.5">
                 <span>MapLibre Streets</span>
-                <span className="px-1 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-mono font-bold">OSM</span>
+                <span className={`text-[9px] font-mono uppercase px-1 rounded font-bold ${
+                  currentProvider === MAP_PROVIDERS.MAPLIBRE ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-800'
+                }`}>OSM</span>
               </div>
-              <div className="text-[10px] text-slate-400">Clean OpenStreetMap cartography</div>
+              <div className={`text-[10px] ${currentProvider === MAP_PROVIDERS.MAPLIBRE ? 'text-white/80' : 'text-slate-400'}`}>
+                Fast vector cartography
+              </div>
             </div>
             {currentProvider === MAP_PROVIDERS.MAPLIBRE && <span>✓</span>}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              onSwitchProvider(MAP_PROVIDERS.MAPTILER);
+              setIsOpen(false);
+            }}
+            className={`p-2 rounded-xl text-left text-xs transition-colors flex items-center justify-between cursor-pointer ${
+              currentProvider === MAP_PROVIDERS.MAPTILER
+                ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                : 'hover:bg-slate-100 text-slate-800'
+            }`}
+          >
+            <div>
+              <div className="font-semibold">MapTiler Satellite</div>
+              <div className={`text-[10px] ${currentProvider === MAP_PROVIDERS.MAPTILER ? 'text-white/80' : 'text-slate-400'}`}>
+                Global cloudless satellite
+              </div>
+            </div>
+            {currentProvider === MAP_PROVIDERS.MAPTILER && <span>✓</span>}
           </button>
 
           <button
@@ -143,16 +161,20 @@ export function MapStyleSelector({ currentProvider = MAP_PROVIDERS.GOOGLE, onSwi
             }}
             className={`p-2 rounded-xl text-left text-xs transition-colors flex items-center justify-between cursor-pointer ${
               currentProvider === MAP_PROVIDERS.TOPO
-                ? 'bg-blue-600 text-white font-semibold'
-                : 'hover:bg-white/10 text-slate-300'
+                ? 'bg-blue-600 text-white font-semibold shadow-sm'
+                : 'hover:bg-slate-100 text-slate-800'
             }`}
           >
             <div>
-              <div className="font-semibold text-white flex items-center gap-1.5">
-                <span>3D Interactive Mesh</span>
-                <span className="px-1 rounded bg-amber-400 text-black text-[9px] font-mono font-bold">GLB</span>
+              <div className="font-semibold flex items-center gap-1.5">
+                <span>Campus 3D Models</span>
+                <span className={`text-[9px] font-mono uppercase px-1 rounded font-bold ${
+                  currentProvider === MAP_PROVIDERS.TOPO ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'
+                }`}>GLB</span>
               </div>
-              <div className="text-[10px] text-slate-400">Three.js 3D campus model</div>
+              <div className={`text-[10px] ${currentProvider === MAP_PROVIDERS.TOPO ? 'text-white/80' : 'text-slate-400'}`}>
+                3D building geometry
+              </div>
             </div>
             {currentProvider === MAP_PROVIDERS.TOPO && <span>✓</span>}
           </button>
@@ -161,3 +183,5 @@ export function MapStyleSelector({ currentProvider = MAP_PROVIDERS.GOOGLE, onSwi
     </div>
   );
 }
+
+export default MapStyleSelector;

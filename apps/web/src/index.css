@@ -43,7 +43,22 @@
   --semantic-warn: #F59E0B;
   --semantic-error: #EF4444;
 
-  /* Mobile-Safe Glass Recipe (Dark - Default) */
+  /* White-Themed Glassmorphism Recipe (Default) */
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-filter: blur(20px) saturate(180%);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+  --glass-text: #0F172A;
+  --glass-text-secondary: #334155;
+  --glass-text-muted: #64748B;
+  --glass-child-bg: rgba(241, 245, 249, 0.70);
+  --glass-child-hover: rgba(226, 232, 240, 0.90);
+  --glass-child-border: rgba(203, 213, 225, 0.60);
+}
+
+[data-theme='dark'] {
+  /* Dark Glass Alternative */
   --glass-bg: rgba(16, 19, 28, 0.62);
   --glass-filter: blur(20px) saturate(150%);
   --glass-border: rgba(255, 255, 255, 0.14);
@@ -58,18 +73,18 @@
 }
 
 [data-theme='light'] {
-  /* Mobile-Safe Glass Recipe (Light) */
-  --glass-bg: rgba(255, 255, 255, 0.70);
-  --glass-filter: blur(20px) saturate(150%);
-  --glass-border: rgba(255, 255, 255, 0.75);
-  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.90);
-  --glass-shadow: 0 12px 36px rgba(15, 23, 42, 0.14);
+  /* White-Themed Glass Recipe */
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-filter: blur(20px) saturate(180%);
+  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  --glass-shadow: 0 10px 30px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
   --glass-text: #0F172A;
   --glass-text-secondary: rgba(15, 23, 42, 0.72);
   --glass-text-muted: rgba(15, 23, 42, 0.48);
-  --glass-child-bg: rgba(0, 0, 0, 0.05);
-  --glass-child-hover: rgba(0, 0, 0, 0.09);
-  --glass-child-border: rgba(0, 0, 0, 0.08);
+  --glass-child-bg: rgba(241, 245, 249, 0.70);
+  --glass-child-hover: rgba(226, 232, 240, 0.90);
+  --glass-child-border: rgba(203, 213, 225, 0.60);
 }
 
 @media (min-width: 1024px) {
@@ -313,6 +328,21 @@ button, a, [role="button"] {
   box-shadow: var(--glass-shadow), var(--glass-highlight);
   color: var(--glass-text);
   font-family: var(--font-ui);
+}
+
+/* White-Themed Glassmorphism Pill (Reference Style) */
+.glass-pill-white {
+  background-color: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 10px 25px -4px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  color: #0F172A;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-pill-white:hover {
+  background-color: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.12), 0 6px 10px -2px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 1);
 }
 
 /* Glass Child Items - Strictly Solid Fills to prevent nested backdrop blur GPU thrash */

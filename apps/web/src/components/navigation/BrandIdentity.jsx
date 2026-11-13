@@ -13,9 +13,9 @@ export function BrandIdentity({
         type="button"
         onClick={onOpenLanding}
         title="Return to MapWave Introduction"
-        className="flex items-center gap-2 group cursor-pointer text-left focus:outline-none"
+        className="flex items-center gap-2.5 px-3 py-1.5 rounded-2xl bg-white/90 hover:bg-white text-slate-800 border border-white/85 shadow-[0_8px_25px_rgba(0,0,0,0.08)] backdrop-blur-2xl group cursor-pointer text-left focus:outline-none transition-all min-h-[40px]"
       >
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600 to-sky-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
+        <div className="w-7 h-7 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:scale-105 transition-transform shrink-0">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
@@ -26,10 +26,10 @@ export function BrandIdentity({
           </svg>
         </div>
         <div className="flex flex-col min-w-0">
-          <span className="text-sm font-extrabold tracking-wider uppercase text-white group-hover:text-sky-400 transition-colors leading-none">
+          <span className="text-xs font-extrabold tracking-wider uppercase text-slate-900 group-hover:text-blue-600 transition-colors leading-none">
             MAPWAVE
           </span>
-          <span className="text-[10px] font-mono tracking-widest text-slate-400 uppercase leading-tight mt-0.5">
+          <span className="text-[9px] font-mono tracking-widest text-slate-500 uppercase leading-tight mt-0.5">
             JSSATE Bengaluru
           </span>
         </div>
@@ -37,22 +37,22 @@ export function BrandIdentity({
 
       {/* Context Breadcrumb if Building or Floor is Selected */}
       {(selectedBuilding || selectedFloor) && (
-        <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.06] border border-white/10 text-xs font-medium text-slate-300 ml-1 truncate">
+        <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/90 border border-white/85 text-xs font-semibold text-slate-800 shadow-sm ml-1 truncate">
           <button
             type="button"
             onClick={onResetToCampus}
-            className="hover:text-white transition-colors cursor-pointer"
+            className="hover:text-blue-600 transition-colors cursor-pointer"
           >
             Campus
           </button>
-          <span className="text-slate-500">/</span>
-          <span className="font-semibold text-white truncate max-w-[120px]">
+          <span className="text-slate-300">/</span>
+          <span className="font-bold text-slate-900 truncate max-w-[120px]">
             {selectedBuilding?.shortName || selectedBuilding?.name?.split('(')[0] || 'Building'}
           </span>
           {selectedFloor && (
             <>
-              <span className="text-slate-500">/</span>
-              <span className="text-amber-400 font-semibold shrink-0">
+              <span className="text-slate-300">/</span>
+              <span className="text-amber-600 font-bold shrink-0">
                 Floor {selectedFloor.level_number}
               </span>
             </>
@@ -62,3 +62,5 @@ export function BrandIdentity({
     </div>
   );
 }
+
+export default BrandIdentity;

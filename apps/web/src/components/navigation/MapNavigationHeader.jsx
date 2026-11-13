@@ -29,10 +29,10 @@ export function MapNavigationHeader({
 
   return (
     <div className="absolute top-4 inset-x-4 z-30 flex flex-col items-start gap-2.5 pointer-events-none select-none max-w-2xl">
-      {/* 1. Unified Premium Navigation Shell */}
+      {/* 1. Unified Premium Navigation Shell in White Glassmorphism */}
       <nav
         aria-label="MapWave Top Navigation"
-        className="w-full pointer-events-auto p-3 sm:p-3.5 rounded-2xl bg-slate-950/80 backdrop-blur-2xl border border-white/10 shadow-[0_16px_40px_rgba(0,0,0,0.45)] text-slate-100 flex flex-col gap-2.5 transition-all"
+        className="w-full pointer-events-auto p-3 sm:p-3.5 rounded-3xl bg-white/88 backdrop-blur-2xl border border-white/85 shadow-[0_16px_40px_rgba(0,0,0,0.10)] text-slate-900 flex flex-col gap-2.5 transition-all"
       >
         {/* ROW 1: BRAND IDENTITY & CAMPUS GEOFENCE STATUS */}
         <div className="flex items-center justify-between gap-2">

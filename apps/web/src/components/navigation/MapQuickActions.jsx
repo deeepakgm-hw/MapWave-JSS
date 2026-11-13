@@ -32,14 +32,14 @@ export function MapQuickActions({
           onClick={onLocateMe}
           title={isGpsActive ? 'Center on Current GPS Location' : 'Locate Me'}
           aria-label="Locate me"
-          className={`w-8 h-8 rounded-xl border flex items-center justify-center transition-all cursor-pointer ${
+          className={`w-9 h-9 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-sm ${
             isGpsActive
-              ? 'bg-blue-600/30 text-sky-300 border-blue-500/50 hover:bg-blue-600/50'
-              : 'bg-white/[0.08] hover:bg-white/[0.14] text-slate-300 hover:text-white border-white/10'
+              ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+              : 'bg-white/90 hover:bg-white text-slate-700 border-white/85'
           }`}
         >
           {isGpsLoading ? (
-            <svg className="w-4 h-4 animate-spin text-sky-400" fill="none" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
@@ -57,7 +57,7 @@ export function MapQuickActions({
           onClick={onResetNorth}
           title="Reset map orientation to North (0°)"
           aria-label="Reset North"
-          className="w-8 h-8 rounded-xl bg-white/[0.08] hover:bg-white/[0.14] active:bg-white/[0.2] text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition-all cursor-pointer"
+          className="w-9 h-9 rounded-full bg-white/90 hover:bg-white active:bg-slate-100 text-slate-700 border border-white/85 shadow-sm flex items-center justify-center transition-all cursor-pointer"
         >
           <svg
             className="w-4 h-4 transition-transform duration-300"
@@ -81,3 +81,5 @@ export function MapQuickActions({
     </div>
   );
 }
+
+export default MapQuickActions;

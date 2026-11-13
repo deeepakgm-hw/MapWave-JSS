@@ -30,32 +30,30 @@ export function CampusStatusIndicator({
       onClick={onToggleMode}
       aria-label={statusLabel}
       title={`Geofence Status: ${statusLabel} (${detailLabel}). Click to switch mode.`}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border backdrop-blur-md transition-all cursor-pointer group ${
-        isCampus
-          ? 'bg-blue-500/15 hover:bg-blue-500/25 border-blue-400/30 text-blue-200'
-          : 'bg-amber-500/15 hover:bg-amber-500/25 border-amber-400/30 text-amber-200'
-      }`}
+      className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/90 hover:bg-white active:bg-white border border-white/85 backdrop-blur-2xl shadow-[0_8px_25px_rgba(0,0,0,0.08)] transition-all cursor-pointer group min-h-[36px]"
     >
-      <div className="relative flex items-center justify-center">
+      <div className="relative flex items-center justify-center shrink-0">
         <span
-          className={`w-2 h-2 rounded-full ${
+          className={`w-2.5 h-2.5 rounded-full ${
             isGpsLoading
-              ? 'bg-cyan-400 animate-ping'
+              ? 'bg-sky-400 animate-ping'
               : isCampus
-              ? 'bg-blue-400 shadow-sm shadow-blue-400/50'
-              : 'bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50'
+              ? 'bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]'
+              : 'bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]'
           }`}
         />
       </div>
 
       <div className="flex flex-col text-left leading-none">
-        <span className="text-xs font-semibold text-white tracking-tight">
+        <span className="text-xs font-bold text-slate-900 tracking-tight">
           {statusLabel}
         </span>
-        <span className="text-[9px] font-mono text-slate-400 tracking-normal mt-0.5">
+        <span className="text-[9px] font-mono text-slate-500 tracking-normal mt-0.5">
           {detailLabel}
         </span>
       </div>
     </button>
   );
 }
+
+export default CampusStatusIndicator;
