@@ -34,9 +34,13 @@ vi.mock('maplibre-gl', () => {
   return {
     Map: MockMap,
     Marker: MockMarker,
+    setWorkerUrl: vi.fn(),
+    getWorkerUrl: vi.fn(),
     default: {
       Map: MockMap,
       Marker: MockMarker,
+      setWorkerUrl: vi.fn(),
+      getWorkerUrl: vi.fn(),
     },
   };
 });

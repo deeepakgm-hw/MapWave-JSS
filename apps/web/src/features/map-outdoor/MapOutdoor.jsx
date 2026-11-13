@@ -1,6 +1,16 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+// Ensure MapLibre GL JS worker resolves correctly in both development and production
+try {
+  if (typeof window !== 'undefined' && 'setWorkerUrl' in maplibregl && typeof maplibregl.setWorkerUrl === 'function') {
+    maplibregl.setWorkerUrl('/assets/maplibre-gl-worker.mjs');
+  }
+} catch {
+  // Ignore in mock or server environment
+}
+
 import { apiClient } from '../../lib/apiClient';
 import { NAV_STATES } from '../../lib/navigationState';
 import {
@@ -257,7 +267,11 @@ export default function MapOutdoor({
 
   // Synchronizes QGIS-generated indoor floor mapping layers (rooms, doors, paths, selected room, route)
   const syncIndoorLayers = useCallback((map) => {
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map) return;
+    if (!map.isStyleLoaded()) {
+      map.once('styledata', () => syncIndoorLayers(map));
+      return;
+    }
 
     const buildingCode = selectedBuilding?.code || '';
     const isBlockA = buildingCode === 'BLOCK_A' || selectedBuilding?.name?.includes('Block A');
@@ -549,34 +563,38 @@ export default function MapOutdoor({
 
     map.on('load', async () => {
       let finalBuildings = campusBuildings;
-      try {
-        const apiBuildings = await apiClient('/api/v1/buildings');
-        if (apiBuildings && apiBuildings.features && apiBuildings.features.length > 0) {
-          // Merge API status/heights with local rich GIS polygons
-          finalBuildings = {
-            type: 'FeatureCollection',
-            features: campusBuildings.features.map((localFeat) => {
-              const apiMatch = apiBuildings.features.find(
-                (af) => af.id === localFeat.id || af.properties?.id === localFeat.id
-              );
-              return {
-                ...localFeat,
-                properties: {
-                  ...localFeat.properties,
-                  ...(apiMatch ? apiMatch.properties : {}),
-                  height_m: apiMatch?.properties?.height_m || localFeat.properties.height_m || 15.0,
-                  status: apiMatch?.properties?.status || localFeat.properties.status || 'existing',
-                  verification: localFeat.properties.verification || 'verified',
-                },
-              };
-            }),
-          };
+      const apiUrl = import.meta.env.VITE_API_URL;
+      if (apiUrl && !apiUrl.includes('localhost:3001')) {
+        try {
+          const apiBuildings = await apiClient('/api/v1/buildings');
+          if (apiBuildings && apiBuildings.features && apiBuildings.features.length > 0) {
+            // Merge API status/heights with local rich GIS polygons
+            finalBuildings = {
+              type: 'FeatureCollection',
+              features: campusBuildings.features.map((localFeat) => {
+                const apiMatch = apiBuildings.features.find(
+                  (af) => af.id === localFeat.id || af.properties?.id === localFeat.id
+                );
+                return {
+                  ...localFeat,
+                  properties: {
+                    ...localFeat.properties,
+                    ...(apiMatch ? apiMatch.properties : {}),
+                    height_m: apiMatch?.properties?.height_m || localFeat.properties.height_m || 15.0,
+                    status: apiMatch?.properties?.status || localFeat.properties.status || 'existing',
+                    verification: localFeat.properties.verification || 'verified',
+                  },
+                };
+              }),
+            };
+          }
+        } catch {
+          finalBuildings = campusBuildings;
         }
-      } catch {
-        finalBuildings = campusBuildings;
       }
 
       addCampusLayers(map, finalBuildings);
+      syncIndoorLayers(map);
 
       // Building hover state tracking with real-time HUD details and area animation
       let hoveredBuildingId = null;
@@ -768,40 +786,50 @@ export default function MapOutdoor({
   // 2. Camera Swoop & Highlight reacting to State Machine
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !map.isStyleLoaded()) return;
+    if (!map) return;
 
-    if (
-      (currentState === NAV_STATES.BUILDING_FLOORS || currentState === NAV_STATES.FLOOR_VIEW) &&
-      selectedBuilding
-    ) {
-      const isBlockA = selectedBuilding.code === 'BLOCK_A' || selectedBuilding.name?.includes('Block A');
-      const targetCenter = isBlockA ? [77.50456, 12.90282] : (selectedBuilding.center || CAMPUS_CENTER);
+    const performCameraUpdate = () => {
+      if (!map.getStyle?.()) return;
 
-      map.flyTo({
-        center: selectedRoom?.coordinates || targetCenter,
-        zoom: selectedRoom?.coordinates ? 20.2 : isBlockA ? 19.3 : 18.5,
-        pitch: isTopView ? 0 : isBlockA ? 25 : 60,
-        bearing: isBlockA ? -20 : -20,
-        speed: 1.2,
-      });
+      if (
+        (currentState === NAV_STATES.BUILDING_FLOORS || currentState === NAV_STATES.FLOOR_VIEW) &&
+        selectedBuilding
+      ) {
+        const isBlockA = selectedBuilding.code === 'BLOCK_A' || selectedBuilding.name?.includes('Block A');
+        const targetCenter = isBlockA ? [77.50456, 12.90282] : (selectedBuilding.center || CAMPUS_CENTER);
 
-      if (map.getLayer && map.getLayer('selected-building-highlight')) {
-        map.setFilter('selected-building-highlight', ['==', ['get', 'id'], selectedBuilding.id]);
+        map.flyTo({
+          center: selectedRoom?.coordinates || targetCenter,
+          zoom: selectedRoom?.coordinates ? 20.2 : isBlockA ? 19.3 : 18.5,
+          pitch: isTopView ? 0 : isBlockA ? 25 : 60,
+          bearing: isBlockA ? -20 : -20,
+          speed: 1.2,
+        });
+
+        if (map.getLayer && map.getLayer('selected-building-highlight')) {
+          map.setFilter('selected-building-highlight', ['==', ['get', 'id'], selectedBuilding.id]);
+        }
+      } else if (currentState === NAV_STATES.OVERVIEW && prevBuildingRef.current) {
+        map.flyTo({
+          center: CAMPUS_CENTER,
+          zoom: 16.8,
+          pitch: isTopView ? 0 : 45,
+          bearing: isTopView ? 0 : -17.6,
+          speed: 1.2,
+        });
+
+        if (map.getLayer && map.getLayer('selected-building-highlight')) {
+          map.setFilter('selected-building-highlight', ['==', ['get', 'id'], '']);
+        }
       }
-    } else if (currentState === NAV_STATES.OVERVIEW && prevBuildingRef.current) {
-      map.flyTo({
-        center: CAMPUS_CENTER,
-        zoom: 16.8,
-        pitch: isTopView ? 0 : 45,
-        bearing: isTopView ? 0 : -17.6,
-        speed: 1.2,
-      });
+      prevBuildingRef.current = selectedBuilding;
+    };
 
-      if (map.getLayer && map.getLayer('selected-building-highlight')) {
-        map.setFilter('selected-building-highlight', ['==', ['get', 'id'], '']);
-      }
+    if (map.isStyleLoaded()) {
+      performCameraUpdate();
+    } else {
+      map.once('styledata', performCameraUpdate);
     }
-    prevBuildingRef.current = selectedBuilding;
   }, [currentState, selectedBuilding, selectedRoom, isTopView]);
 
   // 3. Geolocation Tracking

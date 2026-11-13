@@ -146,7 +146,7 @@ export function getSatelliteStyle(provider = MAP_PROVIDERS.GOOGLE, apiKey = '') 
             'https://mt3.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
           ],
           tileSize: 256,
-          maxzoom: 20,
+          maxzoom: 19,
           attribution: 'Tiles &copy; Google Maps Ultra-HD Satellite Imagery',
         },
       },
@@ -156,7 +156,7 @@ export function getSatelliteStyle(provider = MAP_PROVIDERS.GOOGLE, apiKey = '') 
           type: 'raster',
           source: 'google-satellite',
           minzoom: 0,
-          maxzoom: 20,
+          maxzoom: 22,
         },
       ],
     };

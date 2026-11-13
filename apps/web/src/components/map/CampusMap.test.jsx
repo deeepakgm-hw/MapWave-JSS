@@ -46,10 +46,14 @@ vi.mock('maplibre-gl', () => {
     Map: MockMap,
     Marker: MockMarker,
     ScaleControl: MockScaleControl,
+    setWorkerUrl: vi.fn(),
+    getWorkerUrl: vi.fn(),
     default: {
       Map: MockMap,
       Marker: MockMarker,
       ScaleControl: MockScaleControl,
+      setWorkerUrl: vi.fn(),
+      getWorkerUrl: vi.fn(),
     },
   };
 });

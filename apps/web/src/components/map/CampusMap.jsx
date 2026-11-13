@@ -1,6 +1,16 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+
+// Ensure MapLibre GL JS worker resolves correctly in both development and production
+try {
+  if (typeof window !== 'undefined' && 'setWorkerUrl' in maplibregl && typeof maplibregl.setWorkerUrl === 'function') {
+    maplibregl.setWorkerUrl('/assets/maplibre-gl-worker.mjs');
+  }
+} catch {
+  // Ignore in mock or server environment
+}
+
 import {
   getMapConfig,
   getMapConfigStatus,
