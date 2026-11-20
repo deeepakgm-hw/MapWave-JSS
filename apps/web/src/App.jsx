@@ -42,7 +42,7 @@ export const PILOT_BUILDINGS = [
     code: 'BLOCK_A',
     status: 'existing',
     height_m: 22.0,
-    center: [77.5057, 12.9015],
+    center: [77.50458, 12.90280],
   },
   {
     id: 'b3000000-0000-0000-0000-000000000003',
@@ -51,7 +51,7 @@ export const PILOT_BUILDINGS = [
     code: 'BLOCK_B',
     status: 'existing',
     height_m: 18.0,
-    center: [77.50495, 12.9027],
+    center: [77.50495, 12.90270],
   },
   {
     id: 'b2000000-0000-0000-0000-000000000002',
@@ -60,7 +60,7 @@ export const PILOT_BUILDINGS = [
     code: 'BLOCK_CIVIL',
     status: 'existing',
     height_m: 20.0,
-    center: [77.5068, 12.9022],
+    center: [77.50680, 12.90220],
   },
 ];
 

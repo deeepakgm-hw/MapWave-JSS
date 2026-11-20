@@ -38,17 +38,18 @@
           "IoT & Embedded Prototyping Workshop",
           "CAD/CAM Advanced Engineering Centre",
           "Faculty Chambers & Seminar Halls"
-        ]
+        ],
+        "center": [77.50458, 12.90280]
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
-            [77.50530, 12.90100],
-            [77.50615, 12.90100],
-            [77.50615, 12.90200],
-            [77.50530, 12.90200],
-            [77.50530, 12.90100]
+            [77.50415, 12.90240],
+            [77.50500, 12.90240],
+            [77.50500, 12.90320],
+            [77.50415, 12.90320],
+            [77.50415, 12.90240]
           ]
         ]
       }

@@ -27,6 +27,129 @@ import {
 } from '../../data/campus-map/floorRegistry';
 import { LabelLayer } from '../../components/map/LabelLayer';
 
+export const CAMPUS_PIN_BUILDINGS = [
+  {
+    id: 'b1000000-0000-0000-0000-000000000001',
+    name: 'Block A (CSE, ISE, Robotics, Mechanical)',
+    shortName: 'Block A',
+    code: 'BLOCK_A',
+    category: 'Academic Complex',
+    height_m: 22.0,
+    floor_count: 3,
+    center: [77.50458, 12.90280],
+    indoor_mapping_status: 'available',
+    description: 'Main Academic Complex housing Computer Science & Engineering, Information Science & Engineering, Robotics & Automation, and Mechanical Engineering',
+    departments: [
+      'Computer Science & Engineering (CSE)',
+      'Information Science & Engineering (ISE)',
+      'Robotics & Automation',
+      'Mechanical Engineering',
+    ],
+    facilities: [
+      'NVIDIA GPU AI Computing Lab',
+      'Robotics & Autonomous Systems Lab',
+      'IoT & Embedded Prototyping Workshop',
+      'CAD/CAM Advanced Engineering Centre',
+    ],
+  },
+  {
+    id: 'b3000000-0000-0000-0000-000000000003',
+    name: 'Block B (ECE, EIE & Library)',
+    shortName: 'Block B',
+    code: 'BLOCK_B',
+    category: 'Academic Complex',
+    height_m: 18.0,
+    floor_count: 3,
+    center: [77.50495, 12.90270],
+    indoor_mapping_status: 'available',
+    description: 'Academic & Research Complex housing Electronics & Communication Engineering, Electronics & Instrumentation Engineering, and the Central Campus Library',
+    departments: [
+      'Electronics & Communication Engineering (ECE)',
+      'Electronics & Instrumentation (EIE)',
+      'Central Campus Library',
+    ],
+    facilities: [
+      'Digital Signal Processing Lab',
+      'VLSI & Microelectronics Research Lab',
+      'Central Library Digital Stacks',
+    ],
+  },
+  {
+    id: 'b2000000-0000-0000-0000-000000000002',
+    name: 'Civil Block',
+    shortName: 'Civil Block',
+    code: 'BLOCK_CIVIL',
+    category: 'Academic Complex',
+    height_m: 20.0,
+    floor_count: 4,
+    center: [77.50680, 12.90220],
+    indoor_mapping_status: 'planned',
+    description: 'Civil Engineering academic complex with geotechnical testing facilities, surveying laboratories, and structural design studios',
+    departments: ['Civil Engineering', 'Structural Engineering & Materials'],
+    facilities: ['Geotechnical & Soil Mechanics Lab', 'Concrete Technology Lab', 'Surveying Equipment Centre'],
+  },
+  {
+    id: 'b4000000-0000-0000-0000-000000000004',
+    name: 'Mechanical & Civil Workshops',
+    shortName: 'Workshops',
+    code: 'WORKSHOPS',
+    category: 'Laboratories & Workshops',
+    height_m: 12.0,
+    floor_count: 1,
+    center: [77.50630, 12.89970],
+    description: 'Heavy machinery and manufacturing workshops for foundry, welding, and machine shop practice',
+    facilities: ['Machine Shop & Lathe Operations', 'Welding & Sheet Metal Unit', 'Foundry & Forging Facility'],
+  },
+  {
+    id: 'b5000000-0000-0000-0000-000000000005',
+    name: 'STEP Incubation Centre',
+    shortName: 'STEP Incubation',
+    code: 'STEP',
+    category: 'Innovation & Research',
+    height_m: 16.0,
+    floor_count: 2,
+    center: [77.50600, 12.90360],
+    description: 'Science & Technology Entrepreneurs Park fostering early-stage technology startups and patents',
+    facilities: ['Startup Incubation Pods', 'Prototyping FabLab', 'Venture Mentorship Boardroom'],
+  },
+  {
+    id: 'b6000000-0000-0000-0000-000000000006',
+    name: 'Boys Hostel Complex',
+    shortName: 'Boys Hostel',
+    code: 'HOSTEL_BOYS',
+    category: 'Residential',
+    height_m: 20.0,
+    floor_count: 4,
+    center: [77.50470, 12.89920],
+    description: 'On-campus residential accommodation with dining facilities and recreation halls',
+    facilities: ['Hostel Mess & Dining', 'Indoor Sports Room', 'Study & Reading Lounges'],
+  },
+  {
+    id: 'b7000000-0000-0000-0000-000000000007',
+    name: 'Girls Hostel Complex',
+    shortName: 'Girls Hostel',
+    code: 'HOSTEL_GIRLS',
+    category: 'Residential',
+    height_m: 20.0,
+    floor_count: 4,
+    center: [77.50390, 12.89980],
+    description: 'Secure on-campus residential facility with 24/7 security and dedicated amenities',
+    facilities: ['Residential Dining Hall', 'Fitness Centre', 'Wi-Fi Study Suites'],
+  },
+  {
+    id: 'b8000000-0000-0000-0000-000000000008',
+    name: 'Cafeteria & Food Court',
+    shortName: 'Cafeteria',
+    code: 'CAFETERIA',
+    category: 'Campus Amenities',
+    height_m: 8.0,
+    floor_count: 1,
+    center: [77.50540, 12.90220],
+    description: 'Multi-cuisine campus dining facility offering meals, snacks, and beverages for students and staff',
+    facilities: ['Main Dining Hall', 'Juice & Coffee Kiosk', 'Outdoor Shaded Seating'],
+  },
+];
+
 export default function MapOutdoor({
   currentState,
   selectedBuilding,
@@ -61,6 +184,7 @@ export default function MapOutdoor({
   const [nearestInfo, setNearestInfo] = useState(null);
   const [geoDenied, setGeoDenied] = useState(false);
   const [hoveredBuilding, setHoveredBuilding] = useState(null);
+  const [activeCardBuilding, setActiveCardBuilding] = useState(selectedBuilding || null);
   const hasAutoCentered = useRef(false);
 
   const onSelectRoomRef = useRef(onSelectRoom);
@@ -146,6 +270,73 @@ export default function MapOutdoor({
     return Math.max(10, Math.min(200, accuracyMeters / metersPerPixel));
   };
 
+  // Synchronizes Animated Campus Building Pins (Teardrop pin + ground ripple + label chip)
+  const syncBuildingPins = useCallback((map) => {
+    if (!map) return;
+
+    // Clear previous markers
+    markersRef.current.forEach((m) => m.remove());
+    markersRef.current = [];
+
+    CAMPUS_PIN_BUILDINGS.forEach((bldg) => {
+      const isSelected =
+        (selectedBuilding && (selectedBuilding.id === bldg.id || selectedBuilding.code === bldg.code)) ||
+        (activeCardBuilding && (activeCardBuilding.id === bldg.id || activeCardBuilding.code === bldg.code));
+
+      const el = document.createElement('div');
+      el.className = `campus-pin-marker ${isSelected ? 'active' : ''}`;
+      el.setAttribute('data-testid', `map-pin-${bldg.code.toLowerCase()}`);
+      el.setAttribute('role', 'button');
+      el.setAttribute('aria-label', `${bldg.name} Map Pin`);
+      el.title = `${bldg.name} — Click to inspect block details`;
+
+      el.innerHTML = `
+        <div class="pin-ground-ripple"></div>
+        <div class="pin-icon-wrapper">
+          <svg width="32" height="40" viewBox="0 0 34 42" fill="none" class="pin-svg">
+            <defs>
+              <linearGradient id="pin-grad-${bldg.id}" x1="17" y1="0" x2="17" y2="42" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#FF3B30"/>
+                <stop offset="100%" stop-color="#DC2626"/>
+              </linearGradient>
+              <filter id="pin-sh-${bldg.id}" x="-20%" y="-10%" width="140%" height="130%">
+                <feDropShadow dx="0" dy="3" stdDeviation="2.5" flood-color="rgba(0,0,0,0.55)"/>
+              </filter>
+            </defs>
+            <path d="M17 0C7.611 0 0 7.611 0 17C0 26.5 13.5 39.5 16.14 41.87C16.63 42.31 17.37 42.31 17.86 41.87C20.5 39.5 34 26.5 34 17C34 7.611 26.389 0 17 0Z" fill="url(#pin-grad-${bldg.id})" filter="url(#pin-sh-${bldg.id})" stroke="#FFFFFF" stroke-width="1.3"/>
+            <circle cx="17" cy="16" r="5.2" fill="#FFFFFF"/>
+          </svg>
+        </div>
+        <div class="pin-label-chip">
+          <span>${bldg.shortName}</span>
+        </div>
+      `;
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setActiveCardBuilding(bldg);
+        onSelectBuildingRef.current?.(bldg);
+        map.flyTo({
+          center: bldg.center,
+          zoom: bldg.code === 'BLOCK_A' ? 19.3 : 18.5,
+          pitch: isTopView ? 0 : 35,
+          bearing: bldg.code === 'BLOCK_A' ? -20 : -17.6,
+          speed: 1.2,
+        });
+      });
+
+      const marker = new maplibregl.Marker({
+        element: el,
+        anchor: 'bottom',
+        offset: [0, 4],
+      })
+        .setLngLat(bldg.center)
+        .addTo(map);
+
+      markersRef.current.push(marker);
+    });
+  }, [selectedBuilding, activeCardBuilding, isTopView]);
+
   // Reusable function to add/restore campus GIS layers
   const addCampusLayers = useCallback((map, buildingsOverride = null) => {
     if (!map || !map.isStyleLoaded()) return;
@@ -207,7 +398,7 @@ export default function MapOutdoor({
       map.getSource('campus-boundary').setData(campusBoundary);
     }
 
-    // 2. Campus Buildings (Invisible hit area for interactions, clean outline on selection)
+    // 2. Campus Buildings (Zero opacity invisible hit area; no crude bounding boxes)
     const buildingsData = buildingsOverride || campusBuildings;
 
     if (!map.getSource('campus-buildings')) {
@@ -216,48 +407,21 @@ export default function MapOutdoor({
         data: buildingsData,
       });
 
-      // Layer 1: Invisible Interactive Footprint Layer (captures hover/click without blue 3D boxes)
+      // Layer 1: Invisible Interactive Footprint Layer
       map.addLayer({
         id: 'existing-buildings-extrusion',
         type: 'fill',
         source: 'campus-buildings',
         paint: {
           'fill-color': '#000000',
-          'fill-opacity': 0.001,
-        },
-      });
-
-      // Layer 1c: Animated Hover Glowing Perimeter Ring
-      map.addLayer({
-        id: 'hovered-building-glow',
-        type: 'line',
-        source: 'campus-buildings',
-        filter: ['==', ['get', 'id'], ''],
-        paint: {
-          'line-color': '#38bdf8',
-          'line-width': 3.5,
-          'line-opacity': 0.95,
-        },
-      });
-
-      // Layer 2: Highlighted Selected Building (Amber Perimeter Outline)
-      map.addLayer({
-        id: 'selected-building-highlight',
-        type: 'line',
-        source: 'campus-buildings',
-        filter: ['==', ['get', 'id'], ''],
-        paint: {
-          'line-color': '#f59e0b',
-          'line-width': 4.0,
-          'line-opacity': 1.0,
+          'fill-opacity': 0.0,
         },
       });
     }
 
-    // Clear any markers so map labels are disabled
-    markersRef.current.forEach((m) => m.remove());
-    markersRef.current = [];
-  }, []);
+    // Synchronize animated building pins (Picture 2 style)
+    syncBuildingPins(map);
+  }, [syncBuildingPins]);
 
   // Synchronizes QGIS-generated indoor floor mapping layers (rooms, doors, paths, selected room, route)
   const syncIndoorLayers = useCallback((map) => {
@@ -790,7 +954,7 @@ export default function MapOutdoor({
         selectedBuilding
       ) {
         const isBlockA = selectedBuilding.code === 'BLOCK_A' || selectedBuilding.name?.includes('Block A');
-        const targetCenter = isBlockA ? [77.50456, 12.90282] : (selectedBuilding.center || CAMPUS_CENTER);
+        const targetCenter = isBlockA ? [77.50458, 12.90280] : (selectedBuilding.center || CAMPUS_CENTER);
 
         map.flyTo({
           center: selectedRoom?.coordinates || targetCenter,
@@ -799,10 +963,6 @@ export default function MapOutdoor({
           bearing: isBlockA ? -20 : -20,
           speed: 1.2,
         });
-
-        if (map.getLayer && map.getLayer('selected-building-highlight')) {
-          map.setFilter('selected-building-highlight', ['==', ['get', 'id'], selectedBuilding.id]);
-        }
       } else if (currentState === NAV_STATES.OVERVIEW && prevBuildingRef.current) {
         map.flyTo({
           center: CAMPUS_CENTER,
@@ -811,10 +971,6 @@ export default function MapOutdoor({
           bearing: isTopView ? 0 : -17.6,
           speed: 1.2,
         });
-
-        if (map.getLayer && map.getLayer('selected-building-highlight')) {
-          map.setFilter('selected-building-highlight', ['==', ['get', 'id'], '']);
-        }
       }
       prevBuildingRef.current = selectedBuilding;
     };
@@ -825,6 +981,16 @@ export default function MapOutdoor({
       map.once('styledata', performCameraUpdate);
     }
   }, [currentState, selectedBuilding, selectedRoom, isTopView]);
+
+  // Sync selectedBuilding prop with activeCardBuilding and pins
+  useEffect(() => {
+    if (selectedBuilding) {
+      setActiveCardBuilding(selectedBuilding);
+    }
+    if (mapRef.current && mapRef.current.isStyleLoaded()) {
+      syncBuildingPins(mapRef.current);
+    }
+  }, [selectedBuilding, syncBuildingPins]);
 
   // 3. Geolocation Tracking
   useEffect(() => {
@@ -1157,105 +1323,128 @@ export default function MapOutdoor({
         </div>
       )}
 
-      {/* Interactive Animated Building Detail HUD Card on Cursor Hover */}
-      {hoveredBuilding && (
+      {/* Interactive Animated Building Detail HUD Card (Picture 1 style) */}
+      {(activeCardBuilding || selectedBuilding || hoveredBuilding) && (
         <div
-          className="fixed pointer-events-none z-50 transition-all duration-75 select-none"
+          className="fixed pointer-events-auto z-40 transition-all duration-200 select-none animate-in fade-in slide-in-from-top-2"
           style={{
-            left: `${Math.min(Math.max(16, hoveredBuilding.cursorX || (window.innerWidth / 2)), window.innerWidth - 380)}px`,
-            top: `${(hoveredBuilding.cursorY || 350) > 340 ? (hoveredBuilding.cursorY || 350) - 16 : (hoveredBuilding.cursorY || 350) + 24}px`,
-            transform: (hoveredBuilding.cursorY || 350) > 340 ? 'translate(-50%, -100%)' : 'translate(-50%, 0%)',
+            top: '76px',
+            right: '16px',
+            maxWidth: '380px',
+            width: 'calc(100vw - 32px)',
           }}
+          data-testid="building-hud-card"
         >
-          <div className="w-[360px] max-w-[calc(100vw-32px)] p-4 rounded-2xl bg-stone-900/95 backdrop-blur-2xl border border-sky-400/50 text-white shadow-[0_12px_40px_rgba(0,0,0,0.85)] flex flex-col gap-2.5 pointer-events-auto">
-            {/* Top Pill Row */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider bg-blue-500/30 text-blue-300 border border-blue-400/40">
-                  {hoveredBuilding.code}
-                </span>
-                <span className="text-[10px] text-white/60 font-mono">
-                  {hoveredBuilding.category}
-                </span>
-              </div>
-              <span className="px-2 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/35 flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Verified Campus Block</span>
-              </span>
-            </div>
+          {(() => {
+            const cardBuilding = activeCardBuilding || selectedBuilding || hoveredBuilding;
+            const meta = buildingMetadata[cardBuilding.id] || buildingMetadata[cardBuilding.code] || {};
+            const height = cardBuilding.height_m || meta.height_m || 22.0;
+            const floors = cardBuilding.floor_count || meta.floor_count || 3;
+            const isBlockA = cardBuilding.code === 'BLOCK_A' || cardBuilding.name?.includes('Block A');
+            const hasIndoor = isBlockA || cardBuilding.indoor_mapping_status === 'available' || meta.indoor_mapping_status === 'available';
 
-            {/* Building Title */}
-            <div>
-              <h3 className="text-base font-bold text-white tracking-tight leading-snug drop-shadow-sm">
-                {hoveredBuilding.name}
-              </h3>
-              {hoveredBuilding.description && (
-                <p className="text-[11px] text-white/75 mt-1 leading-relaxed">
-                  {hoveredBuilding.description}
-                </p>
-              )}
-            </div>
-
-            {/* Departments Chips */}
-            {hoveredBuilding.departments && hoveredBuilding.departments.length > 0 && (
-              <div className="flex flex-col gap-1 pt-0.5">
-                <span className="text-[9px] font-mono tracking-widest uppercase text-sky-300 font-bold">
-                  Housed Departments & Faculties
-                </span>
-                <div className="flex flex-wrap gap-1.5">
-                  {hoveredBuilding.departments.map((dept, i) => (
-                    <span
-                      key={i}
-                      className="px-2.5 py-1 rounded-lg bg-sky-950/70 text-sky-200 border border-sky-500/30 text-[11px] font-semibold shadow-sm"
-                    >
-                      {dept}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Facilities preview */}
-            {hoveredBuilding.facilities && hoveredBuilding.facilities.length > 0 && (
-              <div className="flex flex-col gap-1 pt-0.5">
-                <span className="text-[9px] font-mono tracking-widest uppercase text-white/45 font-bold">
-                  Key Laboratories & Infrastructure
-                </span>
-                <div className="text-[11px] text-white/80 space-y-0.5">
-                  {hoveredBuilding.facilities.slice(0, 3).map((fac, i) => (
-                    <div key={i} className="flex items-center gap-1.5">
-                      <span className="w-1 h-1 rounded-full bg-sky-400" />
-                      <span className="truncate">{fac}</span>
+            return (
+              <div className="p-4 rounded-2xl bg-slate-900/95 backdrop-blur-2xl border border-white/20 text-white shadow-[0_16px_50px_rgba(0,0,0,0.85)] flex flex-col gap-2.5">
+                {/* Header: Title + Category + Close Button */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-wider bg-blue-500/25 text-blue-300 border border-blue-400/35">
+                        {cardBuilding.code || 'CAMPUS'}
+                      </span>
+                      <span className="text-[10px] text-white/60 font-mono">
+                        {cardBuilding.category || meta.category || 'Academic Complex'}
+                      </span>
                     </div>
-                  ))}
+                    <h3 className="text-base font-bold text-white tracking-tight leading-snug drop-shadow-sm truncate">
+                      {cardBuilding.name || meta.name}
+                    </h3>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCardBuilding(null);
+                      setHoveredBuilding(null);
+                      onSelectBuildingRef.current?.(null);
+                    }}
+                    title="Close building card"
+                    className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/80 hover:text-white flex items-center justify-center shrink-0 transition-all cursor-pointer border border-white/15"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
                 </div>
-              </div>
-            )}
 
-            {/* Metrics Row */}
-            <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[10px] text-white/60 font-mono">
-              <div className="flex items-center gap-2">
-                <span>{hoveredBuilding.height_m}m Height</span>
-                <span>•</span>
-                <span>{hoveredBuilding.floor_count} Floors</span>
-              </div>
-              <span className="text-emerald-300 font-semibold flex items-center gap-1">
-                <span>✓ Indoor Maps Ready</span>
-              </span>
-            </div>
+                {/* Description */}
+                {(cardBuilding.description || meta.description) && (
+                  <p className="text-[11px] text-white/75 leading-relaxed line-clamp-2">
+                    {cardBuilding.description || meta.description}
+                  </p>
+                )}
 
-            {/* Direct Click Action */}
-            <button
-              type="button"
-              onClick={() => {
-                onSelectBuildingRef.current?.(hoveredBuilding);
-              }}
-              className="mt-1 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-blue-900/40"
-            >
-              <span>Explore Floorplans & Classrooms</span>
-              <span>→</span>
-            </button>
-          </div>
+                {/* Departments Chips */}
+                {(meta.departments || cardBuilding.departments)?.length > 0 && (
+                  <div className="flex flex-col gap-1 pt-0.5">
+                    <span className="text-[9px] font-mono tracking-widest uppercase text-sky-300 font-bold">
+                      Housed Departments & Faculties
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(meta.departments || cardBuilding.departments).slice(0, 4).map((dept, i) => (
+                        <span
+                          key={i}
+                          className="px-2.5 py-1 rounded-lg bg-sky-950/70 text-sky-200 border border-sky-500/30 text-[11px] font-semibold shadow-sm"
+                        >
+                          {dept}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Metrics Row: Height, Floors, Indoor Status (Picture 1 style) */}
+                <div className="flex items-center justify-between pt-2 border-t border-white/10 text-[11px] text-white/70 font-mono">
+                  <div className="flex items-center gap-2">
+                    <span>{height}m Height</span>
+                    <span>•</span>
+                    <span>{floors} Floors</span>
+                  </div>
+                  <span className={`font-semibold flex items-center gap-1 ${hasIndoor ? 'text-emerald-400' : 'text-amber-400'}`}>
+                    {hasIndoor ? (
+                      <>
+                        <span className="text-emerald-400 font-bold">✓</span>
+                        <span>Indoor Maps Ready</span>
+                      </>
+                    ) : (
+                      <span>Planned Q4</span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Primary CTA: Explore Floorplans & Classrooms */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    onSelectBuildingRef.current?.(cardBuilding);
+                    if (isBlockA) {
+                      mapRef.current?.flyTo({
+                        center: [77.50458, 12.90280],
+                        zoom: 19.5,
+                        pitch: 35,
+                        bearing: -20,
+                        speed: 1.2,
+                      });
+                    }
+                  }}
+                  className="mt-1 w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white text-xs font-semibold tracking-wide transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-lg shadow-blue-900/40 border border-blue-400/30"
+                >
+                  <span>Explore Floorplans & Classrooms</span>
+                  <span>→</span>
+                </button>
+              </div>
+            );
+          })()}
         </div>
       )}
 

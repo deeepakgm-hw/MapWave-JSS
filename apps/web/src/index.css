@@ -433,4 +433,99 @@ button, a, [role="button"] {
   outline-offset: 2px !important;
 }
 
+/* ==========================================================================
+   MapWave Animated Geospatial Pins (Teardrop Marker with Ground Pulse)
+   ========================================================================== */
+
+.campus-pin-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 20;
+}
+
+.pin-ground-ripple {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  width: 24px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.55) 0%, rgba(220, 38, 38, 0.25) 50%, rgba(220, 38, 38, 0) 75%);
+  animation: pinGroundRipple 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes pinGroundRipple {
+  0% {
+    transform: translate(-50%, 50%) scale(0.6);
+    opacity: 0.95;
+  }
+  60% {
+    transform: translate(-50%, 50%) scale(2.2);
+    opacity: 0.25;
+  }
+  100% {
+    transform: translate(-50%, 50%) scale(3.0);
+    opacity: 0;
+  }
+}
+
+.pin-icon-wrapper {
+  animation: pinFloat 2.6s ease-in-out infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-origin: bottom center;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+}
+
+@keyframes pinFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
+.campus-pin-marker:hover .pin-icon-wrapper,
+.campus-pin-marker.active .pin-icon-wrapper {
+  transform: scale(1.18) translateY(-5px);
+  filter: drop-shadow(0 6px 14px rgba(220, 38, 38, 0.55));
+}
+
+.pin-label-chip {
+  margin-top: 2px;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.88);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.campus-pin-marker:hover .pin-label-chip,
+.campus-pin-marker.active .pin-label-chip {
+  background: rgba(37, 99, 235, 0.95);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: scale(1.08);
+  box-shadow: 0 4px 18px rgba(37, 99, 235, 0.5);
+}
+
 
