@@ -46,7 +46,7 @@ vi.mock('maplibre-gl', () => {
 });
 
 describe('App End-to-End Workflow Integration', () => {
-  it('renders MapWave - JSSATE landing page and allows entering 3D campus', () => {
+  it('renders MapWave landing page and navigates through login, ID scanner, and into campus portal', async () => {
     render(<App />);
 
     // Landing Page Elements
@@ -57,19 +57,42 @@ describe('App End-to-End Workflow Integration', () => {
     const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
     expect(exploreBtn).toBeInTheDocument();
 
-    // Click Explore to transition to Campus Map View
+    // 1. Click Explore to transition to Login Page
     fireEvent.click(exploreBtn);
+
+    expect(screen.getByText(/Welcome back/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Sign in with Google/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Remember me/i)).toBeInTheDocument();
+
+    // 2. Submit Login to transition to ID Card Scanner
+    const loginBtn = screen.getByRole('button', { name: /^Login$/i });
+    fireEvent.click(loginBtn);
+
+    expect(await screen.findByText('Scan Your Campus ID Card', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Scan Sample ID/i })).toBeInTheDocument();
+
+    // 3. Trigger Sample ID Card scan
+    const scanBtn = screen.getByRole('button', { name: /Scan Sample ID/i });
+    fireEvent.click(scanBtn);
+
+    const confirmBtn = await screen.findByRole(
+      'button',
+      { name: /Confirm & Enter MapWave Portal/i },
+      { timeout: 5000 }
+    );
+    expect(confirmBtn).toBeInTheDocument();
+    expect(screen.getAllByText('DEEPAK G M')[0]).toBeInTheDocument();
+    expect(screen.getAllByText('1JS24IS188')[0]).toBeInTheDocument();
+
+    // 4. Confirm and Enter Portal
+    fireEvent.click(confirmBtn);
 
     expect(screen.getAllByText(/Campus Overview/i)[0]).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Search Rooms/i })).toBeInTheDocument();
   });
 
   it('allows opening search modal and jumping directly to ROUTE_PREVIEW', async () => {
-    render(<App />);
-
-    // Transition from landing page
-    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
-    fireEvent.click(exploreBtn);
+    render(<App initialAuthStep="PORTAL" />);
 
     const searchBtn = screen.getByRole('button', { name: /Search Rooms/i });
     fireEvent.click(searchBtn);
@@ -88,11 +111,7 @@ describe('App End-to-End Workflow Integration', () => {
   });
 
   it('toggles accessible route switch', () => {
-    render(<App />);
-
-    // Transition from landing page
-    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
-    fireEvent.click(exploreBtn);
+    render(<App initialAuthStep="PORTAL" />);
 
     const switchBtn = screen.getByRole('switch');
     expect(switchBtn).toBeInTheDocument();
@@ -103,11 +122,7 @@ describe('App End-to-End Workflow Integration', () => {
   });
 
   it('selects a pilot building (Block A) and transitions to BUILDING_FLOORS', () => {
-    render(<App />);
-
-    // Transition from landing page
-    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
-    fireEvent.click(exploreBtn);
+    render(<App initialAuthStep="PORTAL" />);
 
     // Click Block A pill button in bottom sheet
     const blockBtn = screen.getByRole('button', { name: /Block A/i });
@@ -120,11 +135,7 @@ describe('App End-to-End Workflow Integration', () => {
   });
 
   it('supports automatic and manual geofence switching between CAMPUS_MODE and EXPLORE_MODE', () => {
-    render(<App />);
-
-    // Transition from landing page
-    const exploreBtn = screen.getByRole('button', { name: /EXPLORE/i });
-    fireEvent.click(exploreBtn);
+    render(<App initialAuthStep="PORTAL" />);
 
     // Initial state: Campus Mode is active with 3D Pilot Zones and Search Rooms
     expect(screen.getAllByText(/Campus Mode/i)[0]).toBeInTheDocument();

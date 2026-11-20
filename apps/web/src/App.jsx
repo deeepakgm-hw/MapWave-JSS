@@ -25,6 +25,14 @@ import { getMapConfig, MAP_PROVIDERS } from './config/mapConfig';
 import { useGeofence } from './hooks/useGeofence';
 import { APP_MODES } from './services/geofenceService';
 import { findIndoorRoute } from './services/indoorNavigationGraph';
+import {
+  AuthFlow,
+  UserProfileModal,
+  getStoredUser,
+  saveStoredUser,
+  clearStoredUser,
+  SAMPLE_STUDENT_PROFILE,
+} from './features/auth';
 
 export const PILOT_BUILDINGS = [
   {
@@ -94,9 +102,13 @@ export const OTHER_CAMPUS_FACILITIES = [
   },
 ];
 
-export default function App() {
+export default function App({ initialAuthStep = null }) {
   const [state, dispatch] = useReducer(navigationReducer, INITIAL_NAV_STATE);
-  const [isLandingOpen, setIsLandingOpen] = useState(true);
+  const [authStep, setAuthStep] = useState(() => {
+    return initialAuthStep || 'LANDING';
+  });
+  const [currentUser, setCurrentUser] = useState(() => getStoredUser() || SAMPLE_STUDENT_PROFILE);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [showAllBuildings, setShowAllBuildings] = useState(false);
@@ -419,7 +431,29 @@ export default function App() {
 
   const handleExplore = (quality) => {
     console.log('Entering MapWave 3D Campus Experience in quality:', quality);
-    setIsLandingOpen(false);
+    setAuthStep('LOGIN');
+  };
+
+  const handleAuthComplete = (user) => {
+    setCurrentUser(user);
+    saveStoredUser(user);
+    setAuthStep('PORTAL');
+  };
+
+  const handleLogout = () => {
+    clearStoredUser();
+    setCurrentUser(null);
+    setAuthStep('LOGIN');
+  };
+
+  const handleNavigateToDept = () => {
+    setIsProfileOpen(false);
+    // Find Block A (where ISE is located) and navigate to Floor 2
+    const blockA = PILOT_BUILDINGS.find((b) => b.code === 'BLOCK_A') || PILOT_BUILDINGS[0];
+    if (blockA) {
+      handleSelectBuilding(blockA);
+      handleSelectFloor({ level_number: 2, name: 'Floor 2' });
+    }
   };
 
   const handleSetViewMode = (mode) => {
@@ -446,21 +480,28 @@ export default function App() {
     handleSetViewMode(isTopView ? '3d' : 'top');
   };
 
-  // Trigger map resize when switching from landing page to split-screen view
+  // Trigger map resize when switching from landing / auth page to portal view
   useEffect(() => {
-    if (!isLandingOpen && mapRef.current) {
+    if (authStep === 'PORTAL' && mapRef.current) {
       const timer = setTimeout(() => {
         mapRef.current?.resize?.();
       }, 300);
       return () => clearTimeout(timer);
     }
-  }, [isLandingOpen]);
+  }, [authStep]);
 
   return (
     <div className="relative flex flex-col h-screen w-screen bg-stone-950 text-slate-100 font-sans overflow-hidden">
-      {/* 1. Immersive 3D Interactive Landing Page (thekenyamap.com Style) */}
-      {isLandingOpen ? (
+      {/* 1. Immersive 3D Interactive Landing Page or Auth Flow */}
+      {authStep === 'LANDING' ? (
         <LandingPage onExplore={handleExplore} />
+      ) : authStep === 'LOGIN' || authStep === 'SCAN_ID' ? (
+        <AuthFlow
+          initialStep={authStep}
+          onAuthComplete={handleAuthComplete}
+          onBackToLanding={() => setAuthStep('LANDING')}
+          onSkip={() => setAuthStep('PORTAL')}
+        />
       ) : (
         <div className="relative h-full w-full overflow-hidden bg-stone-950 font-sans" style={{ fontFamily: 'var(--font-ui)' }}>
           {isGridAudit && <div className="grid-audit-overlay" />}
@@ -522,6 +563,8 @@ export default function App() {
               theme={theme}
               onToggleTheme={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
               onOpenSearch={() => setIsSearchOpen(true)}
+              currentUser={currentUser}
+              onOpenProfile={() => setIsProfileOpen(true)}
             />
           </div>
 
@@ -551,7 +594,9 @@ export default function App() {
               }}
               onOpenSearch={() => setIsSearchOpen(true)}
               onOpenAdmin={() => setIsAdminOpen(true)}
-              onOpenIntro={() => setIsLandingOpen(true)}
+              onOpenIntro={() => setAuthStep('LANDING')}
+              currentUser={currentUser}
+              onOpenProfile={() => setIsProfileOpen(true)}
               theme={theme}
               onToggleTheme={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}
               isGridAudit={isGridAudit}
@@ -682,6 +727,19 @@ export default function App() {
 
       {/* Admin Dashboard */}
       {isAdminOpen && <AdminDashboard onClose={() => setIsAdminOpen(false)} />}
+
+      {/* User Profile / Student ID Card Modal */}
+      <UserProfileModal
+        isOpen={isProfileOpen}
+        onClose={() => setIsProfileOpen(false)}
+        user={currentUser}
+        onLogout={handleLogout}
+        onRescanId={() => {
+          setIsProfileOpen(false);
+          setAuthStep('SCAN_ID');
+        }}
+        onNavigateToDept={handleNavigateToDept}
+      />
     </div>
   );
 }

@@ -20,6 +20,8 @@ export function TopBar({
   onToggleTheme,
   onOpenNotifications,
   onOpenSearch,
+  currentUser = null,
+  onOpenProfile,
   className = '',
 }) {
   const buildingLabel = selectedBuilding
@@ -116,13 +118,26 @@ export function TopBar({
             </svg>
           </button>
 
-          {/* Profile Avatar */}
-          <div
-            className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 border border-white/40 flex items-center justify-center text-white text-xs font-bold shadow-sm shrink-0"
-            title="JSSATE Student"
+          {/* Profile Avatar / Student Passport */}
+          <button
+            type="button"
+            onClick={onOpenProfile}
+            title={currentUser ? `${currentUser.name} (${currentUser.dept})` : 'JSSATE Student Profile'}
+            className="relative w-8 h-8 rounded-full overflow-hidden border border-slate-200/90 shadow-sm shrink-0 cursor-pointer tap-feedback active:scale-95"
           >
-            JS
-          </div>
+            {currentUser?.photo ? (
+              <img
+                src={currentUser.photo}
+                alt={currentUser.name}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                {currentUser?.name ? currentUser.name.slice(0, 2) : 'JS'}
+              </div>
+            )}
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-blue-600 border border-white" />
+          </button>
         </div>
       </div>
     </header>

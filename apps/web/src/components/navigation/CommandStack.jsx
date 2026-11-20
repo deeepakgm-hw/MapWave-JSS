@@ -22,6 +22,8 @@ export function CommandStack({
   onOpenSearch,
   onOpenAdmin,
   onOpenIntro,
+  currentUser = null,
+  onOpenProfile,
   theme = 'light',
   onToggleTheme,
   isGridAudit = false,
@@ -115,30 +117,49 @@ export function CommandStack({
           </div>
         </button>
 
-        {/* Dynamic Campus Mode Pill */}
-        <button
-          type="button"
-          onClick={() => {
-            const nextMode =
-              currentMode === APP_MODES.CAMPUS_MODE
-                ? APP_MODES.EXPLORE_MODE
-                : APP_MODES.CAMPUS_MODE;
-            onSwitchMode?.(nextMode);
-          }}
-          title={isInsideCampus ? 'Inside authoritative campus geofence' : 'Outside campus perimeter'}
-          className="h-[32px] px-3 rounded-full flex items-center gap-1.5 text-xs font-semibold bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 transition-all cursor-pointer shrink-0 text-slate-800 shadow-sm"
-        >
-          <span
-            className={`w-2 h-2 rounded-full shrink-0 ${
-              isInsideCampus
-                ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'
-                : 'bg-amber-500 animate-pulse'
-            }`}
-          />
-          <span className="tracking-tight font-medium text-slate-800">
-            {currentMode === APP_MODES.CAMPUS_MODE ? 'Campus Mode' : 'Explore Mode'}
-          </span>
-        </button>
+        {/* Right Actions: Campus Mode Pill + Profile Avatar */}
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => {
+              const nextMode =
+                currentMode === APP_MODES.CAMPUS_MODE
+                  ? APP_MODES.EXPLORE_MODE
+                  : APP_MODES.CAMPUS_MODE;
+              onSwitchMode?.(nextMode);
+            }}
+            title={isInsideCampus ? 'Inside authoritative campus geofence' : 'Outside campus perimeter'}
+            className="h-[32px] px-3 rounded-full flex items-center gap-1.5 text-xs font-semibold bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200/90 transition-all cursor-pointer shrink-0 text-slate-800 shadow-sm"
+          >
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ${
+                isInsideCampus
+                  ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]'
+                  : 'bg-amber-500 animate-pulse'
+              }`}
+            />
+            <span className="tracking-tight font-medium text-slate-800">
+              {currentMode === APP_MODES.CAMPUS_MODE ? 'Campus Mode' : 'Explore Mode'}
+            </span>
+          </button>
+
+          {/* Profile Avatar Trigger */}
+          {currentUser && (
+            <button
+              type="button"
+              onClick={onOpenProfile}
+              title={`${currentUser.name} (${currentUser.dept}) • Click to view Student Passport`}
+              className="relative w-8 h-8 rounded-full overflow-hidden border border-slate-200/90 shadow-sm shrink-0 cursor-pointer tap-feedback active:scale-95 hover:ring-2 hover:ring-blue-500/20"
+            >
+              <img
+                src={currentUser.photo || '/images/student_photo.jpg'}
+                alt={currentUser.name}
+                className="w-full h-full object-cover"
+              />
+              <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-blue-600 border border-white" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ROW B: Search Bar (48px) with Keyboard Shortcut "/" in White Glassmorphism */}
@@ -309,7 +330,28 @@ export function CommandStack({
           </button>
 
           {showOverflowMenu && (
-            <div className="absolute top-[40px] right-0 w-52 p-2 rounded-2xl bg-white/95 backdrop-blur-2xl border border-white/90 shadow-2xl z-50 flex flex-col gap-1 text-slate-800 animate-in fade-in zoom-in-95 duration-150">
+            <div className="absolute top-[40px] right-0 w-56 p-2 rounded-2xl bg-white/95 backdrop-blur-2xl border border-white/90 shadow-2xl z-50 flex flex-col gap-1 text-slate-800 animate-in fade-in zoom-in-95 duration-150">
+              {currentUser && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenProfile?.();
+                    setShowOverflowMenu(false);
+                  }}
+                  className="w-full px-2.5 py-2 rounded-xl text-left text-xs font-semibold text-blue-700 bg-blue-50/80 hover:bg-blue-100/80 flex items-center gap-2.5 cursor-pointer transition-colors"
+                >
+                  <img
+                    src={currentUser.photo || '/images/student_photo.jpg'}
+                    alt={currentUser.name}
+                    className="w-5 h-5 rounded-full object-cover border border-blue-400"
+                  />
+                  <div className="flex flex-col min-w-0">
+                    <span className="truncate">{currentUser.name}</span>
+                    <span className="text-[10px] text-blue-600 font-mono font-normal">USN: {currentUser.usn}</span>
+                  </div>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => {
