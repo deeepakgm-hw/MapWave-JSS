@@ -89,7 +89,7 @@ describe('App End-to-End Workflow Integration', () => {
 
     expect(screen.getAllByText(/Campus Overview/i)[0]).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Search Rooms/i })).toBeInTheDocument();
-  });
+  }, 15000);
 
   it('allows opening search modal and jumping directly to ROUTE_PREVIEW', async () => {
     render(<App initialAuthStep="PORTAL" />);

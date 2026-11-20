@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
 
+/**
+ * MapWave White-Themed Frosted Glassmorphic Login
+ * Implements the exact luminous glass aesthetic from the reference mockup (Image 1):
+ * - Radiant white frosted glass card with glowing translucent border
+ * - 100% Crisp white typography for maximum legibility and zero muddy blending
+ * - Translucent frosted pill input fields with white outline icons
+ * - Perfectly color-matched electric Halfwave Blue primary action button
+ * - Seamless frosted Google OAuth option & matching top-bar pills
+ */
 export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSkip }) {
   const [username, setUsername] = useState('deepak.gm@jssateb.ac.in');
   const [password, setPassword] = useState('••••••••••••');
@@ -26,68 +35,110 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
 
   return (
     <div className="relative w-full h-full min-h-screen flex items-center justify-center p-4 overflow-hidden select-none font-sans">
-      {/* 1. Full-Bleed Campus Background Image (Image 2: JSSATE Main Building) */}
+      {/* 1. Full-Bleed Campus Background Image (JSSATE Main Building) with Natural Vibrant Sunlight */}
       <div
-        className="absolute inset-0 bg-cover bg-center scale-105 filter brightness-[0.85] contrast-[1.05] transition-transform duration-1000 ease-out"
+        className="absolute inset-0 bg-cover bg-center scale-105 filter brightness-[0.96] contrast-[1.03] transition-transform duration-1000 ease-out"
         style={{
           backgroundImage: `url('/images/jssate_main_building.jpg')`,
         }}
       />
 
-      {/* 2. Contrast Scrim & Subtle Vignette for High Legibility */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-900/35 to-slate-950/50 backdrop-blur-[2px]" />
+      {/* 2. Soft Atmospheric Ambient Scrim for Flawless Contrast without Gloomy Tint */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(15, 23, 42, 0.40) 0%, rgba(15, 23, 42, 0.22) 40%, rgba(15, 23, 42, 0.48) 100%)',
+          backdropFilter: 'blur(2px)',
+          WebkitBackdropFilter: 'blur(2px)',
+        }}
+      />
 
-      {/* Top Header Badge */}
+      {/* Top Left Navigation Pill */}
       <div className="absolute top-5 left-5 z-20 flex items-center gap-2.5">
         <button
           type="button"
           onClick={onBackToLanding}
           title="Return to Introduction"
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/85 hover:bg-white text-slate-800 backdrop-blur-xl border border-white/80 shadow-md text-xs font-semibold cursor-pointer transition-all active:scale-95"
+          className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-xs font-semibold cursor-pointer transition-all hover:brightness-110 active:scale-95"
+          style={{
+            background: 'rgba(255, 255, 255, 0.18)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1.5px solid rgba(255, 255, 255, 0.50)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+          }}
         >
-          <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          <span>Back</span>
+          <span className="tracking-wide">Back</span>
         </button>
       </div>
 
-      {/* Top Right Skip / Demo Option */}
+      {/* Top Right Skip / Demo Option Pill */}
       {onSkip && (
         <div className="absolute top-5 right-5 z-20">
           <button
             type="button"
             onClick={onSkip}
-            className="px-3.5 py-1.5 rounded-full bg-white/80 hover:bg-white text-slate-700 hover:text-slate-900 backdrop-blur-xl border border-white/70 shadow-sm text-xs font-medium cursor-pointer transition-all"
+            className="px-4 py-2 rounded-full text-white text-xs font-semibold cursor-pointer transition-all hover:brightness-110 active:scale-95"
+            style={{
+              background: 'rgba(255, 255, 255, 0.18)',
+              backdropFilter: 'blur(16px)',
+              WebkitBackdropFilter: 'blur(16px)',
+              border: '1.5px solid rgba(255, 255, 255, 0.50)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+            }}
           >
             Explore as Guest →
           </button>
         </div>
       )}
 
-      {/* 3. White-Themed Glassmorphic Login Card (Matching Image 1 Reference Style) */}
-      <div className="relative z-10 w-full max-w-[420px] p-7 sm:p-9 rounded-[32px] bg-white/88 backdrop-blur-2xl border border-white/85 shadow-[0_25px_60px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.95)] animate-in fade-in zoom-in-95 duration-300">
+      {/* 3. Luminous Frosted White Glassmorphism Login Card (Direct Image 1 Match) */}
+      <div
+        className="relative z-10 w-full max-w-[420px] p-8 sm:p-9 rounded-[32px] animate-in fade-in zoom-in-95 duration-300"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.10) 100%)',
+          backdropFilter: 'blur(28px) saturate(160%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(160%)',
+          border: '1.5px solid rgba(255, 255, 255, 0.65)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.40), inset 0 1px 1px rgba(255, 255, 255, 0.60)',
+        }}
+      >
         {/* Brand Icon & Heading */}
         <div className="flex flex-col items-start gap-1 mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25">
+            <div
+              className="w-7 h-7 rounded-lg text-white flex items-center justify-center shadow-md"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                border: '1px solid rgba(255, 255, 255, 0.4)',
+              }}
+            >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth={2.2}
+                  strokeWidth={2.4}
                   d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
                 />
               </svg>
             </div>
-            <span className="text-[11px] font-mono font-bold tracking-widest uppercase text-blue-600">
+            <span
+              className="text-[11px] font-mono font-bold tracking-widest uppercase"
+              style={{ color: '#93c5fd', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}
+            >
               MAPWAVE • JSSATE
             </span>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+
+          {/* Crisp Pure White Heading */}
+          <h1 className="text-3xl font-extrabold tracking-tight text-white leading-tight drop-shadow-md">
             Login
           </h1>
-          <p className="text-xs sm:text-sm text-slate-600 font-medium">
+          <p className="text-xs sm:text-sm font-medium leading-relaxed" style={{ color: 'rgba(255, 255, 255, 0.88)' }}>
             Welcome back, please login to your campus account
           </p>
         </div>
@@ -96,7 +147,11 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* User Name Input */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-semibold text-slate-700 tracking-wide" htmlFor="username">
+            <label
+              className="text-xs font-semibold tracking-wide"
+              style={{ color: 'rgba(255, 255, 255, 0.92)' }}
+              htmlFor="username"
+            >
               User Name or USN
             </label>
             <div className="relative flex items-center">
@@ -107,9 +162,24 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your USN or email"
-                className="w-full h-12 pl-4 pr-11 rounded-2xl bg-white/75 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-blue-500 text-slate-900 placeholder:text-slate-400 text-sm font-medium outline-none transition-all shadow-inner focus:ring-4 focus:ring-blue-500/15"
+                className="w-full h-12 pl-4 pr-11 rounded-2xl text-white placeholder-white/60 text-sm font-medium outline-none transition-all"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.14)',
+                  border: '1.5px solid rgba(255, 255, 255, 0.38)',
+                  boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.15)',
+                }}
+                onFocus={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.22)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.85)';
+                  e.target.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.25)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.14)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.38)';
+                  e.target.style.boxShadow = 'inset 0 1px 3px rgba(0, 0, 0, 0.15)';
+                }}
               />
-              <div className="absolute right-3.5 text-slate-400 pointer-events-none">
+              <div className="absolute right-3.5 text-white/70 pointer-events-none">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     strokeLinecap="round"
@@ -125,13 +195,18 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
           {/* Password Input */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-700 tracking-wide" htmlFor="password">
+              <label
+                className="text-xs font-semibold tracking-wide"
+                style={{ color: 'rgba(255, 255, 255, 0.92)' }}
+                htmlFor="password"
+              >
                 Password
               </label>
               <button
                 type="button"
                 onClick={() => alert('Password reset link sent to your college registered email!')}
-                className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+                className="text-[11px] font-semibold hover:underline cursor-pointer transition-colors"
+                style={{ color: '#93c5fd' }}
               >
                 Forgot password?
               </button>
@@ -144,13 +219,28 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
-                className="w-full h-12 pl-4 pr-11 rounded-2xl bg-white/75 hover:bg-white focus:bg-white border border-slate-200/90 focus:border-blue-500 text-slate-900 placeholder:text-slate-400 text-sm font-medium outline-none transition-all shadow-inner focus:ring-4 focus:ring-blue-500/15"
+                className="w-full h-12 pl-4 pr-11 rounded-2xl text-white placeholder-white/60 text-sm font-medium outline-none transition-all"
+                style={{
+                  background: 'rgba(255, 255, 255, 0.14)',
+                  border: '1.5px solid rgba(255, 255, 255, 0.38)',
+                  boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.15)',
+                }}
+                onFocus={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.22)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.85)';
+                  e.target.style.boxShadow = '0 0 15px rgba(255, 255, 255, 0.25)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.14)';
+                  e.target.style.borderColor = 'rgba(255, 255, 255, 0.38)';
+                  e.target.style.boxShadow = 'inset 0 1px 3px rgba(0, 0, 0, 0.15)';
+                }}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-3.5 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="absolute right-3.5 text-white/70 hover:text-white transition-colors cursor-pointer"
               >
                 {showPassword ? (
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -181,25 +271,34 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
             </div>
           </div>
 
-          {/* Remember Me */}
+          {/* Remember Me Checkbox with Pure White Label */}
           <div className="flex items-center gap-2 pt-0.5">
             <input
               id="remember"
               type="checkbox"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+              className="w-4 h-4 rounded text-blue-600 focus:ring-0 border-white/60 bg-white/20 cursor-pointer"
             />
-            <label htmlFor="remember" className="text-xs font-medium text-slate-700 cursor-pointer select-none">
+            <label
+              htmlFor="remember"
+              className="text-xs font-medium cursor-pointer select-none"
+              style={{ color: 'rgba(255, 255, 255, 0.92)' }}
+            >
               Remember me
             </label>
           </div>
 
-          {/* Primary Login Button */}
+          {/* Primary Login Button (Color-Matched Halfwave Electric Blue Gradient) */}
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full h-12 mt-1 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm tracking-wide shadow-lg shadow-blue-600/30 active:scale-[0.985] transition-all cursor-pointer flex items-center justify-center gap-2"
+            className="w-full h-12 mt-1 rounded-2xl text-white font-bold text-sm tracking-wide active:scale-[0.985] transition-all cursor-pointer flex items-center justify-center gap-2 hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 50%, #3b82f6 100%)',
+              border: '1.5px solid rgba(255, 255, 255, 0.35)',
+              boxShadow: '0 10px 25px rgba(37, 99, 235, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.35)',
+            }}
           >
             {isLoading ? (
               <>
@@ -215,20 +314,35 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
           </button>
         </form>
 
-        {/* OR Divider */}
+        {/* OR Divider with Glass Pill Badge */}
         <div className="relative my-5 flex items-center justify-center">
-          <div className="w-full border-t border-slate-200/90" />
-          <span className="absolute px-3 bg-white/90 rounded-full text-[11px] font-mono font-semibold text-slate-400 tracking-wider">
+          <div className="w-full border-t border-white/25" />
+          <span
+            className="absolute px-3 py-0.5 rounded-full text-[11px] font-mono font-bold tracking-widest uppercase"
+            style={{
+              background: 'rgba(255, 255, 255, 0.16)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+              border: '1px solid rgba(255, 255, 255, 0.35)',
+              color: 'rgba(255, 255, 255, 0.85)',
+            }}
+          >
             OR
           </span>
         </div>
 
-        {/* Login with Google Option Button */}
+        {/* Login with Google Option Button (Polished White Glass Pill) */}
         <button
           type="button"
           onClick={handleGoogleClick}
           disabled={isLoading}
-          className="w-full h-12 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200/90 font-semibold text-sm shadow-sm active:scale-[0.985] transition-all cursor-pointer flex items-center justify-center gap-3 group"
+          className="w-full h-12 rounded-2xl font-semibold text-sm active:scale-[0.985] transition-all cursor-pointer flex items-center justify-center gap-3 group hover:brightness-105"
+          style={{
+            background: 'rgba(255, 255, 255, 0.94)',
+            border: '1.5px solid rgba(255, 255, 255, 0.95)',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.18)',
+            color: '#0f172a',
+          }}
         >
           {/* Official Multicolor Google G Icon */}
           <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
@@ -249,16 +363,17 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
               d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.7 1.28 6.62l3.99 3.13c.95-2.85 3.6-4.96 6.73-4.96z"
             />
           </svg>
-          <span className="tracking-tight">Sign in with Google</span>
+          <span className="tracking-tight font-bold">Sign in with Google</span>
         </button>
 
-        {/* Signup Footer Link */}
-        <div className="mt-6 text-center text-xs text-slate-500 font-medium">
+        {/* Signup Footer Link with Crisp White & Sky Blue Highlight */}
+        <div className="mt-6 text-center text-xs font-medium" style={{ color: 'rgba(255, 255, 255, 0.85)' }}>
           Don't have an account?{' '}
           <button
             type="button"
             onClick={() => onLoginSuccess?.({ username: 'new_student@jssateb.ac.in' })}
-            className="font-bold text-blue-600 hover:text-blue-700 hover:underline cursor-pointer"
+            className="font-bold hover:underline cursor-pointer transition-colors"
+            style={{ color: '#93c5fd' }}
           >
             Signup
           </button>

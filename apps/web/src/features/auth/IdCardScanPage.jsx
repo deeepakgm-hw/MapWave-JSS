@@ -93,31 +93,55 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
 
   return (
     <div className="relative w-full h-full min-h-screen flex items-center justify-center p-4 overflow-y-auto select-none font-sans">
-      {/* 1. Full-Bleed Campus Background */}
+      {/* 1. Full-Bleed Campus Background with Natural Vibrant Sunlight */}
       <div
-        className="fixed inset-0 bg-cover bg-center filter brightness-[0.80] contrast-[1.05]"
+        className="fixed inset-0 bg-cover bg-center filter brightness-[0.96] contrast-[1.03]"
         style={{
           backgroundImage: `url('/images/jssate_main_building.jpg')`,
         }}
       />
-      <div className="fixed inset-0 bg-gradient-to-t from-slate-950/80 via-slate-900/40 to-slate-950/60 backdrop-blur-[2px]" />
+      <div
+        className="fixed inset-0"
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(15, 23, 42, 0.40) 0%, rgba(15, 23, 42, 0.22) 40%, rgba(15, 23, 42, 0.48) 100%)',
+          backdropFilter: 'blur(2px)',
+          WebkitBackdropFilter: 'blur(2px)',
+        }}
+      />
 
       {/* Back Button */}
       <div className="fixed top-5 left-5 z-20">
         <button
           type="button"
           onClick={onBackToLogin}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/90 hover:bg-white text-slate-800 backdrop-blur-xl border border-white/80 shadow-md text-xs font-semibold cursor-pointer transition-all active:scale-95"
+          className="flex items-center gap-2 px-4 py-2 rounded-full text-white text-xs font-semibold cursor-pointer transition-all hover:brightness-110 active:scale-95"
+          style={{
+            background: 'rgba(255, 255, 255, 0.18)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1.5px solid rgba(255, 255, 255, 0.50)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+          }}
         >
-          <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
           </svg>
-          <span>Back to Login</span>
+          <span className="tracking-wide">Back to Login</span>
         </button>
       </div>
 
       {/* 2. Main White-Themed Glassmorphism Container */}
-      <div className="relative z-10 w-full max-w-xl my-8 p-6 sm:p-8 rounded-[32px] bg-white/90 backdrop-blur-2xl border border-white/85 shadow-[0_25px_60px_rgba(0,0,0,0.25)] flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-200">
+      <div
+        className="relative z-10 w-full max-w-xl my-8 p-6 sm:p-8 rounded-[32px] flex flex-col gap-5 animate-in fade-in zoom-in-95 duration-200"
+        style={{
+          background: 'rgba(255, 255, 255, 0.94)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          border: '1.5px solid rgba(255, 255, 255, 0.95)',
+          boxShadow: '0 25px 60px rgba(0, 0, 0, 0.35)',
+        }}
+      >
         {/* Header */}
         <div className="flex flex-col items-center text-center gap-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/80 text-blue-700 text-xs font-bold uppercase tracking-wider mb-1">
