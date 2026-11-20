@@ -1,25 +1,30 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { SAMPLE_STUDENT_PROFILE, SAMPLE_FACULTY_PROFILE, parseIdCardScan } from './authService';
+import { parseIdCardScan, cropFaceFromIdCard } from './authService';
 
 export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
   const [role, setRole] = useState('STUDENT'); // 'STUDENT' | 'FACULTY'
   const [isScanning, setIsScanning] = useState(false);
   const [scannedUser, setScannedUser] = useState(null);
   const [scanProgress, setScanProgress] = useState(0);
-  const [previewImage, setPreviewImage] = useState('/images/sample_student_id.jpg');
+  const [previewImage, setPreviewImage] = useState(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Editable fields state
+  const [editableName, setEditableName] = useState('');
+  const [editableUsn, setEditableUsn] = useState('');
+  const [editableDept, setEditableDept] = useState('');
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // Stop camera on unmount
+  // Auto-start live camera on mount
   useEffect(() => {
+    startCamera();
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
+      stopCamera();
     };
   }, []);
 
@@ -35,12 +40,12 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        videoRef.current.play();
+        videoRef.current.play().catch((err) => console.warn('Video play error:', err));
       }
       setCameraActive(true);
     } catch (err) {
       console.warn('[Camera] Failed to access camera:', err);
-      setCameraError('Camera access unavailable. You can use sample card scan or upload a photo.');
+      setCameraError('Camera access unavailable. You can upload an ID photo or use reference test.');
       setCameraActive(false);
     }
   };
@@ -53,26 +58,61 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
     setCameraActive(false);
   };
 
-  const handleScanCard = async (imgSrc = previewImage) => {
+  /**
+   * Captures live frame from camera canvas and runs real OCR + face crop
+   */
+  const handleCaptureLiveCamera = async () => {
+    if (!videoRef.current) return;
     setIsScanning(true);
-    setScanProgress(15);
+    setScanProgress(20);
 
-    const timer1 = setTimeout(() => setScanProgress(55), 300);
-    const timer2 = setTimeout(() => setScanProgress(90), 600);
+    try {
+      const video = videoRef.current;
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    const userProfile = await parseIdCardScan(imgSrc, role);
+      setScanProgress(50);
+      const userProfile = await parseIdCardScan(canvas, role);
 
-    setTimeout(() => {
       setScanProgress(100);
       setIsScanning(false);
       setScannedUser(userProfile);
+      setEditableName(userProfile.name);
+      setEditableUsn(userProfile.usn);
+      setEditableDept(userProfile.dept);
       stopCamera();
-    }, 900);
+    } catch (err) {
+      console.error('[Scanner] Capture error:', err);
+      setIsScanning(false);
+    }
+  };
 
-    return () => {
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-    };
+  /**
+   * Scans an uploaded ID photo or sample reference image
+   */
+  const handleScanCard = async (imgSrc) => {
+    setIsScanning(true);
+    setScanProgress(20);
+
+    const timer = setTimeout(() => setScanProgress(70), 300);
+
+    try {
+      const userProfile = await parseIdCardScan(imgSrc, role);
+      clearTimeout(timer);
+      setScanProgress(100);
+      setIsScanning(false);
+      setScannedUser(userProfile);
+      setEditableName(userProfile.name);
+      setEditableUsn(userProfile.usn);
+      setEditableDept(userProfile.dept);
+      stopCamera();
+    } catch (err) {
+      console.error('[Scanner] OCR error:', err);
+      setIsScanning(false);
+    }
   };
 
   const handleFileUpload = (e) => {
@@ -87,7 +127,13 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
 
   const handleConfirmAndEnter = () => {
     if (scannedUser) {
-      onVerificationComplete?.(scannedUser);
+      const finalUser = {
+        ...scannedUser,
+        name: editableName || scannedUser.name,
+        usn: editableUsn || scannedUser.usn,
+        dept: editableDept || scannedUser.dept,
+      };
+      onVerificationComplete?.(finalUser);
     }
   };
 
@@ -152,7 +198,7 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
             Scan Your Campus ID Card
           </h1>
           <p className="text-xs sm:text-sm text-slate-600 font-medium max-w-md">
-            Scan your physical JSSATE ID card to auto-fetch your department credentials and unlock indoor navigation.
+            Hold your physical JSSATE badge up to the camera or upload a photo to auto-extract credentials and unlock indoor navigation.
           </p>
         </div>
 
@@ -160,40 +206,30 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
         <div className="flex items-center justify-center p-1 rounded-full bg-slate-100/90 border border-slate-200/80 w-full max-w-xs mx-auto">
           <button
             type="button"
-            onClick={() => {
-              setRole('STUDENT');
-              if (scannedUser) setScannedUser(SAMPLE_STUDENT_PROFILE);
-            }}
+            onClick={() => setRole('STUDENT')}
             className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              role === 'STUDENT'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+              role === 'STUDENT' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Student ID
           </button>
           <button
             type="button"
-            onClick={() => {
-              setRole('FACULTY');
-              if (scannedUser) setScannedUser(SAMPLE_FACULTY_PROFILE);
-            }}
+            onClick={() => setRole('FACULTY')}
             className={`flex-1 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              role === 'FACULTY'
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-slate-600 hover:text-slate-900'
+              role === 'FACULTY' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
             Faculty / Staff
           </button>
         </div>
 
-        {/* 3. Scanner Viewfinder or Scanned Badge Preview */}
+        {/* 3. Live Camera Viewfinder or Extracted Badge */}
         {!scannedUser ? (
           <div className="flex flex-col gap-4">
             {/* Viewfinder Card */}
-            <div className="relative w-full aspect-[1.586/1] max-h-[280px] rounded-2xl overflow-hidden bg-slate-950 border-2 border-dashed border-slate-300 flex items-center justify-center shadow-inner group">
-              {/* Camera Video Feed */}
+            <div className="relative w-full aspect-[1.586/1] max-h-[300px] rounded-2xl overflow-hidden bg-slate-950 border-2 border-dashed border-slate-400 flex items-center justify-center shadow-inner group">
+              {/* Live Video Feed */}
               {cameraActive ? (
                 <video
                   ref={videoRef}
@@ -202,30 +238,45 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
                   muted
                   className="w-full h-full object-cover"
                 />
-              ) : (
-                /* Static Image Preview of ID Card (Image 3) */
+              ) : previewImage ? (
+                /* Uploaded Photo Preview */
                 <img
                   src={previewImage}
-                  alt="JSSATE ID Card Preview"
-                  className="w-full h-full object-cover filter contrast-[1.03] transition-opacity"
+                  alt="Uploaded ID Card Preview"
+                  className="w-full h-full object-contain filter contrast-[1.03]"
                 />
+              ) : (
+                /* Camera Prompt Placeholder */
+                <div className="flex flex-col items-center justify-center text-center p-6 gap-2">
+                  <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 text-white flex items-center justify-center mb-1">
+                    <svg className="w-8 h-8 text-blue-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <span className="text-white text-sm font-semibold">Live Camera Ready</span>
+                  <span className="text-white/60 text-xs max-w-xs">Align your physical ID card squarely within the viewfinder</span>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="mt-2 px-4 py-1.5 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md cursor-pointer"
+                  >
+                    Start Camera
+                  </button>
+                </div>
               )}
 
               {/* Viewfinder Overlay Reticle (Corner Brackets) */}
               <div className="absolute inset-4 pointer-events-none">
-                {/* Top-Left */}
                 <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-blue-500 rounded-tl-lg" />
-                {/* Top-Right */}
                 <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-blue-500 rounded-tr-lg" />
-                {/* Bottom-Left */}
                 <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-blue-500 rounded-bl-lg" />
-                {/* Bottom-Right */}
                 <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-blue-500 rounded-br-lg" />
 
                 {/* Laser Sweep Line */}
                 <div
                   className={`absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-cyan-400 to-transparent shadow-[0_0_15px_#22d3ee] pointer-events-none ${
-                    isScanning ? 'animate-laser' : 'top-1/2 -translate-y-1/2 opacity-60'
+                    isScanning ? 'animate-laser' : cameraActive ? 'top-1/2 -translate-y-1/2 opacity-75' : 'hidden'
                   }`}
                 />
               </div>
@@ -233,8 +284,8 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
               {/* Status Banner */}
               <div className="absolute bottom-3 inset-x-3 flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-950/80 backdrop-blur-md text-white text-[11px] font-mono border border-white/15">
                 <span className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full ${isScanning ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
-                  {isScanning ? `Analyzing OCR Data (${scanProgress}%)...` : cameraActive ? 'Camera Active • Align ID' : 'Sample Card Ready'}
+                  <span className={`w-2 h-2 rounded-full ${isScanning ? 'bg-amber-400 animate-ping' : cameraActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-400'}`} />
+                  {isScanning ? `Analyzing OCR Data (${scanProgress}%)...` : cameraActive ? 'Live Camera Active • Hold Card Still' : previewImage ? 'Photo Loaded' : 'Camera Standby'}
                 </span>
                 <span className="text-white/60 uppercase">JSSATE-CR80</span>
               </div>
@@ -248,56 +299,74 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
             )}
 
             {/* Scanner Controls / Triggers */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-              {/* Scan Sample Card Button (Image 3: Deepak G M) */}
-              <button
-                type="button"
-                onClick={() => handleScanCard('/images/sample_student_id.jpg')}
-                disabled={isScanning}
-                className="py-2.5 px-3 rounded-2xl bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-bold text-xs tracking-wide shadow-md shadow-blue-500/25 transition-all cursor-pointer flex items-center justify-center gap-2 col-span-1 sm:col-span-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                <span>{isScanning ? 'Scanning...' : 'Scan Sample ID'}</span>
-              </button>
+            <div className="flex flex-col gap-2.5 pt-1">
+              {/* Primary Live Capture / Scan Button */}
+              {cameraActive ? (
+                <button
+                  type="button"
+                  onClick={handleCaptureLiveCamera}
+                  disabled={isScanning}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 active:scale-[0.985] text-white font-bold text-sm tracking-wide shadow-lg shadow-blue-500/30 transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>{isScanning ? 'Extracting ID Details...' : 'Capture & Scan Physical ID'}</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={startCamera}
+                  disabled={isScanning}
+                  className="w-full py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <span>Open Live Camera</span>
+                </button>
+              )}
 
-              {/* Upload Card Image */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isScanning}
-                className="py-2.5 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-semibold text-xs border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                </svg>
-                <span>Upload Card</span>
-              </button>
+              {/* Secondary Options: Upload Card & Reference Sample */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isScanning}
+                  className="py-2.5 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-semibold text-xs border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                  </svg>
+                  <span>Upload ID Photo</span>
+                </button>
 
-              {/* Toggle Live Camera */}
-              <button
-                type="button"
-                onClick={cameraActive ? stopCamera : startCamera}
-                disabled={isScanning}
-                className="py-2.5 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-800 font-semibold text-xs border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <svg className="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                <span>{cameraActive ? 'Stop Camera' : 'Live Camera'}</span>
-              </button>
+                {/* Reference ID Test Button */}
+                <button
+                  type="button"
+                  onClick={() => handleScanCard('/images/sample_student_id.jpg')}
+                  disabled={isScanning}
+                  className="py-2.5 px-3 rounded-2xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-700 font-semibold text-xs border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                  title="Use reference student badge for instant simulation"
+                >
+                  <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span>Scan Sample ID</span>
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          /* 4. Extracted Credentials Card (Auto-Fetched from ID Scan) */
+          /* 4. Extracted Credentials Card with Live Photo Crop & Edit Capability */
           <div className="flex flex-col gap-4 animate-in fade-in zoom-in-95 duration-250">
             {/* Holographic Digital Student ID Card */}
             <div className="relative p-5 rounded-2xl bg-white border border-slate-200 shadow-xl overflow-hidden flex flex-col gap-4">
@@ -329,15 +398,24 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
 
               {/* Student Details & Photo Row */}
               <div className="flex items-start justify-between gap-4">
-                {/* Left: Metadata Details */}
-                <div className="flex flex-col gap-2 flex-1">
+                {/* Left: Metadata Details (with Edit capability) */}
+                <div className="flex flex-col gap-2 flex-1 min-w-0">
                   <div>
                     <span className="text-[10px] font-mono uppercase text-slate-400 font-semibold tracking-wider">
                       FULL NAME
                     </span>
-                    <div className="text-lg font-black text-slate-900 tracking-tight leading-snug">
-                      {scannedUser.name}
-                    </div>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={editableName}
+                        onChange={(e) => setEditableName(e.target.value)}
+                        className="w-full text-base font-bold text-slate-900 border-b border-blue-500 outline-none pb-0.5 bg-blue-50/50"
+                      />
+                    ) : (
+                      <div className="text-lg font-black text-slate-900 tracking-tight leading-snug">
+                        {editableName}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-2 pt-1 border-t border-slate-100 text-xs">
@@ -347,25 +425,43 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
                     </div>
                     <div>
                       <span className="text-[10px] font-mono uppercase text-slate-400">USN</span>
-                      <div className="font-bold text-blue-600 font-mono">{scannedUser.usn}</div>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editableUsn}
+                          onChange={(e) => setEditableUsn(e.target.value.toUpperCase())}
+                          className="font-bold text-blue-600 font-mono border-b border-blue-500 outline-none bg-blue-50/50"
+                        />
+                      ) : (
+                        <div className="font-bold text-blue-600 font-mono">{editableUsn}</div>
+                      )}
                     </div>
                     <div>
                       <span className="text-[10px] font-mono uppercase text-slate-400">DEPARTMENT</span>
-                      <div className="font-bold text-slate-800">{scannedUser.dept}</div>
+                      {isEditing ? (
+                        <input
+                          type="text"
+                          value={editableDept}
+                          onChange={(e) => setEditableDept(e.target.value.toUpperCase())}
+                          className="font-bold text-slate-800 border-b border-blue-500 outline-none bg-blue-50/50"
+                        />
+                      ) : (
+                        <div className="font-bold text-slate-800">{editableDept}</div>
+                      )}
                     </div>
                     <div>
                       <span className="text-[10px] font-mono uppercase text-slate-400">BUILDING</span>
-                      <div className="font-bold text-emerald-700">Block A (F2)</div>
+                      <div className="font-bold text-emerald-700">{scannedUser.academicBlock} (F{scannedUser.preferredFloor})</div>
                     </div>
                   </div>
                 </div>
 
-                {/* Right: Student Photo extracted from ID card */}
+                {/* Right: Scanned Live Photo Crop */}
                 <div className="flex flex-col items-center gap-1 shrink-0">
                   <div className="w-24 h-28 rounded-xl overflow-hidden border-2 border-slate-300 shadow-md bg-slate-100">
                     <img
                       src={scannedUser.photo}
-                      alt={scannedUser.name}
+                      alt={editableName}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -375,32 +471,29 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
                 </div>
               </div>
 
-              {/* Barcode & Signature Row */}
+              {/* Barcode & Edit Toggle Row */}
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-                {/* Barcode Graphic */}
                 <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-[2px] h-6">
                     {[3, 1, 2, 4, 1, 3, 2, 1, 4, 2, 3, 1, 2, 4, 1, 3, 2, 3, 1, 4, 2, 1, 3].map((w, i) => (
-                      <div
-                        key={i}
-                        className="bg-slate-900 h-full"
-                        style={{ width: `${w * 1.5}px` }}
-                      />
+                      <div key={i} className="bg-slate-900 h-full" style={{ width: `${w * 1.5}px` }} />
                     ))}
                   </div>
                   <span className="text-[9px] font-mono text-slate-500 font-semibold tracking-widest">
-                    {scannedUser.barcode}
+                    {editableUsn}
                   </span>
                 </div>
 
-                <div className="flex flex-col items-end text-right">
-                  <div className="text-xs font-serif italic text-slate-700 font-semibold">
-                    Dr. H. R. Purushothama
-                  </div>
-                  <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest font-bold">
-                    PRINCIPAL
-                  </span>
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(!isEditing)}
+                  className="text-xs font-semibold text-blue-600 hover:text-blue-800 flex items-center gap-1 cursor-pointer"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  <span>{isEditing ? 'Save Changes' : 'Edit Details'}</span>
+                </button>
               </div>
             </div>
 
@@ -411,10 +504,10 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
               </div>
               <div className="flex flex-col text-xs text-blue-950 leading-snug">
                 <span className="font-bold">
-                  Department Recognized: {scannedUser.departmentFullName} ({scannedUser.dept})
+                  Department Recognized: {scannedUser.departmentFullName} ({editableDept})
                 </span>
                 <span className="text-blue-700 text-[11px] mt-0.5">
-                  Academic Block A (Floor 2 labs, classrooms & corridors) will be prioritized on your campus map.
+                  {scannedUser.academicBlock} (Floor {scannedUser.preferredFloor} labs, classrooms & corridors) will be prioritized on your campus map.
                 </span>
               </div>
             </div>
@@ -423,7 +516,11 @@ export function IdCardScanPage({ onVerificationComplete, onBackToLogin }) {
             <div className="flex items-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setScannedUser(null)}
+                onClick={() => {
+                  setScannedUser(null);
+                  setPreviewImage(null);
+                  startCamera();
+                }}
                 className="py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition-all cursor-pointer"
               >
                 Re-Scan Card

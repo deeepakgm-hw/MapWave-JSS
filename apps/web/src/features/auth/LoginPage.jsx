@@ -7,11 +7,17 @@ import React, { useState } from 'react';
  * - 100% Crisp white typography for maximum legibility and zero muddy blending
  * - Translucent frosted pill input fields with white outline icons
  * - Perfectly color-matched electric Halfwave Blue primary action button
- * - Seamless frosted Google OAuth option & matching top-bar pills
+ * - Direct camera physical ID card scanner option & Google OAuth
  */
-export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSkip }) {
-  const [username, setUsername] = useState('deepak.gm@jssateb.ac.in');
-  const [password, setPassword] = useState('••••••••••••');
+export function LoginPage({
+  onLoginSuccess,
+  onGoogleLogin,
+  onScanIdDirect,
+  onBackToLanding,
+  onSkip,
+}) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -19,9 +25,10 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsLoading(true);
+    const finalUsername = username.trim() || 'student@jssateb.ac.in';
     setTimeout(() => {
       setIsLoading(false);
-      onLoginSuccess?.({ username });
+      onLoginSuccess?.({ username: finalUsername });
     }, 600);
   };
 
@@ -158,10 +165,9 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
               <input
                 id="username"
                 type="text"
-                required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your USN or email"
+                placeholder="Enter USN or email (e.g. 1JS24IS...)"
                 className="w-full h-12 pl-4 pr-11 rounded-2xl text-white placeholder-white/60 text-sm font-medium outline-none transition-all"
                 style={{
                   background: 'rgba(255, 255, 255, 0.14)',
@@ -215,7 +221,6 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
-                required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter password"
@@ -312,10 +317,32 @@ export function LoginPage({ onLoginSuccess, onGoogleLogin, onBackToLanding, onSk
               <span>Login</span>
             )}
           </button>
+
+          {/* Direct Camera Scan Action Button */}
+          {onScanIdDirect && (
+            <button
+              type="button"
+              onClick={onScanIdDirect}
+              className="w-full h-11 rounded-2xl text-white font-semibold text-xs tracking-wide active:scale-[0.985] transition-all cursor-pointer flex items-center justify-center gap-2 hover:brightness-110"
+              style={{
+                background: 'rgba(255, 255, 255, 0.16)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                border: '1.5px solid rgba(255, 255, 255, 0.45)',
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.15)',
+              }}
+            >
+              <svg className="w-4 h-4 text-cyan-300 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Scan Physical ID Card with Camera</span>
+            </button>
+          )}
         </form>
 
         {/* OR Divider with Glass Pill Badge */}
-        <div className="relative my-5 flex items-center justify-center">
+        <div className="relative my-4 flex items-center justify-center">
           <div className="w-full border-t border-white/25" />
           <span
             className="absolute px-3 py-0.5 rounded-full text-[11px] font-mono font-bold tracking-widest uppercase"

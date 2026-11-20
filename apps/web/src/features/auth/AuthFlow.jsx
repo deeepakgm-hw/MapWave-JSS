@@ -31,6 +31,7 @@ export function AuthFlow({
       <LoginPage
         onLoginSuccess={handleLoginSuccess}
         onGoogleLogin={handleGoogleLogin}
+        onScanIdDirect={() => setStep('SCAN_ID')}
         onBackToLanding={onBackToLanding}
         onSkip={onSkip}
       />
